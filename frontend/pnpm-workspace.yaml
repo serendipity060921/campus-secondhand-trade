@@ -1,0 +1,5 @@
+# pnpm 设置：允许这些依赖在安装时执行构建脚本
+# （esbuild 需要安装平台二进制，vue-demi 需要按 Vue 版本切换实现）
+allowBuilds:
+  esbuild: true
+  vue-demi: true

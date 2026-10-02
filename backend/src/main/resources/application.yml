@@ -1,0 +1,58 @@
+# =============================================================================
+# 校园二手交易平台 - 主配置（所有环境共用）
+# 版本：v0.03  里程碑：前后端分离项目脚手架
+# =============================================================================
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+  tomcat:
+    uri-encoding: UTF-8
+
+spring:
+  application:
+    name: campus-trade-backend
+  mvc:
+    # 找不到接口时抛 NoHandlerFoundException，交由全局异常处理器返回统一 JSON
+    throw-exception-if-no-handler-found: true
+  web:
+    resources:
+      # 后端不提供静态资源（前端由 Vite / Nginx 托管），关闭默认静态映射
+      add-mappings: false
+  # 激活的环境：dev（开发）/ prod（生产），可用启动参数 --spring.profiles.active=prod 覆盖
+  profiles:
+    active: dev
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 20MB
+
+mybatis-plus:
+  # Mapper XML 位置（复杂的多表 SQL 写这里，简单单表 CRUD 用注解/内置方法）
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.campus.trade.entity
+  configuration:
+    # 下划线自动映射驼峰：create_time -> createTime
+    map-underscore-to-camel-case: true
+    # 开发期打印 SQL，便于调试
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    banner: false
+    db-config:
+      id-type: auto
+      # 逻辑删除配置：deleted = 0 未删除，1 已删除
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 日志级别
+logging:
+  level:
+    root: info
+    com.campus.trade: debug

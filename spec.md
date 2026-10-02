@@ -8,6 +8,8 @@
 | 配套文件 | `db_schema.sql`（建表 SQL）、`spec.md`（本文档） |
 
 > 说明：本文档只做需求与设计，不含业务代码实现。数据库脚本见同目录 `db_schema.sql`。
+>
+> **版本说明**：v0.01 需求分析（本文档）→ v0.02 数据库设计（`db_schema.sql`）→ **v0.03 前后端分离脚手架（`backend/`、`frontend/`，启动方式见 [README.md](./README.md)）**。
 
 ---
 

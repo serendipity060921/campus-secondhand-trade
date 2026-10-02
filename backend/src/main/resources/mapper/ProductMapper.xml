@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!--
+  复杂多表 SQL 的存放位置示例。
+  说明：
+    1. 简单单表 CRUD 由 MyBatis-Plus 的 BaseMapper 提供，无需写 XML；
+    2. 只有多表关联、复杂统计才需要写在这里；
+    3. namespace 必须与 Mapper 接口全限定名一致。
+-->
+<mapper namespace="com.campus.trade.mapper.ProductMapper">
+
+    <!--
+      示例（后续里程碑启用）：
+      <select id="selectProductPage" resultType="com.campus.trade.vo.ProductVO">
+          SELECT p.id, p.title, p.price, c.name AS categoryName, u.nickname AS sellerName
+          FROM product p
+          LEFT JOIN category c ON c.id = p.category_id
+          LEFT JOIN `user` u ON u.id = p.seller_id
+          WHERE p.deleted = 0 AND p.status = 1
+          ORDER BY p.create_time DESC
+      </select>
+    -->
+
+</mapper>

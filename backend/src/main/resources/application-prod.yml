@@ -1,0 +1,28 @@
+# =============================================================================
+# 生产环境配置（prod）—— 脚手架阶段仅提供模板，部署时按实际环境修改
+# =============================================================================
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DB:campus_trade}?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:请改成真实密码}
+    hikari:
+      minimum-idle: 10
+      maximum-pool-size: 50
+
+mybatis-plus:
+  configuration:
+    # 生产环境关闭 SQL 打印
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+logging:
+  level:
+    root: warn
+    com.campus.trade: info
+
+app:
+  version: v0.03
+  cors:
+    allowed-origins:
+      - https://your-domain.com
