@@ -75,6 +75,7 @@ onMounted(loadUserInfo)
       <!-- v0.06 快捷入口 -->
       <el-divider content-position="left">快捷入口</el-divider>
       <div class="quick-links">
+        <el-button type="primary" plain @click="router.push('/profile/edit')">编辑资料 / 上传头像</el-button>
         <el-button plain type="warning" @click="router.push('/favorites')">★ 我的收藏</el-button>
         <el-button plain type="primary" @click="router.push('/product/mine')">我的商品</el-button>
         <el-button plain type="danger" @click="router.push('/orders/bought')">我买到的</el-button>

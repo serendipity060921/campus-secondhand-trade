@@ -25,6 +25,13 @@ const routes = [
         meta: { title: '首页' }
       },
       {
+        // v0.09 商品搜索/筛选结果页（公开，关键词与分类同步在 URL 上）
+        path: 'search',
+        name: 'ProductSearch',
+        component: () => import('@/views/product/Search.vue'),
+        meta: { title: '搜索商品' }
+      },
+      {
         path: 'product/publish',
         name: 'ProductPublish',
         component: () => import('@/views/product/Publish.vue'),
@@ -55,6 +62,13 @@ const routes = [
         name: 'MyFavorites',
         component: () => import('@/views/user/MyFavorites.vue'),
         meta: { title: '我的收藏', requiresAuth: true }
+      },
+      {
+        // v0.09 编辑个人资料（含头像上传）
+        path: 'profile/edit',
+        name: 'ProfileEdit',
+        component: () => import('@/views/user/ProfileEdit.vue'),
+        meta: { title: '编辑资料', requiresAuth: true }
       },
       {
         // v0.07 消息会话列表

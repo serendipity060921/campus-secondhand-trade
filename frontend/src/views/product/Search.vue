@@ -1,13 +1,17 @@
 <script setup>
 /**
- * 商品列表页（v0.05，作为首页）
+ * 商品搜索 / 筛选结果页（v0.09）
  *
- * 功能：关键词搜索 + 分类筛选 + 排序 + 分页；卡片展示图片、名称、价格、发布时间。
- * 图片：优先用商品真实封面；没有封面（或加载失败）时按分类显示统一的占位图。
+ * 路由：/search?keyword=教材&categoryId=1&sort=new&page=1
+ *
+ * 说明：
+ *   ① 调用 GET /api/product/search（按商品名称模糊查询 + 分类筛选 + 分页）；
+ *   ② 关键词、分类、排序、页码都同步到 URL，刷新/分享链接后结果一致；
+ *   ③ 首页顶部搜索框与商品列表页的分类下拉都跳到这里。
  */
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCategoryList, getProductList } from '@/api/product'
+import { getSearchCategories, searchProducts } from '@/api/search'
 import { demoImage, formatPrice, resolveImageUrl } from '@/utils/product'
 
 const route = useRoute()
@@ -17,15 +21,14 @@ const loading = ref(false)
 const products = ref([])
 const categories = ref([])
 const total = ref(0)
-/** 记录加载失败的图片，失败时回退到占位图 */
 const failedImages = reactive(new Set())
 
 const query = reactive({
-  page: 1,
-  size: 12,
   keyword: '',
   categoryId: null,
-  sort: 'new'
+  sort: 'new',
+  page: 1,
+  size: 12
 })
 
 const sortOptions = [
@@ -35,7 +38,7 @@ const sortOptions = [
   { value: 'hot', label: '最多浏览' }
 ]
 
-/** 分类下拉：按一级分类分组 */
+/** 分类下拉：按一级分类分组（与发布页一致） */
 const categoryGroups = computed(() => {
   const tops = categories.value.filter((c) => !c.parentId || c.parentId === 0)
   return tops.map((top) => ({
@@ -47,6 +50,11 @@ const categoryGroups = computed(() => {
   }))
 })
 
+const currentCategoryName = computed(() => {
+  const found = categories.value.find((c) => c.id === query.categoryId)
+  return found ? found.name : ''
+})
+
 function imageOf(product) {
   if (failedImages.has(product.id)) {
     return demoImage(product.categoryName)
@@ -54,28 +62,24 @@ function imageOf(product) {
   return product.coverImage ? resolveImageUrl(product.coverImage) : demoImage(product.categoryName)
 }
 
-function onImageError(product) {
-  failedImages.add(product.id)
-}
-
 async function loadCategories() {
   try {
-    const res = await getCategoryList()
+    const res = await getSearchCategories()
     categories.value = res.data || []
   } catch (e) {
-    /* 拦截器已提示 */
+    /* 忽略 */
   }
 }
 
 async function loadProducts() {
   loading.value = true
   try {
-    const res = await getProductList({
-      page: query.page,
-      size: query.size,
+    const res = await searchProducts({
       keyword: query.keyword || undefined,
       categoryId: query.categoryId || undefined,
-      sort: query.sort
+      sort: query.sort,
+      page: query.page,
+      size: query.size
     })
     products.value = res.data.records || []
     total.value = res.data.total || 0
@@ -87,8 +91,19 @@ async function loadProducts() {
   }
 }
 
+/** 把当前查询条件写回 URL（刷新/分享不丢条件） */
+function syncUrl() {
+  const q = {}
+  if (query.keyword) q.keyword = query.keyword
+  if (query.categoryId) q.categoryId = query.categoryId
+  if (query.sort && query.sort !== 'new') q.sort = query.sort
+  if (query.page > 1) q.page = query.page
+  router.replace({ path: '/search', query: q })
+}
+
 function handleSearch() {
   query.page = 1
+  syncUrl()
   loadProducts()
 }
 
@@ -97,32 +112,35 @@ function handleReset() {
   query.categoryId = null
   query.sort = 'new'
   query.page = 1
+  syncUrl()
   loadProducts()
 }
 
 function handlePageChange(page) {
   query.page = page
+  syncUrl()
   loadProducts()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-function goDetail(id) {
-  router.push(`/product/${id}`)
+/** 从 URL 读取查询条件（进入页面或 URL 变化时） */
+function applyUrlQuery() {
+  query.keyword = route.query.keyword ? String(route.query.keyword) : ''
+  query.categoryId = route.query.categoryId ? Number(route.query.categoryId) : null
+  query.sort = route.query.sort ? String(route.query.sort) : 'new'
+  query.page = route.query.page ? Number(route.query.page) : 1
 }
 
-/** 发布时间只显示到分钟 */
-function shortTime(time) {
-  return time ? String(time).slice(0, 16) : ''
-}
+watch(
+  () => route.query,
+  () => {
+    applyUrlQuery()
+    loadProducts()
+  }
+)
 
 onMounted(() => {
-  // v0.09：支持 /home?keyword=xxx&categoryId=1 深度链接，首页可直接按关键词/分类筛选
-  if (route.query.keyword) {
-    query.keyword = String(route.query.keyword)
-  }
-  if (route.query.categoryId) {
-    query.categoryId = Number(route.query.categoryId)
-  }
+  applyUrlQuery()
   loadCategories()
   loadProducts()
 })
@@ -130,18 +148,28 @@ onMounted(() => {
 
 <template>
   <div>
-    <!-- 筛选栏 -->
-    <el-card shadow="never" class="filter-card">
-      <div class="filter-bar">
+    <!-- 搜索栏 -->
+    <el-card shadow="never" class="search-card">
+      <div class="search-bar">
         <el-input
           v-model="query.keyword"
-          placeholder="搜索教材、数码、生活用品…"
+          size="large"
+          placeholder="搜索商品名称，例如：教材 / 键盘 / 台灯"
           clearable
-          class="keyword"
+          maxlength="50"
           @keyup.enter="handleSearch"
         />
+        <el-button type="primary" size="large" @click="handleSearch">搜索</el-button>
+      </div>
 
-        <el-select v-model="query.categoryId" placeholder="全部分类" clearable class="category" @change="handleSearch">
+      <div class="filter-bar">
+        <el-select
+          v-model="query.categoryId"
+          placeholder="全部分类"
+          clearable
+          class="category"
+          @change="handleSearch"
+        >
           <el-option-group v-for="group in categoryGroups" :key="group.label" :label="group.label">
             <el-option v-for="item in group.options" :key="item.id" :label="item.name" :value="item.id" />
           </el-option-group>
@@ -151,27 +179,27 @@ onMounted(() => {
           <el-option v-for="item in sortOptions" :key="item.value" :label="item.label" :value="item.value" />
         </el-select>
 
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="handleReset">重置</el-button>
+        <el-button @click="handleReset">重置条件</el-button>
 
-        <el-button type="success" plain class="publish-btn" @click="router.push('/product/publish')">
-          + 发布闲置
-        </el-button>
+        <span class="text-muted result-tip">
+          共 <b>{{ total }}</b> 件商品
+          <template v-if="query.keyword">，关键词「{{ query.keyword }}」</template>
+          <template v-if="currentCategoryName">，分类「{{ currentCategoryName }}」</template>
+        </span>
       </div>
     </el-card>
 
-    <!-- 商品卡片列表 -->
-    <div v-loading="loading" class="product-area">
-      <el-empty v-if="!loading && products.length === 0" description="暂时没有符合条件的商品，换个关键词试试～" />
+    <!-- 结果列表 -->
+    <div v-loading="loading" class="result-area">
+      <el-empty v-if="!loading && products.length === 0" description="没有找到符合条件的商品，换个关键词试试～">
+        <el-button type="primary" @click="router.push('/home')">返回首页</el-button>
+      </el-empty>
 
       <el-row v-else :gutter="16">
-        <el-col v-for="item in products" :key="item.id" :xs="12" :sm="8" :md="6" :lg="6">
-          <el-card class="product-card" shadow="hover" :body-style="{ padding: '0' }" @click="goDetail(item.id)">
+        <el-col v-for="item in products" :key="item.id" :xs="12" :sm="8" :md="6">
+          <el-card class="product-card" shadow="hover" :body-style="{ padding: '0' }" @click="router.push(`/product/${item.id}`)">
             <div class="cover">
-              <img :src="imageOf(item)" alt="商品图片" @error="onImageError(item)" />
-              <el-tag v-if="item.conditionLevel" class="condition" size="small" effect="dark" type="info">
-                {{ ['', '全新', '几乎全新', '轻微使用', '明显使用'][item.conditionLevel] }}
-              </el-tag>
+              <img :src="imageOf(item)" alt="商品图片" @error="failedImages.add(item.id)" />
             </div>
             <div class="info">
               <div class="title" :title="item.title">{{ item.title }}</div>
@@ -181,18 +209,18 @@ onMounted(() => {
               </div>
               <div class="meta">
                 <el-tag size="small" effect="plain">{{ item.categoryName || '未分类' }}</el-tag>
-                <span class="time">{{ shortTime(item.createTime) }}</span>
+                <span class="time">{{ item.createTime ? String(item.createTime).slice(0, 16) : '' }}</span>
               </div>
               <div class="meta second">
-                <span class="seller">卖家：{{ item.sellerNickname || '匿名' }}</span>
-                <span class="views">{{ item.viewCount || 0 }} 次浏览</span>
+                <span>卖家：{{ item.sellerNickname || '匿名' }}</span>
+                <span>{{ item.viewCount || 0 }} 次浏览</span>
               </div>
             </div>
           </el-card>
         </el-col>
       </el-row>
 
-      <div v-if="total > 0" class="pagination">
+      <div v-if="total > query.size" class="pagination">
         <el-pagination
           background
           layout="total, prev, pager, next, jumper"
@@ -207,19 +235,21 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.filter-card {
+.search-card {
   margin-bottom: 16px;
 }
 
+.search-bar {
+  display: flex;
+  gap: 10px;
+}
+
 .filter-bar {
+  margin-top: 12px;
   display: flex;
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
-}
-
-.keyword {
-  width: 260px;
 }
 
 .category {
@@ -227,14 +257,15 @@ onMounted(() => {
 }
 
 .sort {
-  width: 160px;
+  width: 150px;
 }
 
-.publish-btn {
+.result-tip {
   margin-left: auto;
+  font-size: 13px;
 }
 
-.product-area {
+.result-area {
   min-height: 300px;
 }
 
@@ -249,7 +280,6 @@ onMounted(() => {
 }
 
 .cover {
-  position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
   background: #f7f9fc;
@@ -261,12 +291,6 @@ onMounted(() => {
   height: 100%;
   object-fit: cover;
   display: block;
-}
-
-.condition {
-  position: absolute;
-  top: 8px;
-  left: 8px;
 }
 
 .info {

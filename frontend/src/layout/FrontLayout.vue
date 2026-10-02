@@ -2,7 +2,7 @@
 /**
  * 前台基础布局：顶部导航 + 内容区 + 页脚
  */
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
@@ -10,6 +10,24 @@ import { useUserStore } from '@/store/user'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
+/* ---------------- v0.09 顶部全局搜索 ---------------- */
+const searchKeyword = ref('')
+
+// 进入 /search 页时回显关键词
+watch(
+  () => route.query.keyword,
+  (v) => {
+    searchKeyword.value = v ? String(v) : ''
+  },
+  { immediate: true }
+)
+
+/** 回车/点搜索按钮：跳到商品搜索结果页 */
+function handleSearch() {
+  const keyword = searchKeyword.value.trim()
+  router.push({ path: '/search', query: keyword ? { keyword } : {} })
+}
 
 /** 当前高亮菜单：详情页 /product/3 也要高亮到「首页」 */
 const activeMenu = computed(() => {
@@ -56,6 +74,20 @@ async function handleLogout() {
         </el-menu>
 
         <div class="header-right">
+          <!-- v0.09 顶部搜索框：首页顶部即可直接搜索商品，回车跳到搜索结果页 -->
+          <el-input
+            v-model="searchKeyword"
+            class="header-search"
+            placeholder="搜索商品名称"
+            clearable
+            maxlength="50"
+            @keyup.enter="handleSearch"
+          >
+            <template #append>
+              <el-button @click="handleSearch">搜索</el-button>
+            </template>
+          </el-input>
+
           <template v-if="userStore.isLogin">
             <el-dropdown>
               <span class="user-name">
@@ -151,6 +183,11 @@ async function handleLogout() {
 .header-right {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+
+.header-search {
+  width: 240px;
 }
 
 .user-name {
