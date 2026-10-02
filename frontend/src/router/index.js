@@ -71,6 +71,29 @@ const routes = [
         meta: { title: '聊天', requiresAuth: true }
       },
       {
+        // v0.08 我买到的订单
+        path: 'orders/bought',
+        name: 'OrderBought',
+        component: () => import('@/views/order/OrderList.vue'),
+        props: { role: 'buy' },
+        meta: { title: '我买到的', requiresAuth: true }
+      },
+      {
+        // v0.08 我卖出的订单
+        path: 'orders/sold',
+        name: 'OrderSold',
+        component: () => import('@/views/order/OrderList.vue'),
+        props: { role: 'sell' },
+        meta: { title: '我卖出的', requiresAuth: true }
+      },
+      {
+        // v0.08 订单详情（必须放在 orders/bought、orders/sold 之后）
+        path: 'orders/:id',
+        name: 'OrderDetail',
+        component: () => import('@/views/order/Detail.vue'),
+        meta: { title: '订单详情', requiresAuth: true }
+      },
+      {
         // 脚手架自带的连通性自检看板（v0.03）
         path: 'dev/health',
         name: 'DevHealth',

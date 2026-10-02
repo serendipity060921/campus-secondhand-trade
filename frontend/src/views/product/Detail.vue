@@ -5,11 +5,12 @@
  * 展示：商品大图（可放大预览）、描述、价格、分类、发布者信息、浏览量等。
  * 图片：优先 product_image 中的图片；没有则用封面；都没有则按分类显示占位图。
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getProductDetail } from '@/api/product'
 import { checkFavorite, operateFavorite } from '@/api/favorite'
+import { createOrder } from '@/api/order'
 import { useUserStore } from '@/store/user'
 import { conditionLabel, formatPrice, PRODUCT_STATUS, resolveDetailImages } from '@/utils/product'
 
@@ -42,6 +43,51 @@ function goChatWithSeller() {
     path: `/chat/${product.value.sellerId}`,
     query: { productId: product.value.id }
   })
+}
+
+/* ---------------- v0.08 下单 ---------------- */
+const orderDialogVisible = ref(false)
+const orderSubmitting = ref(false)
+const orderForm = reactive({ tradePlace: '', buyerRemark: '' })
+
+/** 打开下单确认框（先做前端预校验，后端还会再校验一次） */
+function openOrderDialog() {
+  if (!userStore.isLogin) {
+    ElMessage.warning('请先登录后再下单')
+    router.push({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+  if (isSelfProduct.value) {
+    ElMessage.warning('不能购买自己发布的商品')
+    return
+  }
+  if (product.value.status !== 1) {
+    ElMessage.warning('该商品已下架或已被预订，无法下单')
+    return
+  }
+  orderForm.tradePlace = product.value.tradePlace || ''
+  orderForm.buyerRemark = ''
+  orderDialogVisible.value = true
+}
+
+/** 提交订单 → 跳到订单详情页 */
+async function submitOrder() {
+  orderSubmitting.value = true
+  try {
+    const res = await createOrder({
+      productId: product.value.id,
+      deliveryType: 1,
+      tradePlace: orderForm.tradePlace,
+      buyerRemark: orderForm.buyerRemark
+    })
+    ElMessage.success('下单成功，请与卖家约定面交时间')
+    orderDialogVisible.value = false
+    router.push(`/orders/${res.data.id}`)
+  } catch (e) {
+    /* 商品已下架(6001)/不能买自己的商品(6002) 等由拦截器统一提示 */
+  } finally {
+    orderSubmitting.value = false
+  }
 }
 
 const images = computed(() => (product.value ? resolveDetailImages(product.value) : []))
@@ -208,9 +254,11 @@ onMounted(loadDetail)
               <!-- v0.07 私聊卖家：进入聊天窗口并带上当前商品 -->
               <el-button v-else type="primary" @click="goChatWithSeller">私聊卖家</el-button>
 
-              <el-tooltip content="下单功能将在订单模块里程碑开放" placement="top">
+              <!-- v0.08 下单：弹出确认框（交易地点 + 备注），创建订单后跳订单详情 -->
+              <el-tooltip v-if="product.status !== 1" content="商品已下架或已被预订，无法下单" placement="top">
                 <span><el-button type="danger" disabled>立即购买</el-button></span>
               </el-tooltip>
+              <el-button v-else type="danger" @click="openOrderDialog">立即购买</el-button>
               <el-button text type="primary" @click="router.push('/home')">← 返回商品列表</el-button>
             </div>
           </el-col>
@@ -220,6 +268,41 @@ onMounted(loadDetail)
         <el-divider content-position="left">商品描述</el-divider>
         <p class="description">{{ product.description || '卖家很懒，没有填写描述。' }}</p>
       </el-card>
+
+      <!-- v0.08 下单确认框 -->
+      <el-dialog v-model="orderDialogVisible" title="确认下单" width="480px">
+        <el-form label-width="86px">
+          <el-form-item label="商品">
+            <span>{{ product.title }}</span>
+          </el-form-item>
+          <el-form-item label="成交金额">
+            <span class="dialog-price">￥{{ Number(product.price).toFixed(2) }}</span>
+          </el-form-item>
+          <el-form-item label="交易地点">
+            <el-input v-model="orderForm.tradePlace" maxlength="100" placeholder="例如：东校区图书馆门口" />
+          </el-form-item>
+          <el-form-item label="买家备注">
+            <el-input
+              v-model="orderForm.buyerRemark"
+              type="textarea"
+              :rows="3"
+              maxlength="255"
+              show-word-limit
+              placeholder="例如：明天下午三点方便面交吗"
+            />
+          </el-form-item>
+        </el-form>
+        <el-alert
+          type="info"
+          :closable="false"
+          show-icon
+          title="下单后商品会被锁定为「交易中」，其他同学无法再购买；取消订单后商品自动重新上架。"
+        />
+        <template #footer>
+          <el-button @click="orderDialogVisible = false">再想想</el-button>
+          <el-button type="danger" :loading="orderSubmitting" @click="submitOrder">确认下单</el-button>
+        </template>
+      </el-dialog>
     </template>
   </div>
 </template>
@@ -328,5 +411,11 @@ onMounted(loadDetail)
   line-height: 1.9;
   white-space: pre-wrap;
   color: #303133;
+}
+
+.dialog-price {
+  color: #f56c6c;
+  font-weight: 700;
+  font-size: 16px;
 }
 </style>

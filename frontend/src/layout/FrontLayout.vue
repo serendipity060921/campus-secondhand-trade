@@ -19,6 +19,7 @@ const activeMenu = computed(() => {
   if (path.startsWith('/product')) return '/home'
   if (path.startsWith('/profile')) return '/profile'
   if (path.startsWith('/messages') || path.startsWith('/chat')) return '/messages'
+  if (path.startsWith('/orders')) return '/orders/bought'
   if (path.startsWith('/favorites')) return '/favorites'
   return path
 })
@@ -50,6 +51,7 @@ async function handleLogout() {
           <el-menu-item index="/product/publish">发布商品</el-menu-item>
           <el-menu-item index="/product/mine">我的商品</el-menu-item>
           <el-menu-item index="/messages">消息</el-menu-item>
+          <el-menu-item index="/orders/bought">订单</el-menu-item>
           <el-menu-item index="/profile">个人中心</el-menu-item>
         </el-menu>
 
@@ -63,6 +65,8 @@ async function handleLogout() {
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item @click="router.push('/profile')">个人中心</el-dropdown-item>
+                  <el-dropdown-item @click="router.push('/orders/bought')">我买到的</el-dropdown-item>
+                  <el-dropdown-item @click="router.push('/orders/sold')">我卖出的</el-dropdown-item>
                   <el-dropdown-item @click="router.push('/favorites')">我的收藏</el-dropdown-item>
                   <el-dropdown-item @click="router.push('/product/mine')">我的商品</el-dropdown-item>
                   <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>

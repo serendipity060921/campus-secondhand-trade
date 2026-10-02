@@ -282,7 +282,8 @@ curl http://localhost:8080/api/health/db     # 直连后端（含 MySQL 查询�
 | **v0.05** | **商品核心模块（含商品占位图方案）** | 发布商品、图片上传、商品列表/详情、上下架、分类列表、9 张 800×800 占位图（详见第十一节） |
 | **v0.06** | **商品收藏模块** | 收藏/取消收藏、我的收藏分页、是否已收藏查询、详情页收藏按钮、我的收藏页（详见第十二节） |
 | **v0.07** | **私信聊天模块** | 发送私信、会话列表、聊天记录分页、已读更新、会话列表页、聊天窗口页、详情页「私聊卖家」（详见第十三节） |
-| v0.08（计划） | 留言与订单 | 商品留言盖楼回复、下单、订单状态流转 |
+| **v0.08** | **订单交易模块** | 下单、订单三态流转、买家/卖家订单列表、订单详情与权限校验、下单弹窗、订单页面（详见第十四节） |
+| v0.09（计划） | 商品留言与后台管理 | 留言盖楼回复、商品审核、用户管理、数据概览 |
 
 ---
 
@@ -841,3 +842,126 @@ curl "$BASE/message/peer?peerId=1" -H "Authorization: Bearer $STU"              
 | v0.06 收藏模块 | 未改动任何文件 |
 | 复用既有能力 | 注入既有的 `MessageService` / `UserService` / `ProductService`，只用通用 CRUD；新增 `MessageModuleMapper` 承载两条联表查询 |
 | 前端既有逻辑 | Token 请求拦截、401 跳登录、路由守卫（`requiresAuth`）全部沿用，未改动 |
+
+---
+
+## 十四、v0.08 订单交易模块
+
+### 14.1 接口清单（全部需要登录）
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/order/create` | 创建订单 `{productId, deliveryType?, tradePlace?, buyerRemark?}`，买家 = 当前登录用户 |
+| PUT | `/api/order/status` | 修改订单状态 `{orderId, status, cancelReason?}`，status：**3 已完成 / 4 已取消** |
+| GET | `/api/order/buyList?status=&page=&size=` | 我买到的订单（分页，可按状态筛选） |
+| GET | `/api/order/sellList?status=&page=&size=` | 我卖出的订单（分页，可按状态筛选） |
+| GET | `/api/order/{id}` | 订单详情（**仅买卖双方可查看**） |
+
+### 14.2 订单状态机与商品状态联动
+
+```
+                  ┌──────────── 取消（买卖任一方）───────────┐
+                  ▼                                        │
+商品：在售(1) ──下单──▶ 交易中(4) ──完成──▶ 已售出(5)        │
+订单：       ──下单──▶ 待交易(0) ──取消──▶ 已取消(4) ────────┘ 商品回到在售(1)
+```
+
+| 订单状态 | 状态码 | 说明 |
+| --- | --- | --- |
+| 待交易 | 0 | 下单后的初始状态（本模块把"支付+交付"简化为一次线下见面交易） |
+| 已完成 | 3 | 商品标记「已售出」，买卖双方信用分 +1 |
+| 已取消 | 4 | 商品回到「在售」，记录取消原因 |
+
+> db_schema.sql 中 orders.status 注释还有 1 待交付 / 2 待收货 / 5 已退款，这些**保留给后续「支付与物流」里程碑**，本模块不会产生。
+> 调用 `/api/order/status` 传 0 会明确提示：「status 只能为 3（已完成）或 4（已取消）；待交易(0) 是下单后的初始状态」。
+
+### 14.3 订单模块错误码
+
+| code | 含义 | 触发场景 |
+| --- | --- | --- |
+| 400 | 参数不合法 | `status` 不是 3/4；`page/size` 越界 |
+| 401 | 未登录 | 五个接口都由 `@LoginRequired` 保护 |
+| 3001 | 商品不存在或已被删除 | 下单时商品ID无效（复用商品模块错误码） |
+| 6001 | 商品已下架或已被预订，无法下单 | 商品不是「在售」状态（含被别人抢先下单） |
+| 6002 | 不能购买自己发布的商品 | 买自己发布的商品 |
+| 6003 | 订单不存在 | 订单ID无效 |
+| 6004 | 无权查看或操作该订单 | 非买卖双方访问详情/改状态 |
+| 6005 | 订单当前状态不允许该操作 | 已完成/已取消的订单再次流转 |
+
+### 14.4 防「一物多卖」的实现
+
+下单时不用「先查再改」，而是一条**条件更新**：
+
+```java
+int locked = productService.getBaseMapper().update(null, new LambdaUpdateWrapper<Product>()
+        .set(Product::getStatus, PRODUCT_TRADING)   // 改成"交易中"
+        .eq(Product::getId, product.getId())
+        .eq(Product::getStatus, PRODUCT_ON_SALE));  // ← 只有仍是"在售"才更新成功
+if (locked == 0) {
+    throw OrderException.productNotOnSale();        // 6001 已被别人抢先下单
+}
+```
+两个买家同时点"立即购买"，数据库层面只会有一个 UPDATE 成功（`affected rows = 1`），另一个拿到 6001。
+测试 SQL 第 9.2 节的「一物多卖异常组数」会校验这一点（恒为 0）。
+
+订单同时保存了 **商品标题/封面/价格快照**，商品之后被改名、下架、删除都不影响历史订单。
+
+### 14.5 数据库测试
+
+```bash
+mysql -h 127.0.0.1 -P 3306 -u root -p123456 --default-character-set=utf8mb4 < db_order_test.sql
+```
+
+脚本包含：orders 表结构、订单总览（含商品与买卖双方）、买家/卖家列表等价 SQL、订单详情 SQL、
+**订单状态与商品状态联动校验**、三态流转 SQL 演示（下单→取消→再下单，并留下一条待交易订单供前端演示）、
+3 条约束反向验证（商品/买家不存在 → 1452，订单号重复 → 1062）、业务规则排查
+（自买自卖、一物多卖、状态悬挂）、统计总览与信用分。
+
+### 14.6 测试步骤
+
+**后端（curl / Python）**
+
+```bash
+BASE=http://localhost:8080/api
+STU=$(curl -s -X POST $BASE/user/login -H "Content-Type: application/json" -d '{"username":"stu_test01","password":"abc12345"}' | sed 's/.*"token":"\([^"]*\)".*/\1/')
+ADM=$(curl -s -X POST $BASE/user/login -H "Content-Type: application/json" -d '{"username":"admin","password":"123456"}' | sed 's/.*"token":"\([^"]*\)".*/\1/')
+
+curl -X POST $BASE/order/create -H "Content-Type: application/json" -d '{"productId":8}'                       # ① 未登录 → 401
+curl -X POST $BASE/order/create -H "Authorization: Bearer $STU" -H "Content-Type: application/json" -d '{"productId":999999}'  # ② 商品不存在 → 3001
+curl -X POST $BASE/order/create -H "Authorization: Bearer $STU" -H "Content-Type: application/json" -d '{"productId":5}'        # ③ 买自己的商品 → 6002
+curl -X PUT  $BASE/product/status -H "Authorization: Bearer $ADM" -H "Content-Type: application/json" -d '{"productId":14,"status":3}'   # ④ 先下架
+curl -X POST $BASE/order/create -H "Authorization: Bearer $STU" -H "Content-Type: application/json" -d '{"productId":14}'       # ⑤ 已下架 → 6001
+curl -X POST $BASE/order/create -H "Authorization: Bearer $STU" -H "Content-Type: application/json" \
+  -d '{"productId":8,"tradePlace":"东校区图书馆门口","buyerRemark":"明天下午三点"}'                                              # ⑥ 下单成功
+curl -X POST $BASE/order/create -H "Authorization: Bearer $DEMO" -H "Content-Type: application/json" -d '{"productId":8}'      # ⑦ 别人再买同款 → 6001
+curl "$BASE/order/buyList?page=1&size=10"  -H "Authorization: Bearer $STU"    # ⑧ 我买到的
+curl "$BASE/order/sellList?page=1&size=10" -H "Authorization: Bearer $ADM"    # ⑨ 我卖出的
+curl "$BASE/order/1" -H "Authorization: Bearer $STU"                          # ⑩ 买家看详情 → 200
+curl "$BASE/order/1" -H "Authorization: Bearer $DEMO"                         # ⑪ 第三人看详情 → 6004
+curl -X PUT $BASE/order/status -H "Authorization: Bearer $ADM" -H "Content-Type: application/json" -d '{"orderId":1,"status":3}'        # ⑫ 卖家确认完成
+curl -X PUT $BASE/order/status -H "Authorization: Bearer $STU" -H "Content-Type: application/json" -d '{"orderId":1,"status":4}'        # ⑬ 已完成再操作 → 6005
+curl -X PUT $BASE/order/status -H "Authorization: Bearer $STU" -H "Content-Type: application/json" -d '{"orderId":2,"status":4,"cancelReason":"不需要了"}'  # ⑭ 取消订单
+```
+
+**前端（浏览器）**
+
+1. 登录后打开别人的商品详情 → 点「**立即购买**」→ 弹出下单确认框（记住交易地点 + 买家备注）→ 确认下单；
+2. 下单成功后自动跳到订单详情，状态为「待交易」，顶部显示「我是买家」，右侧有「确认交易完成 / 取消订单」；
+3. 该商品同时被别人打开时，会看到「商品已下架或已被预订」（商品状态已变「交易中」）；
+4. 顶部导航「订单」→【我买到的】/【我卖出的】两个页签可互相切换，列表可按状态筛选、分页；
+5. 用卖家账号（`admin / 123456`）登录 →「订单」→【我卖出的】→ 打开详情 → 点「确认交易完成」→ 状态变「已完成」，
+   商品变「已售出」，双方信用分 +1；
+6. 再下一单并点「取消订单」→ 填取消原因 → 状态变「已取消」，商品回到「在售」出现在首页；
+7. 在自己发布的商品详情页，「立即购买」按钮为禁用状态（不能买自己的商品）；
+8. 用第三个账号直接访问 `http://localhost:5173/orders/1` → 显示「无权查看该订单」（后端 6004）；
+9. 未登录访问 `/orders/bought` → 路由守卫跳登录页。
+
+### 14.7 与既有模块的兼容性
+
+| 项 | 说明 |
+| --- | --- |
+| v0.04 用户模块 | 未改动后端任何文件（完成订单时通过 `UserService` 通用方法给信用分 +1） |
+| v0.05 商品模块 | 后端未改动；仅商品详情页把原来禁用的「立即购买」改为可用的下单弹窗（需求 1） |
+| v0.06 收藏模块 | 未改动任何文件 |
+| v0.07 私信模块 | 未改动后端文件；订单详情页新增「私聊对方」按钮，直接跳到 v0.07 的聊天窗口 |
+| 前端既有逻辑 | Token 拦截、401 跳登录、路由守卫全部沿用 |

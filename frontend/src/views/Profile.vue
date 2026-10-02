@@ -77,6 +77,9 @@ onMounted(loadUserInfo)
       <div class="quick-links">
         <el-button plain type="warning" @click="router.push('/favorites')">★ 我的收藏</el-button>
         <el-button plain type="primary" @click="router.push('/product/mine')">我的商品</el-button>
+        <el-button plain type="danger" @click="router.push('/orders/bought')">我买到的</el-button>
+        <el-button plain type="success" @click="router.push('/orders/sold')">我卖出的</el-button>
+        <el-button plain @click="router.push('/messages')">我的消息</el-button>
         <el-button plain type="success" @click="router.push('/product/publish')">发布商品</el-button>
       </div>
     </el-card>
