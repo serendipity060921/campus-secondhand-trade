@@ -21,10 +21,10 @@ const routes = [
         meta: { title: '首页' }
       },
       {
-        // 预留：需要登录的页面写在这里
+        // 需要登录的页面（meta.requiresAuth = true，由下面的路由守卫拦截）
         path: 'profile',
         name: 'Profile',
-        component: () => import('@/views/Placeholder.vue'),
+        component: () => import('@/views/Profile.vue'),
         meta: { title: '个人中心', requiresAuth: true }
       }
     ]
@@ -34,6 +34,12 @@ const routes = [
     name: 'Login',
     component: () => import('@/views/Login.vue'),
     meta: { title: '登录' }
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/Register.vue'),
+    meta: { title: '注册' }
   },
   {
     path: '/:pathMatch(.*)*',
