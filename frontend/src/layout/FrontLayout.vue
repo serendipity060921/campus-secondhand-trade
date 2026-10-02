@@ -60,6 +60,8 @@ async function handleLogout() {
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item @click="router.push('/profile')">个人中心</el-dropdown-item>
+                  <el-dropdown-item @click="router.push('/favorites')">我的收藏</el-dropdown-item>
+                  <el-dropdown-item @click="router.push('/product/mine')">我的商品</el-dropdown-item>
                   <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>

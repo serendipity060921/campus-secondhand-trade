@@ -7,15 +7,24 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { getProductDetail } from '@/api/product'
+import { checkFavorite, operateFavorite } from '@/api/favorite'
+import { useUserStore } from '@/store/user'
 import { conditionLabel, formatPrice, PRODUCT_STATUS, resolveDetailImages } from '@/utils/product'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const notFound = ref(false)
 const product = ref(null)
+
+/* ---------------- v0.06 收藏状态 ---------------- */
+const favorited = ref(false)
+const favoriteCount = ref(0)
+const favoriteLoading = ref(false)
 
 const images = computed(() => (product.value ? resolveDetailImages(product.value) : []))
 const statusInfo = computed(() => PRODUCT_STATUS[product.value?.status] || { label: '未知', type: 'info' })
@@ -26,12 +35,54 @@ async function loadDetail() {
   try {
     const res = await getProductDetail(route.params.id)
     product.value = res.data
+    favoriteCount.value = res.data.favoriteCount || 0
+    // 已登录才查询自己的收藏状态（未登录不请求，后端接口需要 Token）
+    if (userStore.isLogin) {
+      loadFavoriteState()
+    }
   } catch (e) {
     // 后端返回 3001「商品不存在或已被删除」，这里展示空状态
     notFound.value = true
     product.value = null
   } finally {
     loading.value = false
+  }
+}
+
+/* ---------------- v0.06 收藏 ---------------- */
+
+/** 查询当前用户是否已收藏该商品 */
+async function loadFavoriteState() {
+  try {
+    const res = await checkFavorite(route.params.id)
+    favorited.value = res.data.favorited
+    favoriteCount.value = res.data.favoriteCount
+  } catch (e) {
+    /* 未登录或接口异常时忽略，不影响详情展示 */
+  }
+}
+
+/** 点击收藏按钮：未登录先去登录，已登录则切换收藏状态 */
+async function toggleFavorite() {
+  if (!userStore.isLogin) {
+    ElMessage.warning('请先登录后再收藏')
+    router.push({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+  favoriteLoading.value = true
+  try {
+    // type：1 收藏，2 取消收藏
+    const res = await operateFavorite({
+      productId: Number(route.params.id),
+      type: favorited.value ? 2 : 1
+    })
+    favorited.value = res.data.favorited
+    favoriteCount.value = res.data.favoriteCount
+    ElMessage.success(res.message || (favorited.value ? '收藏成功' : '已取消收藏'))
+  } catch (e) {
+    // 4001 重复收藏 / 4002 收藏自己的商品 等错误由 axios 拦截器统一提示
+  } finally {
+    favoriteLoading.value = false
   }
 }
 
@@ -105,6 +156,7 @@ onMounted(loadDetail)
               <el-descriptions-item label="交易地点">{{ product.tradePlace || '面议' }}</el-descriptions-item>
               <el-descriptions-item label="发布时间">{{ product.createTime }}</el-descriptions-item>
               <el-descriptions-item label="浏览量">{{ product.viewCount }} 次</el-descriptions-item>
+              <el-descriptions-item label="收藏量">{{ favoriteCount }} 人收藏</el-descriptions-item>
             </el-descriptions>
 
             <!-- 发布者信息 -->
@@ -122,7 +174,17 @@ onMounted(loadDetail)
             </el-card>
 
             <div class="actions">
-              <el-tooltip content="留言/私信功能将在 v0.06 里程碑开放" placement="top">
+              <!-- v0.06 收藏按钮：点击切换 收藏 / 已收藏 -->
+              <el-button
+                :type="favorited ? 'warning' : 'danger'"
+                :plain="favorited"
+                :loading="favoriteLoading"
+                @click="toggleFavorite"
+              >
+                {{ favorited ? '★ 已收藏' : '☆ 收藏' }}（{{ favoriteCount }}）
+              </el-button>
+
+              <el-tooltip content="留言/私信功能将在后续里程碑开放" placement="top">
                 <span><el-button disabled>联系卖家</el-button></span>
               </el-tooltip>
               <el-tooltip content="下单功能将在订单模块里程碑开放" placement="top">

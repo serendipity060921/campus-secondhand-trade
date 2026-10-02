@@ -50,6 +50,13 @@ const routes = [
         meta: { title: '个人中心', requiresAuth: true }
       },
       {
+        // v0.06 我的收藏（个人中心入口）
+        path: 'favorites',
+        name: 'MyFavorites',
+        component: () => import('@/views/user/MyFavorites.vue'),
+        meta: { title: '我的收藏', requiresAuth: true }
+      },
+      {
         // 脚手架自带的连通性自检看板（v0.03）
         path: 'dev/health',
         name: 'DevHealth',

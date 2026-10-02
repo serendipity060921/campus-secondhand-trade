@@ -280,7 +280,8 @@ curl http://localhost:8080/api/health/db     # 直连后端（含 MySQL 查询�
 | **v0.03** | **前后端分离脚手架** | 本文件：Spring Boot 分层骨架 + Vue3/Vite 骨架 + 连通性验证 |
 | **v0.04** | **用户注册登录模块（JWT 身份认证）** | 注册、登录、BCrypt 加密、JWT 工具类、`@LoginRequired` 拦截器、登录/注册页、路由守卫（详见第十节） |
 | **v0.05** | **商品核心模块（含商品占位图方案）** | 发布商品、图片上传、商品列表/详情、上下架、分类列表、9 张 800×800 占位图（详见第十一节） |
-| v0.06（计划） | 搜索与留言私信 | 关键词搜索增强、商品留言、私信会话 |
+| **v0.06** | **商品收藏模块** | 收藏/取消收藏、我的收藏分页、是否已收藏查询、详情页收藏按钮、我的收藏页（详见第十二节） |
+| v0.07（计划） | 留言与私信 | 商品留言、盖楼回复、私信会话、未读数 |
 
 ---
 
@@ -603,3 +604,108 @@ curl $BASE/product/mine -H "Authorization: Bearer $TOKEN"    # ⑧ 我的商品
 | v0.03 脚手架接口 | `/api/products`、`/api/categories`、`/api/health/**` 全部保留可用（类名不同，路径不同，互不冲突） |
 | 连通性自检看板 | 由 `/home` 移到 `/dev/health`（页脚有入口），`views/Home.vue` 文件本身未修改 |
 | 首页 | 由看板改为商品列表（这是 v0.05 的明确需求） |
+
+---
+
+## 十二、v0.06 商品收藏模块
+
+### 12.1 接口清单（三个接口都需要登录）
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/favorite/operate` | 收藏 / 取消收藏，`{productId, type}`，type：1 收藏（默认）、2 取消 |
+| GET | `/api/favorite/list?page=1&size=12` | 我的收藏分页（**只返回上架商品**） |
+| GET | `/api/favorite/hasFavorite?productId=8` | 当前用户是否已收藏该商品 |
+
+**收藏 / 取消收藏**
+
+```bash
+curl -X POST http://localhost:8080/api/favorite/operate \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+  -d '{"productId":8}'
+# {"code":200,"message":"收藏成功","data":{"productId":8,"favorited":true,"favoriteCount":1}}
+
+curl -X POST http://localhost:8080/api/favorite/operate \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+  -d '{"productId":8,"type":2}'
+# {"code":200,"message":"已取消收藏","data":{"productId":8,"favorited":false,"favoriteCount":0}}
+```
+
+**我的收藏列表**：返回结构与商品列表一致（`PageResult`），每条含 `favoriteId / favoriteTime /
+productId / title / price / originalPrice / coverImage / categoryName / conditionLevel / campus /
+productStatus / sellerId / sellerNickname / viewCount / productCreateTime`。
+
+### 12.2 收藏模块错误码
+
+| code | 含义 | 触发场景 |
+| --- | --- | --- |
+| 3001 | 商品不存在或已被删除 | 收藏不存在的商品ID（复用商品模块错误码） |
+| 400 | 参数不合法 | `type` 不是 1/2；`page < 1`；`size` 超出 1~100 |
+| 4001 | 已收藏该商品，请勿重复收藏 | 重复点击收藏 |
+| 4002 | 不能收藏自己发布的商品 | 收藏自己发布的商品 |
+| 4003 | 尚未收藏该商品，无法取消 | 对未收藏的商品执行取消 |
+| 401 | 未登录 | 三个接口都由 `@LoginRequired` 保护 |
+
+### 12.3 两个关键设计点
+
+**① 取消收藏为什么用物理删除？**
+
+`favorite` 表有唯一索引 `uk_user_product(user_id, product_id)`，而实体又带 `@TableLogic` 逻辑删除。
+若取消收藏走逻辑删除（`deleted = 1`），旧行仍在表里，用户再次收藏时会直接撞唯一索引插入失败。
+因此新增 `FavoriteModuleMapper.physicalDelete()` 用注解 SQL 做物理删除 ——
+**数据库唯一索引作为"禁止重复收藏"的最后一道防线**（后端先查重返回 4001，插库时再被 1062 兜底）。
+
+**② 收藏数怎么保证准确？**
+
+不做 `favorite_count + 1 / - 1` 累加，而是每次收藏/取消后
+`SELECT COUNT(*) FROM favorite WHERE product_id = ?` 再回写 `product.favorite_count`，
+避免异常或并发场景下计数漂移（`db_favorite_test.sql` 第 5 节可校验一致性）。
+
+### 12.4 数据库测试
+
+```bash
+mysql -h 127.0.0.1 -P 3306 -u root -p123456 --default-character-set=utf8mb4 < db_favorite_test.sql
+```
+
+脚本包含：表结构与唯一索引、"我的收藏"等价关联查询（只含在售）、**收藏数一致性校验**、
+重复收藏验证（预期 1062）、取消收藏 + 再次收藏（验证物理删除方案）、计数修复语句、
+业务规则排查 SQL（自收藏/重复收藏/收藏排行）、统计总览。
+
+### 12.5 测试步骤
+
+**后端（curl）**
+
+```bash
+BASE=http://localhost:8080/api
+TOKEN=$(curl -s -X POST $BASE/user/login -H "Content-Type: application/json" \
+  -d '{"username":"stu_test01","password":"abc12345"}' | sed 's/.*"token":"\([^"]*\)".*/\1/')
+
+curl -X POST $BASE/favorite/operate -H "Content-Type: application/json" -d '{"productId":8}'   # ① 未登录 → 401
+curl -X POST $BASE/favorite/operate -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"productId":8}'          # ② 收藏成功
+curl -X POST $BASE/favorite/operate -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"productId":8}'          # ③ 重复收藏 → 4001
+curl -X POST $BASE/favorite/operate -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"productId":5}'          # ④ 自己的商品 → 4002
+curl -X POST $BASE/favorite/operate -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"productId":999999}'     # ⑤ 不存在 → 3001
+curl "$BASE/favorite/hasFavorite?productId=8" -H "Authorization: Bearer $TOKEN"        # ⑥ 是否已收藏 → true
+curl -X POST $BASE/favorite/operate -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"productId":8,"type":2}' # ⑦ 取消收藏
+curl -X POST $BASE/favorite/operate -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" -d '{"productId":8,"type":2}' # ⑧ 再次取消 → 4003
+curl "$BASE/favorite/list?page=1&size=12" -H "Authorization: Bearer $TOKEN"            # ⑨ 我的收藏（只含在售）
+```
+
+**前端（浏览器）**
+
+1. 未登录打开商品详情 → 点「☆ 收藏」→ 提示「请先登录后再收藏」并跳转登录页（带 redirect 参数）；
+2. 登录后回到详情页 → 按钮显示「☆ 收藏（0）」；点击 → 变成「★ 已收藏（1）」，收藏量同步 +1；
+3. 再次点击 → 取消收藏，按钮与收藏量回到初始；重复点击不会产生重复记录；
+4. 打开自己发布的商品详情 → 点收藏 → 提示「不能收藏自己发布的商品」（4002）；
+5. 顶部头像下拉 → 「我的收藏」（或个人中心 → 快捷入口 → 我的收藏）→ 分页展示收藏的商品卡片，卡片可点击进详情；
+6. 在收藏页点「取消收藏」→ 二次确认 → 该商品从列表移除；若是本页最后一条会自动回退一页；
+7. 卖家把自己收藏的商品下架 → 刷新收藏页，该商品不再显示（但收藏记录仍在数据库中，重新上架后会再次出现）。
+
+### 12.6 与既有模块的兼容性
+
+| 项 | 说明 |
+| --- | --- |
+| v0.04 用户模块 | 未改动后端任何文件；仅 `Profile.vue` 增加了一组「快捷入口」按钮（纯 UI） |
+| v0.05 商品模块 | 后端未改动任何文件；`ProductModuleServiceImpl` 等逻辑原样保留。仅 `Detail.vue` 按要求新增收藏按钮与收藏量展示 |
+| 复用既有能力 | 收藏服务注入既有的 `FavoriteService` / `ProductService`，只用它们的通用 CRUD，不改其业务方法 |
+| 鉴权 | 三个接口均由 `@LoginRequired` 保护，沿用 v0.04 的拦截器与前端 Token 拦截、路由守卫 |

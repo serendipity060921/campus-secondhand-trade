@@ -71,6 +71,14 @@ onMounted(loadUserInfo)
         <el-button type="primary" @click="loadUserInfo">刷新（带 Token 重新请求）</el-button>
         <el-button @click="handleLogout">退出登录</el-button>
       </div>
+
+      <!-- v0.06 快捷入口 -->
+      <el-divider content-position="left">快捷入口</el-divider>
+      <div class="quick-links">
+        <el-button plain type="warning" @click="router.push('/favorites')">★ 我的收藏</el-button>
+        <el-button plain type="primary" @click="router.push('/product/mine')">我的商品</el-button>
+        <el-button plain type="success" @click="router.push('/product/publish')">发布商品</el-button>
+      </div>
     </el-card>
 
     <el-card shadow="never" class="mt-16">
@@ -93,6 +101,12 @@ onMounted(loadUserInfo)
 
 .actions {
   margin-top: 20px;
+}
+
+.quick-links {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 p {
