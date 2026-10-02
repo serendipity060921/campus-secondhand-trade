@@ -281,7 +281,8 @@ curl http://localhost:8080/api/health/db     # 直连后端（含 MySQL 查询�
 | **v0.04** | **用户注册登录模块（JWT 身份认证）** | 注册、登录、BCrypt 加密、JWT 工具类、`@LoginRequired` 拦截器、登录/注册页、路由守卫（详见第十节） |
 | **v0.05** | **商品核心模块（含商品占位图方案）** | 发布商品、图片上传、商品列表/详情、上下架、分类列表、9 张 800×800 占位图（详见第十一节） |
 | **v0.06** | **商品收藏模块** | 收藏/取消收藏、我的收藏分页、是否已收藏查询、详情页收藏按钮、我的收藏页（详见第十二节） |
-| v0.07（计划） | 留言与私信 | 商品留言、盖楼回复、私信会话、未读数 |
+| **v0.07** | **私信聊天模块** | 发送私信、会话列表、聊天记录分页、已读更新、会话列表页、聊天窗口页、详情页「私聊卖家」（详见第十三节） |
+| v0.08（计划） | 留言与订单 | 商品留言盖楼回复、下单、订单状态流转 |
 
 ---
 
@@ -709,3 +710,134 @@ curl "$BASE/favorite/list?page=1&size=12" -H "Authorization: Bearer $TOKEN"     
 | v0.05 商品模块 | 后端未改动任何文件；`ProductModuleServiceImpl` 等逻辑原样保留。仅 `Detail.vue` 按要求新增收藏按钮与收藏量展示 |
 | 复用既有能力 | 收藏服务注入既有的 `FavoriteService` / `ProductService`，只用它们的通用 CRUD，不改其业务方法 |
 | 鉴权 | 三个接口均由 `@LoginRequired` 保护，沿用 v0.04 的拦截器与前端 Token 拦截、路由守卫 |
+
+---
+
+## 十三、v0.07 私信聊天模块
+
+### 13.1 接口清单（全部需要登录）
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/message/send` | 发送私信 `{toUserId, content, productId?}` |
+| GET | `/api/message/conversationList` | 会话列表：聊天对象 + 最后一条消息 + 未读数 |
+| GET | `/api/message/history?peerId=&page=&size=` | 与某人的聊天记录（分页，**最新在前**） |
+| PUT | `/api/message/read` | 标记已读 `{peerId}` 或 `{messageIds:[...]}` |
+| GET | `/api/message/peer?peerId=` | 聊天对象公开信息（聊天窗口顶部展示，配套接口） |
+
+**发送消息**
+
+```bash
+curl -X POST http://localhost:8080/api/message/send \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+  -d '{"toUserId":1,"content":"你好，罗技键盘还在吗？","productId":8}'
+# {"code":200,"message":"发送成功","data":{"id":1,"fromUserId":5,"toUserId":1,
+#   "content":"你好，罗技键盘还在吗？","productId":8,"productTitle":"罗技 K380 蓝牙键盘","isRead":0,...}}
+```
+
+**会话列表**（每条含 `peerId / peerNickname / peerAvatar / peerCampus / lastMessage /
+lastMessageTime / lastFromMe / productId / productTitle / unreadCount`）
+
+**聊天记录**：`PageResult` 结构，**按时间倒序返回（最新在前）**，前端展示时翻转成正序；
+向上翻页（page=2、3…）拿更早的消息。
+
+### 13.2 私信模块错误码
+
+| code | 含义 | 触发场景 |
+| --- | --- | --- |
+| 400 | 参数不合法 | 内容为空/超 1000 字；`read` 未传 peerId 与 messageIds；`page/size` 越界；缺 `peerId` |
+| 401 | 未登录 | 五个接口都由 `@LoginRequired` 保护 |
+| 3001 | 商品不存在或已被删除 | `send` 带了一个不存在的 `productId`（复用商品模块错误码） |
+| 5001 | 不能给自己发送消息 | `toUserId` 等于当前登录用户 |
+| 5002 | 接收人不存在 | `toUserId` 查不到用户；`peer` 接口查不到对象 |
+| 5003 | 消息不存在或无权操作 | 预留（消息级操作） |
+
+### 13.3 三个关键设计点
+
+**① 私信与商品留言共用 message 表，用 `type` 隔离**
+
+`type = 2` 为私信（本模块），`type = 1` 留给商品留言（后续里程碑）。
+本模块所有查询都带 `type = 2`，两套功能互不干扰 —— 这也是 v0.02 建表时把 `type` 放进 message 表的原因。
+
+**② 会话列表用一条 SQL 完成"取每个聊天对象的最后一条 + 未读数"**
+
+```sql
+-- 子查询：把"我发的/发给我的"统一成 (peer_id, max_id)
+SELECT IF(m.from_user_id = #{userId}, m.to_user_id, m.from_user_id) AS peer_id,
+       MAX(m.id) AS max_id
+FROM message m
+WHERE m.deleted = 0 AND m.type = 2
+  AND (m.from_user_id = #{userId} OR m.to_user_id = #{userId})
+GROUP BY peer_id
+-- 再 JOIN 回 message 取最后一条内容，未读数用相关子查询统计
+```
+注意：子查询里的 `peer_id` 是别名，MySQL 支持在 `GROUP BY` 中直接引用；
+用 `MAX(id)` 取最新消息（自增主键与时间同序）。
+
+**③ 已读更新必须带 `to_user_id = 当前用户`**
+
+```java
+new LambdaUpdateWrapper<Message>()
+    .set(Message::getIsRead, 1).set(Message::getReadTime, now)
+    .eq(Message::getToUserId, userId)   // ← 只能标记"我收到的"消息
+    .eq(Message::getIsRead, 0)
+```
+实测：用 A 账号传 B 收到的消息 ID，更新条数为 **0**（越权无效），从 SQL 层面杜绝篡改他人消息。
+
+> 实时性说明：毕设阶段前端用 **5 秒轮询** 拉取新消息模拟实时（聊天窗口）+
+> 15 秒刷新会话列表；后续可平滑升级为 WebSocket（只需替换推送层，接口与表结构不变）。
+
+### 13.4 数据库测试
+
+```bash
+mysql -h 127.0.0.1 -P 3306 -u root -p123456 --default-character-set=utf8mb4 < db_message_test.sql
+```
+
+脚本包含：表结构、消息类型分布、私信明细（双方昵称 + 关联商品）、**会话列表等价 SQL**、
+**聊天记录分页 SQL**、未读统计、标记已读 SQL、补充演示数据（新增聊天对象 `stu_demo`）、
+3 条外键反向验证（预期 1452）、业务规则排查（自聊检测/会话对数/会话消息排行）。
+
+### 13.5 测试步骤
+
+**后端（curl）**
+
+```bash
+BASE=http://localhost:8080/api
+STU=$(curl -s -X POST $BASE/user/login -H "Content-Type: application/json" \
+  -d '{"username":"stu_test01","password":"abc12345"}' | sed 's/.*"token":"\([^"]*\)".*/\1/')
+ADM=$(curl -s -X POST $BASE/user/login -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"123456"}' | sed 's/.*"token":"\([^"]*\)".*/\1/')
+
+curl -X POST $BASE/message/send -H "Content-Type: application/json" -d '{"toUserId":1,"content":"hi"}'          # ① 未登录 → 401
+curl -X POST $BASE/message/send -H "Authorization: Bearer $STU" -H "Content-Type: application/json" -d '{"toUserId":5,"content":"hi"}'   # ② 给自己发 → 5001
+curl -X POST $BASE/message/send -H "Authorization: Bearer $STU" -H "Content-Type: application/json" -d '{"toUserId":999999,"content":"hi"}' # ③ 接收人不存在 → 5002
+curl -X POST $BASE/message/send -H "Authorization: Bearer $STU" -H "Content-Type: application/json" -d '{"toUserId":1,"content":""}'        # ④ 内容为空 → 400
+curl -X POST $BASE/message/send -H "Authorization: Bearer $STU" -H "Content-Type: application/json" -d '{"toUserId":1,"content":"hi","productId":999999}' # ⑤ 商品不存在 → 3001
+curl -X POST $BASE/message/send -H "Authorization: Bearer $STU" -H "Content-Type: application/json" -d '{"toUserId":1,"content":"键盘还在吗","productId":8}' # ⑥ 发送成功
+curl -X POST $BASE/message/send -H "Authorization: Bearer $ADM" -H "Content-Type: application/json" -d '{"toUserId":5,"content":"在的"}'  # ⑦ 对方回复
+curl "$BASE/message/conversationList" -H "Authorization: Bearer $STU"                      # ⑧ 会话列表（含未读数）
+curl "$BASE/message/history?peerId=1&page=1&size=20" -H "Authorization: Bearer $STU"        # ⑨ 聊天记录（最新在前）
+curl -X PUT $BASE/message/read -H "Authorization: Bearer $STU" -H "Content-Type: application/json" -d '{"peerId":1}'   # ⑩ 标记已读
+curl "$BASE/message/peer?peerId=1" -H "Authorization: Bearer $STU"                          # ⑪ 对方信息
+```
+
+**前端（浏览器）**
+
+1. 打开商品详情 <http://localhost:5173/product/8> → 点「**私聊卖家**」→ 未登录时先跳登录（带 redirect）；
+2. 登录后自动进入聊天窗口，输入框已预填「你好，这件商品还在吗？」→ 点发送，消息以蓝色气泡出现在右侧；
+3. 用另一个浏览器（或隐身窗口）登录卖家账号 → 顶部导航「消息」→ 会话列表出现未读红点 → 点进聊天窗口；
+4. 卖家回复后，买家窗口 **5 秒内自动出现**新消息（轮询）；聊天记录按时间正序展示、超过 5 分钟显示时间分隔；
+5. 会话列表显示"最后一条消息 + 时间 + 未读数"，自己发的最后一条会带「我：」前缀；点「刷新」可手动更新；
+6. 聊天窗口点「加载更早的消息」翻看历史（分页），已读后未读数归零；
+7. 在自己发布的商品详情页，「私聊卖家」按钮变灰（不能私聊自己）；直接访问 `/chat/<自己的ID>` 会提示"这是你自己"并禁用输入框；
+8. 未登录直接访问 <http://localhost:5173/messages> 或 `/chat/1` → 路由守卫跳登录页。
+
+### 13.6 与既有模块的兼容性
+
+| 项 | 说明 |
+| --- | --- |
+| v0.04 用户模块 | 未改动后端任何文件 |
+| v0.05 商品模块 | 后端未改动；仅 `Detail.vue` 把原来禁用的「联系卖家」替换为可用的「私聊卖家」按钮（需求 3） |
+| v0.06 收藏模块 | 未改动任何文件 |
+| 复用既有能力 | 注入既有的 `MessageService` / `UserService` / `ProductService`，只用通用 CRUD；新增 `MessageModuleMapper` 承载两条联表查询 |
+| 前端既有逻辑 | Token 请求拦截、401 跳登录、路由守卫（`requiresAuth`）全部沿用，未改动 |

@@ -26,6 +26,24 @@ const favorited = ref(false)
 const favoriteCount = ref(0)
 const favoriteLoading = ref(false)
 
+/* ---------------- v0.07 私聊卖家 ---------------- */
+
+/** 是否是自己的商品（自己的商品不能私聊自己） */
+const isSelfProduct = computed(() => !!product.value && product.value.sellerId === userStore.userInfo?.id)
+
+/** 私聊卖家：未登录先去登录，登录后进入聊天窗口并带上当前商品 */
+function goChatWithSeller() {
+  if (!userStore.isLogin) {
+    ElMessage.warning('请先登录后再私聊卖家')
+    router.push({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+  router.push({
+    path: `/chat/${product.value.sellerId}`,
+    query: { productId: product.value.id }
+  })
+}
+
 const images = computed(() => (product.value ? resolveDetailImages(product.value) : []))
 const statusInfo = computed(() => PRODUCT_STATUS[product.value?.status] || { label: '未知', type: 'info' })
 
@@ -184,9 +202,12 @@ onMounted(loadDetail)
                 {{ favorited ? '★ 已收藏' : '☆ 收藏' }}（{{ favoriteCount }}）
               </el-button>
 
-              <el-tooltip content="留言/私信功能将在后续里程碑开放" placement="top">
-                <span><el-button disabled>联系卖家</el-button></span>
+              <el-tooltip v-if="isSelfProduct" content="这是你自己发布的商品" placement="top">
+                <span><el-button disabled>私聊卖家</el-button></span>
               </el-tooltip>
+              <!-- v0.07 私聊卖家：进入聊天窗口并带上当前商品 -->
+              <el-button v-else type="primary" @click="goChatWithSeller">私聊卖家</el-button>
+
               <el-tooltip content="下单功能将在订单模块里程碑开放" placement="top">
                 <span><el-button type="danger" disabled>立即购买</el-button></span>
               </el-tooltip>

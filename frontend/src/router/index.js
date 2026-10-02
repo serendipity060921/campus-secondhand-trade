@@ -57,6 +57,20 @@ const routes = [
         meta: { title: '我的收藏', requiresAuth: true }
       },
       {
+        // v0.07 消息会话列表
+        path: 'messages',
+        name: 'ConversationList',
+        component: () => import('@/views/message/ConversationList.vue'),
+        meta: { title: '我的消息', requiresAuth: true }
+      },
+      {
+        // v0.07 聊天窗口（:userId 为聊天对象ID，可带 ?productId= 关联商品）
+        path: 'chat/:userId',
+        name: 'Chat',
+        component: () => import('@/views/message/Chat.vue'),
+        meta: { title: '聊天', requiresAuth: true }
+      },
+      {
         // 脚手架自带的连通性自检看板（v0.03）
         path: 'dev/health',
         name: 'DevHealth',

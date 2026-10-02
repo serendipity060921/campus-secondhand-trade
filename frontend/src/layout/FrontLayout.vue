@@ -18,6 +18,8 @@ const activeMenu = computed(() => {
   if (path.startsWith('/product/mine')) return '/product/mine'
   if (path.startsWith('/product')) return '/home'
   if (path.startsWith('/profile')) return '/profile'
+  if (path.startsWith('/messages') || path.startsWith('/chat')) return '/messages'
+  if (path.startsWith('/favorites')) return '/favorites'
   return path
 })
 
@@ -47,6 +49,7 @@ async function handleLogout() {
           <el-menu-item index="/home">首页</el-menu-item>
           <el-menu-item index="/product/publish">发布商品</el-menu-item>
           <el-menu-item index="/product/mine">我的商品</el-menu-item>
+          <el-menu-item index="/messages">消息</el-menu-item>
           <el-menu-item index="/profile">个人中心</el-menu-item>
         </el-menu>
 
