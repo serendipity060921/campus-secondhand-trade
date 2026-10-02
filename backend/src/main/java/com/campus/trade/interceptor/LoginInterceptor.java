@@ -62,6 +62,10 @@ public class LoginInterceptor implements HandlerInterceptor {
             loginRequired = handlerMethod.getBeanType().getAnnotation(LoginRequired.class);
         }
         if (loginRequired == null) {
+            // v0.10 增强：公开接口如果带了有效 Token，也解析出登录用户放到上下文，
+            // 便于业务层做"本人可见"的判断（例如待审核商品只对卖家本人可见）。
+            // 这里对 Token 错误一律静默忽略，绝不影响公开接口的正常访问。
+            tryPopulateContext(request);
             return true;
         }
 
@@ -95,6 +99,25 @@ public class LoginInterceptor implements HandlerInterceptor {
                                 Object handler, Exception ex) {
         // ⑥ 必须清理，避免线程池复用导致上一个请求的用户信息残留
         UserContext.clear();
+    }
+
+    /**
+     * 尝试解析 Token 并写入上下文（仅用于公开接口的"可选登录"，失败不抛异常）。
+     */
+    private void tryPopulateContext(HttpServletRequest request) {
+        String token = resolveToken(request);
+        if (!StringUtils.hasText(token)) {
+            return;
+        }
+        try {
+            Claims claims = jwtUtil.parseToken(token);
+            UserContext.set(new LoginUser(
+                    Long.valueOf(claims.getSubject()),
+                    claims.get("username", String.class),
+                    claims.get("role", Integer.class)));
+        } catch (Exception ignored) {
+            // 公开接口：Token 无效/过期不影响访问，仅视为未登录
+        }
     }
 
     /**

@@ -3,6 +3,8 @@ package com.campus.trade.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.campus.trade.common.context.LoginUser;
+import com.campus.trade.common.context.UserContext;
 import com.campus.trade.common.exception.ProductException;
 import com.campus.trade.common.result.PageResult;
 import com.campus.trade.dto.ProductPublishDTO;
@@ -45,6 +47,7 @@ import java.util.stream.Collectors;
 public class ProductModuleServiceImpl implements ProductModuleService {
 
     /** 商品状态常量（与 db_schema.sql 中 product.status 注释一致） */
+    private static final int STATUS_PENDING = 0;      // 待审核
     private static final int STATUS_ON_SALE = 1;      // 在售（上架）
     private static final int STATUS_OFF_SHELF = 3;    // 已下架
     private static final int STATUS_TRADING = 4;      // 交易中
@@ -136,6 +139,21 @@ public class ProductModuleServiceImpl implements ProductModuleService {
         if (product == null) {
             throw ProductException.notFound();
         }
+
+        // v0.10 缺陷修复（BUG-02）：待审核(0) 商品只有卖家本人和管理员可见，
+        // 其他人按"商品不存在"处理，避免未审核内容提前外泄。
+        // 公开接口的当前登录用户由 LoginInterceptor 的可选鉴权写入（未登录则为 null）。
+        if (Integer.valueOf(STATUS_PENDING).equals(product.getStatus())) {
+            LoginUser current = UserContext.get();
+            boolean isOwner = current != null && Objects.equals(current.userId(), product.getSellerId());
+            boolean isAdmin = current != null && current.isAdmin();
+            if (!isOwner && !isAdmin) {
+                log.info("[商品详情] 待审核商品对外隐藏 productId={} 访问者={}", productId,
+                        current == null ? "匿名" : current.userId());
+                throw ProductException.notFound();
+            }
+        }
+
         // 浏览量 +1（一条 SQL 原子自增，避免并发覆盖）
         productService.update(new LambdaUpdateWrapper<Product>()
                 .setSql("view_count = view_count + 1")

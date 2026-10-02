@@ -91,20 +91,33 @@ async function loadProducts() {
   }
 }
 
-/** 把当前查询条件写回 URL（刷新/分享不丢条件） */
-function syncUrl() {
+/** 组装要写回 URL 的查询条件 */
+function buildQuery() {
   const q = {}
   if (query.keyword) q.keyword = query.keyword
   if (query.categoryId) q.categoryId = query.categoryId
   if (query.sort && query.sort !== 'new') q.sort = query.sort
   if (query.page > 1) q.page = query.page
-  router.replace({ path: '/search', query: q })
+  return q
+}
+
+/**
+ * v0.10 缺陷修复（BUG-03）：原来 handleSearch 里既 router.replace 又手动 loadProducts，
+ * 会导致 URL 变化时重复请求两次。现在统一为：
+ *   URL 有变化 → 交给 watch(route.query) 加载；URL 没变化 → 直接重新查询。
+ */
+function applyAndReload() {
+  const next = buildQuery()
+  if (JSON.stringify(next) === JSON.stringify(route.query)) {
+    loadProducts()
+  } else {
+    router.replace({ path: '/search', query: next })
+  }
 }
 
 function handleSearch() {
   query.page = 1
-  syncUrl()
-  loadProducts()
+  applyAndReload()
 }
 
 function handleReset() {
@@ -112,14 +125,12 @@ function handleReset() {
   query.categoryId = null
   query.sort = 'new'
   query.page = 1
-  syncUrl()
-  loadProducts()
+  applyAndReload()
 }
 
 function handlePageChange(page) {
   query.page = page
-  syncUrl()
-  loadProducts()
+  applyAndReload()
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
