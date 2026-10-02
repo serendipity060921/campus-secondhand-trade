@@ -26,6 +26,11 @@ export default defineConfig({
         target: 'http://127.0.0.1:8080',
         changeOrigin: true
         // 后端接口本身以 /api 开头，因此不需要 rewrite
+      },
+      // v0.05：商品图片上传后的访问路径（后端 FileUploadConfig 映射的静态目录）
+      '/upload': {
+        target: 'http://127.0.0.1:8080',
+        changeOrigin: true
       }
     }
   },

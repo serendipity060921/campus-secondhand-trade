@@ -34,3 +34,4 @@ desktop.ini
 logs/
 *.log
 backend/src/main/resources/static/upload/
+backend/uploads/

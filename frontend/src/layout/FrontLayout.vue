@@ -11,7 +11,15 @@ const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-const activeMenu = computed(() => route.path)
+/** 当前高亮菜单：详情页 /product/3 也要高亮到「首页」 */
+const activeMenu = computed(() => {
+  const path = route.path
+  if (path.startsWith('/product/publish')) return '/product/publish'
+  if (path.startsWith('/product/mine')) return '/product/mine'
+  if (path.startsWith('/product')) return '/home'
+  if (path.startsWith('/profile')) return '/profile'
+  return path
+})
 
 function goLogin() {
   router.push('/login')
@@ -32,11 +40,13 @@ async function handleLogout() {
         <div class="logo" @click="router.push('/home')">
           <span class="logo-icon">♻</span>
           <span class="logo-text">校园二手交易平台</span>
-          <el-tag size="small" type="success" effect="plain">v0.03 脚手架</el-tag>
+          <el-tag size="small" type="success" effect="plain">v0.05 商品模块</el-tag>
         </div>
 
         <el-menu :default-active="activeMenu" mode="horizontal" class="nav-menu" router :ellipsis="false">
           <el-menu-item index="/home">首页</el-menu-item>
+          <el-menu-item index="/product/publish">发布商品</el-menu-item>
+          <el-menu-item index="/product/mine">我的商品</el-menu-item>
           <el-menu-item index="/profile">个人中心</el-menu-item>
         </el-menu>
 
@@ -74,8 +84,11 @@ async function handleLogout() {
     <!-- 页脚 -->
     <el-footer class="layout-footer">
       <div class="page-container">
-        <p>校园二手交易平台 · 毕业设计项目 · 版本 v0.03（前后端分离脚手架）</p>
-        <p class="text-muted">技术栈：Spring Boot 3 + MyBatis-Plus + MySQL 8 + Vue 3 + Vite + Element Plus</p>
+        <p>校园二手交易平台 · 毕业设计项目 · 版本 v0.05（商品核心模块）</p>
+        <p class="text-muted">
+          技术栈：Spring Boot 3 + MyBatis-Plus + MySQL 8 + Vue 3 + Vite + Element Plus ·
+          <el-link type="info" :underline="false" @click="router.push('/dev/health')">连通性自检</el-link>
+        </p>
       </div>
     </el-footer>
   </el-container>

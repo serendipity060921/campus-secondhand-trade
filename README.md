@@ -279,7 +279,8 @@ curl http://localhost:8080/api/health/db     # 直连后端（含 MySQL 查询�
 | v0.02 | 数据库设计 | `db_schema.sql`：7 张表 + 初始化数据，已在 MySQL 8.4.4 实测通过 |
 | **v0.03** | **前后端分离脚手架** | 本文件：Spring Boot 分层骨架 + Vue3/Vite 骨架 + 连通性验证 |
 | **v0.04** | **用户注册登录模块（JWT 身份认证）** | 注册、登录、BCrypt 加密、JWT 工具类、`@LoginRequired` 拦截器、登录/注册页、路由守卫（详见第十节） |
-| v0.05（计划） | 商品模块 | 商品发布、图片上传、我的商品、商品列表与详情 |
+| **v0.05** | **商品核心模块（含商品占位图方案）** | 发布商品、图片上传、商品列表/详情、上下架、分类列表、9 张 800×800 占位图（详见第十一节） |
+| v0.06（计划） | 搜索与留言私信 | 关键词搜索增强、商品留言、私信会话 |
 
 ---
 
@@ -460,3 +461,145 @@ Token 过期分支的测试：把 `JwtProperties.expireSeconds` 改成 `10`（�
 | 密钥 | `app.jwt.secret` 可通过配置文件或环境变量 `APP_JWT_SECRET` 覆盖，默认值仅用于开发 |
 | 越权防护 | `/api/user/info` 的用户ID 取自 Token 解析结果，不接受前端传参 |
 | 退出登录 | JWT 无状态，前端清除本地 Token；如需服务端强制失效，可后续接入 Redis 黑名单 |
+
+---
+
+## 十一、v0.05 商品核心模块（含商品占位图）
+
+### 11.1 接口清单
+
+| 方法 | 路径 | 说明 | 是否需要 Token |
+| --- | --- | --- | :---: |
+| POST | `/api/product/publish` | 发布商品，卖家 = 当前登录用户 | 是 |
+| POST | `/api/product/upload` | 图片上传（单张 `file` / 多张 `files`），可带 `productId` 直接写入 `product_image` | 是 |
+| GET | `/api/product/list` | 商品分页列表，**只返回上架商品**，支持分类/关键词/价格区间/排序 | 否 |
+| GET | `/api/product/{id}` | 商品详情（浏览量 +1，含图片列表与卖家信息） | 否 |
+| GET | `/api/product/mine` | 我的商品（含已下架） | 是 |
+| PUT | `/api/product/status` | 上架 / 下架，**只能操作自己发布的商品** | 是 |
+| GET | `/api/category/list` | 分类列表（发布页与首页筛选用） | 否 |
+
+**发布商品示例**
+
+```bash
+TOKEN=<登录后拿到的 token>
+curl -X POST http://localhost:8080/api/product/publish \
+  -H "Content-Type: application/json" -H "Authorization: Bearer $TOKEN" \
+  -d '{"title":"iPad Air 5 64G","description":"自用一年，无磕碰","categoryId":15,
+       "price":2680.00,"originalPrice":4399.00,"conditionLevel":3,
+       "campus":"东校区","tradePlace":"一食堂门口",
+       "imageUrls":["/upload/2026/10/xxx.png"]}'
+```
+
+**图片上传示例**
+
+```bash
+# 单张
+curl -X POST http://localhost:8080/api/product/upload -H "Authorization: Bearer $TOKEN" -F "file=@a.png"
+# 多张
+curl -X POST http://localhost:8080/api/product/upload -H "Authorization: Bearer $TOKEN" -F "files=@a.png" -F "files=@b.png"
+# 带商品ID：上传后直接把图片写入 product_image 表（会校验商品归属）
+curl -X POST http://localhost:8080/api/product/upload -H "Authorization: Bearer $TOKEN" -F "file=@a.png" -F "productId=1"
+```
+
+返回：`{"code":200,"data":[{"originalName":"a.png","url":"/upload/2026/10/a1b2c3.png","size":5121}]}`
+
+### 11.2 商品模块错误码
+
+| code | 含义 | 触发场景 |
+| --- | --- | --- |
+| 400 | 参数不合法 | 标题/价格/分类/成色校验失败；`status` 不是 1 或 3 |
+| 3001 | 商品不存在或已被删除 | 详情/上下架/传图时商品 ID 不存在 |
+| 3002 | 无权操作他人发布的商品 | 上下架或补传图片时不是商品所有者 |
+| 3003 | 商品当前状态不允许该操作 | 交易中(4)/已售出(5) 的商品再上下架 |
+| 3004 | 商品分类不存在 | 发布时传了不存在的分类 ID |
+| 3006 | 图片格式不支持 | 上传 .txt 等非图片文件 |
+| 3007 | 图片大小超出限制 | 单张超过 5MB |
+| 3009 | 图片数量超出限制 | 一次超过 9 张 / 单个商品超过 9 张 |
+
+### 11.3 商品占位图方案
+
+位置：`frontend/public/demo-images/`（Vite 直接以 `/demo-images/xxx.png` 提供访问）
+
+| 文件名 | 类别 | 主色 | 对应数据库分类示例 |
+| --- | --- | --- | --- |
+| `textbook.png` | 教材课本 | 蓝 #4C8DF6 | 教材书籍 / 公共课教材 / 专业课教材 / 考研资料 |
+| `digital.png` | 手机数码 | 靛 #6E7BFF | 数码电子 / 手机 / 平板电脑 / 耳机音响 / 相机摄影 |
+| `computer.png` | 电脑配件 | 青 #46B3A9 | 笔记本电脑 / 键盘鼠标 |
+| `daily.png` | 生活用品 | 橙 #F2994A | 生活用品 / 日常洗护 |
+| `clothes.png` | 衣物鞋子 | 紫 #7B61FF | 服饰鞋包 / 男装 / 女装 / 鞋靴 |
+| `sport.png` | 运动器材 | 红 #EB5757 | 运动户外 / 自行车 / 球类器材 / 健身器材 |
+| `dorm.png` | 宿舍用品 | 亮蓝 #56CCF2 | 宿舍家具 / 行李收纳 |
+| `beauty.png` | 美妆护肤 | 粉 #F178B6 | 美妆护肤 / 护肤 / 彩妆 |
+| `default.png` | 通用兜底 | 绿 #27AE60 | 其他闲置 / 乐器文具 / 未匹配分类 |
+
+规格：**800×800 PNG**，纯白背景 + 浅色圆形色块 + 居中扁平主体，单张约 5KB，风格统一。
+预览图（9 张拼版）：[docs/demo-images-preview.png](./docs/demo-images-preview.png)
+
+**兜底逻辑**（`frontend/src/utils/product.js`）：
+
+- 商品有 `coverImage` → 用真实图片（`/upload/...`）；
+- 没有封面，或图片加载失败 → 按 `categoryName` 查表返回对应占位图；
+- 详情页 `product_image` 为空 → 退化为「封面 / 占位图」单图。
+
+> 生成脚本（Pillow 程序化绘制，可重新生成/改色）保留在开发记录中，重新生成只需调整主色与图形函数。
+
+### 11.4 图片上传的存储与访问
+
+| 项 | 说明 |
+| --- | --- |
+| 保存目录 | `backend/uploads/yyyy/MM/{uuid}.{ext}`（可用 `app.upload.path` 配置；已加入 .gitignore） |
+| 文件名 | 服务端用 UUID 重新生成，彻底避免路径穿越与重名 |
+| 校验 | 非空 → 扩展名白名单（jpg/jpeg/png/gif/webp/bmp）→ Content-Type 必须 `image/*` → 单张 ≤ 5MB → 单次 ≤ 9 张 |
+| 访问 | 后端 `FileUploadConfig` 把上传目录映射为 `/upload/**`；前端开发环境由 Vite 代理 `/upload` 到 8080，生产环境由 Nginx 代理 |
+| 数据表 | 图片地址写入 `product_image`（`productId` 在发布时提交，或上传时直接带 `productId`） |
+
+### 11.5 数据库测试
+
+```bash
+mysql -h 127.0.0.1 -P 3306 -u root -p123456 --default-character-set=utf8mb4 < db_product_test.sql
+```
+
+脚本包含：表结构与外键检查、分类统计、商品总览（含图片数）、上架列表等价 SQL、
+**插入 9 条使用占位图的演示商品**（覆盖全部 8 类图片 + 2 条多图商品）、上下架 SQL 验证、
+3 条约束反向验证（分类/卖家/商品不存在 → 预期 1452），以及统计校验与常用排查 SQL。
+
+### 11.6 测试步骤
+
+**后端（curl）**
+
+```bash
+BASE=http://localhost:8080/api
+TOKEN=$(curl -s -X POST $BASE/user/login -H "Content-Type: application/json" \
+  -d '{"username":"stu_test01","password":"abc12345"}' | sed 's/.*"token":"\([^"]*\)".*/\1/')
+
+curl $BASE/category/list                                    # ① 分类列表
+curl -X POST $BASE/product/publish -H "Content-Type: application/json" -d '{...}'   # ② 不带 Token → 401
+curl -X POST $BASE/product/upload -H "Authorization: Bearer $TOKEN" -F "file=@a.png"  # ③ 上传图片
+curl -X POST $BASE/product/publish -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" -d '{"title":"...","categoryId":10,"price":15,"conditionLevel":2,"imageUrls":["/upload/..."]}'
+curl "$BASE/product/list?page=1&size=12"                    # ④ 列表（只含上架）
+curl $BASE/product/6                                        # ⑤ 详情
+curl -X PUT $BASE/product/status -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" -d '{"productId":6,"status":3}'   # ⑥ 下架自己的商品
+curl -X PUT $BASE/product/status -H "Authorization: Bearer <别人的token>" \
+  -H "Content-Type: application/json" -d '{"productId":6,"status":3}'   # ⑦ 越权 → 3002
+curl $BASE/product/mine -H "Authorization: Bearer $TOKEN"    # ⑧ 我的商品
+```
+
+**前端（浏览器）**
+
+1. 打开 <http://localhost:5173/>（首页即商品列表）：卡片展示图片、名称、价格、发布时间；搜索「台灯」、切换分类与排序、翻页；
+2. 打开任意商品详情：大图可点击放大、缩略图切换、描述/分类/价格/发布者信息齐全；
+3. 登录后点导航「发布商品」：填表 + 选图片（本地立即预览，上传成功后有提示），不选图片也能发布并自动显示占位图；
+4. 发布成功后自动跳转详情页；点「我的商品」可看到刚发布的商品；
+5. 在「我的商品」点「下架」→ 确认 → 商品从首页列表消失；再点「上架」→ 重新出现；
+6. 用另一个账号登录，尝试下架他人商品 → 提示「无权操作他人发布的商品」（后端 3002）。
+
+### 11.7 与既有模块的兼容性
+
+| 项 | 说明 |
+| --- | --- |
+| v0.04 用户模块 | 未改动任何文件；`/api/user/**` 回归测试通过 |
+| v0.03 脚手架接口 | `/api/products`、`/api/categories`、`/api/health/**` 全部保留可用（类名不同，路径不同，互不冲突） |
+| 连通性自检看板 | 由 `/home` 移到 `/dev/health`（页脚有入口），`views/Home.vue` 文件本身未修改 |
+| 首页 | 由看板改为商品列表（这是 v0.05 的明确需求） |
