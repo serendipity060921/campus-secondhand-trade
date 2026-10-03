@@ -17,6 +17,7 @@ import com.campus.trade.service.CategoryService;
 import com.campus.trade.service.ProductImageService;
 import com.campus.trade.service.ProductModuleService;
 import com.campus.trade.service.ProductService;
+import com.campus.trade.service.UserBehaviorService;
 import com.campus.trade.service.UserService;
 import com.campus.trade.vo.ProductDetailVO;
 import com.campus.trade.vo.ProductVO;
@@ -59,6 +60,8 @@ public class ProductModuleServiceImpl implements ProductModuleService {
     private final ProductImageService productImageService;
     private final CategoryService categoryService;
     private final UserService userService;
+    /** v0.11 推荐模块：行为埋点 */
+    private final UserBehaviorService userBehaviorService;
 
     /* ==================== 1. 发布商品 ==================== */
 
@@ -161,6 +164,20 @@ public class ProductModuleServiceImpl implements ProductModuleService {
         product.setViewCount(product.getViewCount() == null ? 1 : product.getViewCount() + 1);
 
         Category category = product.getCategoryId() == null ? null : categoryService.getById(product.getCategoryId());
+
+        // v0.11 行为埋点：记录浏览行为（推荐算法数据源）。
+        // 说明：① 未登录不记录；② 卖家看自己的商品不计入兴趣，避免自我强化；
+        //      ③ 埋点失败绝不能影响商品详情正常返回，因此统一吞掉异常；
+        //      ④ 取用户一律用可空的 UserContext.get()，getUserId() 在匿名时会抛 401。
+        LoginUser viewer = UserContext.get();
+        try {
+            if (viewer != null && !Objects.equals(viewer.userId(), product.getSellerId())) {
+                userBehaviorService.record(viewer.userId(), productId, UserBehaviorService.TYPE_VIEW);
+            }
+        } catch (Exception e) {
+            log.warn("[行为埋点失败] 浏览 userId={} productId={} 原因={}",
+                    viewer == null ? "匿名" : viewer.userId(), productId, e.getMessage());
+        }
         return toDetailVO(product, category, true);
     }
 

@@ -56,3 +56,40 @@ logging:
   level:
     root: info
     com.campus.trade: debug
+
+# =============================================================================
+# 推荐算法参数（v0.11 推荐模块）
+# 说明：把行为权重、融合系数、多样性上限等做成配置项，调参不用改代码，
+#       离线评测脚本（tools/recommend-eval.py）可通过参数覆盖做对比实验
+# =============================================================================
+campus:
+  recommend:
+    # 是否启用个性化（false 时所有场景退化为热门推荐，可用于 A/B 对比）
+    enabled: true
+    # 各行为的兴趣权重：1浏览 2收藏 3私信 4下单
+    behavior-weights:
+      1: 1.0
+      2: 3.0
+      3: 2.0
+      4: 5.0
+    # 融合权重（三路归一化后加权求和，建议和为 1）
+    cf-weight: 0.50          # 协同过滤（Item-CF）
+    content-weight: 0.35     # 内容匹配（分类 + 价格 + 校区）
+    hot-weight: 0.15         # 热门度（浏览量 + 收藏量 + 行为人数 + 新鲜度）
+    # 时间衰减半衰期（天）：weight(t) = 0.5 ^ (距今天数 / half-life-days)
+    half-life-days: 30
+    # 候选池与返回条数
+    candidate-pool-size: 200
+    default-size: 8
+    max-size: 30
+    # 同一分类最多出现几条（多样性控制）
+    category-cap: 3
+    # 相似商品（详情页"相关推荐"）
+    similar-size: 6
+    similar-threshold: 0.02
+    # 仅浏览过（未收藏未下单）的商品得分惩罚系数
+    seen-penalty: 0.55
+    # 与用户校区一致时的内容加成
+    campus-bonus: 0.15
+    # 冷启动（未登录 / 无行为）返回条数
+    cold-start-size: 12

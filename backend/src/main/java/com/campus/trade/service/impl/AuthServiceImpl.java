@@ -64,7 +64,16 @@ public class AuthServiceImpl implements AuthService {
         user.setDeleted(0);
 
         // ③ 入库（MyBatis-Plus 会把自增主键回填到 user.id）
-        boolean saved = userService.save(user);
+        // v0.10 缺陷修复（BUG-04）：并发注册同一用户名时，两个请求可能同时通过上面的查重，
+        // 由数据库唯一索引 uk_username 兜底；这里把唯一键冲突转换成业务错误码 2001，
+        // 避免用户看到通用的「数据已存在（违反唯一约束）」(1002)。
+        boolean saved;
+        try {
+            saved = userService.save(user);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            log.warn("[注册冲突] 并发注册同一用户名: {}", username);
+            throw UserException.usernameExists();
+        }
         if (!saved) {
             throw new com.campus.trade.common.exception.BusinessException("注册失败，请稍后重试");
         }

@@ -239,6 +239,71 @@ curl "http://localhost:8080/api/product/search?keyword=教材&categoryId=1&page=
 | `GET /api/products?page=&size=` | 分页查询**在售**商品（v0.10 已修复越权泄漏问题，仅返回 status=1） |
 | `GET /api/products/{id}` | 查询在售商品详情，非在售按 404 处理 |
 
+### 3.9 推荐接口（v0.11）
+
+#### 猜你喜欢
+
+| 项 | 值 |
+| --- | --- |
+| 方法/路径 | `GET /api/product/recommend` |
+| 鉴权 | 否（**公开接口**；携带有效 Token 时自动个性化，未登录退化为热门推荐） |
+| 查询参数 | `size`（1~30，默认 8）、`strategy`（见下表，默认 `auto`） |
+| 返回 | `RecommendResultVO`：`strategy`、`strategyLabel`、`personalized`、`profileDesc`、`basis[]`（算法过程说明）、`total`、`items[]` |
+
+`items[]` 每条包含商品卡片字段 + **算法可解释字段**：
+`score`（综合分）、`cfScore`、`contentScore`、`hotScore`（三路归一化得分）、
+`sourceType`（1 协同过滤 / 2 内容匹配 / 3 热门 / 4 混合）、`sourceLabel`、`reason`（一句话理由）、`reasons[]`。
+
+`strategy` 取值（同一套过滤规则，便于离线对比与线上 A/B）：
+
+| 取值 | 含义 | 权重（协同/内容/热门） |
+| --- | --- | --- |
+| `auto` / `hybrid` | 默认融合（读取 `campus.recommend.*` 配置） | 0.50 / 0.35 / 0.15 |
+| `hot` | 纯热门排序（基线） | 0 / 0 / 1 |
+| `content` | 纯内容匹配召回 | 0 / 1 / 0 |
+| `cf` | 纯协同过滤召回 | 1 / 0 / 0 |
+| `hybrid-cf` | 融合·偏协同 | 0.70 / 0.20 / 0.10 |
+| `hybrid-content` | 融合·偏内容 | 0.30 / 0.60 / 0.10 |
+
+```bash
+# 未登录：热门冷启动
+curl "http://localhost:8080/api/product/recommend?size=8"
+
+# 登录后个性化 + 指定策略（离线实验/AB）
+curl "http://localhost:8080/api/product/recommend?size=10&strategy=hybrid-content" -H "Authorization: Bearer $TOKEN"
+```
+
+```json
+{ "code": 200, "message": "success",
+  "data": { "strategy": "auto", "strategyLabel": "个性化推荐（自动权重）", "personalized": true,
+            "profileDesc": "常看：键盘鼠标、手机；价位 ￥15~129",
+            "basis": ["在售候选商品 12 件", "过滤条件：排除自己发布 8 件、已收藏 3 件、已下单 1 件",
+                      "行为样本 7 条（浏览 1 / 收藏 3 / 私信 2 / 下单 1）",
+                      "协同过滤：用户交互过 4 件商品，命中相似物品对 14 组",
+                      "融合权重：协同过滤 0.50 / 内容匹配 0.35 / 热门度 0.15"],
+            "total": 2,
+            "items": [ { "productId": 13, "title": "珀莱雅精华水 余量九成", "price": 78.00,
+                         "score": 0.443, "cfScore": 0.0, "contentScore": 0.92, "hotScore": 0.804,
+                         "sourceType": 2, "sourceLabel": "内容匹配",
+                         "reason": "你常看「护肤」分类",
+                         "reasons": ["内容匹配：分类 / 价格偏好命中", "最近 3 天新发布"] } ] } }
+```
+
+> 排序规则：三路得分各自 min-max 归一化后按权重加权求和；
+> 仅浏览过未收藏/未下单的商品得分乘 0.55；同一分类最多 3 条（多样性）；结果按 `score` 降序。
+> 错误码：`400` size 或 strategy 非法（`size 必须为 1~30 之间的整数`）。
+
+#### 相似商品（详情页相关推荐）
+
+| 项 | 值 |
+| --- | --- |
+| 方法/路径 | `GET /api/product/similar/{id}` |
+| 鉴权 | 否 |
+| 查询参数 | `size`（1~30，默认 6） |
+| 返回 | 同 `RecommendResultVO`，`strategy=similar`；`items[]` 的 `sourceLabel` 为「协同过滤」或「同类目热门」 |
+| 说明 | 基于物品共现相似度 `co(i,j)/sqrt(pop(i)×pop(j))`；相似物品不足时用**同父分类**（兄弟分类）热门商品补齐；不推荐当前商品与已下架/售出商品 |
+| 错误码 | `3001` 商品不存在 |
+
 ---
 
 ## 四、分类模块
@@ -392,7 +457,7 @@ curl -X POST http://localhost:8080/api/order/create -H "Authorization: Bearer $T
 
 ---
 
-## 九、接口清单速查（共 37 个）
+## 九、接口清单速查（共 39 个）
 
 | # | 方法 | 路径 | 鉴权 |
 | --- | --- | --- | --- |
@@ -414,25 +479,27 @@ curl -X POST http://localhost:8080/api/order/create -H "Authorization: Bearer $T
 | 16 | PUT | `/api/product/status` | 是 |
 | 17 | GET | `/api/products` | 否（脚手架演示） |
 | 18 | GET | `/api/products/{id}` | 否（脚手架演示） |
-| 19 | GET | `/api/category/list` | 否 |
-| 20 | GET | `/api/categories` | 否（脚手架演示） |
-| 21 | POST | `/api/category/add` | **管理员** |
-| 22 | PUT | `/api/category/update` | **管理员** |
-| 23 | POST | `/api/favorite/operate` | 是 |
-| 24 | GET | `/api/favorite/list` | 是 |
-| 25 | GET | `/api/favorite/hasFavorite` | 是 |
-| 26 | POST | `/api/message/send` | 是 |
-| 27 | GET | `/api/message/conversationList` | 是 |
-| 28 | GET | `/api/message/history` | 是 |
-| 29 | PUT | `/api/message/read` | 是 |
-| 30 | GET | `/api/message/peer` | 是 |
-| 31 | POST | `/api/order/create` | 是 |
-| 32 | PUT | `/api/order/status` | 是 |
-| 33 | GET | `/api/order/buyList` | 是 |
-| 34 | GET | `/api/order/sellList` | 是 |
-| 35 | GET | `/api/order/{id}` | 是（仅买卖双方） |
-| 36 | GET | `/api/health` | 否 |
-| 37 | GET | `/api/health/db` | 否 |
+| 19 | GET | `/api/product/recommend` | 否（**v0.11 猜你喜欢**，带 Token 则个性化） |
+| 20 | GET | `/api/product/similar/{id}` | 否（**v0.11 相似商品**） |
+| 21 | GET | `/api/category/list` | 否 |
+| 22 | GET | `/api/categories` | 否（脚手架演示） |
+| 23 | POST | `/api/category/add` | **管理员** |
+| 24 | PUT | `/api/category/update` | **管理员** |
+| 25 | POST | `/api/favorite/operate` | 是 |
+| 26 | GET | `/api/favorite/list` | 是 |
+| 27 | GET | `/api/favorite/hasFavorite` | 是 |
+| 28 | POST | `/api/message/send` | 是 |
+| 29 | GET | `/api/message/conversationList` | 是 |
+| 30 | GET | `/api/message/history` | 是 |
+| 31 | PUT | `/api/message/read` | 是 |
+| 32 | GET | `/api/message/peer` | 是 |
+| 33 | POST | `/api/order/create` | 是 |
+| 34 | PUT | `/api/order/status` | 是 |
+| 35 | GET | `/api/order/buyList` | 是 |
+| 36 | GET | `/api/order/sellList` | 是 |
+| 37 | GET | `/api/order/{id}` | 是（仅买卖双方） |
+| 38 | GET | `/api/health` | 否 |
+| 39 | GET | `/api/health/db` | 否 |
 
 > 前端调用说明：所有请求经 `frontend/src/api/*.js` 封装，`request.js` 统一注入 Token、
 > 统一处理 `code != 200` 的错误提示，并在 401 时清理登录态跳转登录页。

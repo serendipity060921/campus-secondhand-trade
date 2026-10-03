@@ -15,6 +15,7 @@ import com.campus.trade.entity.User;
 import com.campus.trade.service.OrderModuleService;
 import com.campus.trade.service.OrderService;
 import com.campus.trade.service.ProductService;
+import com.campus.trade.service.UserBehaviorService;
 import com.campus.trade.service.UserService;
 import com.campus.trade.vo.OrderDetailVO;
 import com.campus.trade.vo.OrderVO;
@@ -66,6 +67,8 @@ public class OrderModuleServiceImpl implements OrderModuleService {
     private final OrderService orderService;
     private final ProductService productService;
     private final UserService userService;
+    /** v0.11 推荐模块：行为埋点 */
+    private final UserBehaviorService userBehaviorService;
 
     /* ==================== 1. 创建订单 ==================== */
 
@@ -115,6 +118,12 @@ public class OrderModuleServiceImpl implements OrderModuleService {
 
         log.info("[下单成功] orderNo={} productId={} buyerId={} sellerId={} amount={}",
                 order.getOrderNo(), product.getId(), buyerId, product.getSellerId(), product.getPrice());
+        // v0.11 行为埋点：下单是最强兴趣信号（失败不影响主流程）
+        try {
+            userBehaviorService.record(buyerId, product.getId(), UserBehaviorService.TYPE_ORDER);
+        } catch (Exception e) {
+            log.warn("[行为埋点失败] 下单 userId={} productId={} 原因={}", buyerId, product.getId(), e.getMessage());
+        }
         return toDetailVO(order, buyerId);
     }
 

@@ -13,10 +13,12 @@ import com.campus.trade.mapper.FavoriteModuleMapper;
 import com.campus.trade.service.FavoriteModuleService;
 import com.campus.trade.service.FavoriteService;
 import com.campus.trade.service.ProductService;
+import com.campus.trade.service.UserBehaviorService;
 import com.campus.trade.vo.FavoriteStatusVO;
 import com.campus.trade.vo.FavoriteVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +49,20 @@ public class FavoriteModuleServiceImpl implements FavoriteModuleService {
     private final FavoriteService favoriteService;
     private final FavoriteModuleMapper favoriteModuleMapper;
     private final ProductService productService;
+    /** v0.11 推荐模块：行为埋点 */
+    private final UserBehaviorService userBehaviorService;
+
+    /**
+     * v0.11 行为埋点（推荐算法数据源）。
+     * <p>埋点属于旁路逻辑，任何异常都不能影响收藏等主业务，因此这里统一吞掉并记 warn 日志。</p>
+     */
+    private void recordBehaviorQuietly(Long userId, Long productId, int type) {
+        try {
+            userBehaviorService.record(userId, productId, type);
+        } catch (Exception e) {
+            log.warn("[行为埋点失败] userId={} productId={} type={} 原因={}", userId, productId, type, e.getMessage());
+        }
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -78,8 +94,18 @@ public class FavoriteModuleServiceImpl implements FavoriteModuleService {
             favorite.setUserId(userId);
             favorite.setProductId(productId);
             favorite.setDeleted(0);
-            favoriteService.save(favorite);
+            // v0.10 缺陷修复（BUG-04）：并发下两个请求可能同时通过上面的查重，
+            // 由数据库唯一索引 uk_user_product 兜底；这里把唯一键冲突转换成业务错误码 4001，
+            // 避免用户看到通用的「数据已存在（违反唯一约束）」(1002)。
+            try {
+                favoriteService.save(favorite);
+            } catch (DuplicateKeyException e) {
+                log.warn("[收藏冲突] 并发重复收藏 userId={} productId={}", userId, productId);
+                throw FavoriteException.alreadyFavorited();
+            }
             log.info("[收藏成功] userId={} productId={} title={}", userId, productId, product.getTitle());
+            // v0.11 行为埋点：收藏作为推荐算法的强兴趣信号（失败不影响主流程）
+            recordBehaviorQuietly(userId, productId, UserBehaviorService.TYPE_FAVORITE);
         } else {
             // ⑤ 取消收藏：必须已收藏
             if (!exists) {

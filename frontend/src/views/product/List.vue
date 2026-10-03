@@ -9,6 +9,8 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getCategoryList, getProductList } from '@/api/product'
 import { demoImage, formatPrice, resolveImageUrl } from '@/utils/product'
+// v0.11 推荐模块：首页"猜你喜欢"面板（自拉数据，不影响本页既有逻辑）
+import RecommendPanel from '@/components/RecommendPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -203,6 +205,9 @@ onMounted(() => {
         />
       </div>
     </div>
+
+    <!-- v0.11 推荐模块：猜你喜欢（登录后个性化，未登录热门冷启动） -->
+    <RecommendPanel mode="personal" title="猜你喜欢" :size="8" />
   </div>
 </template>
 

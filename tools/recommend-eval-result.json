@@ -1,0 +1,186 @@
+{
+ "seed": 20261003,
+ "k": 10,
+ "users": 60,
+ "evaluated_users": 60,
+ "catalog": 92,
+ "active_ratio": 0.6,
+ "report": [
+  {
+   "strategy": "hot",
+   "label": "纯热门（基线）",
+   "users": 60,
+   "hits": 5,
+   "hit_rate": 8.33,
+   "precision_at_k": 0.83,
+   "coverage": 11.96,
+   "avg_latency_ms": 29.3,
+   "distinct_items": 11,
+   "active": {
+    "users": 39,
+    "hits": 3,
+    "hit_rate": 7.69,
+    "precision_at_k": 0.77,
+    "coverage": 11.96,
+    "avg_latency_ms": 29.1,
+    "distinct_items": 11
+   },
+   "sparse": {
+    "users": 21,
+    "hits": 2,
+    "hit_rate": 9.52,
+    "precision_at_k": 0.95,
+    "coverage": 10.87,
+    "avg_latency_ms": 29.8,
+    "distinct_items": 10
+   }
+  },
+  {
+   "strategy": "content",
+   "label": "纯内容匹配",
+   "users": 60,
+   "hits": 15,
+   "hit_rate": 25.0,
+   "precision_at_k": 2.5,
+   "coverage": 92.39,
+   "avg_latency_ms": 65.9,
+   "distinct_items": 85,
+   "active": {
+    "users": 39,
+    "hits": 12,
+    "hit_rate": 30.77,
+    "precision_at_k": 3.08,
+    "coverage": 88.04,
+    "avg_latency_ms": 77.6,
+    "distinct_items": 81
+   },
+   "sparse": {
+    "users": 21,
+    "hits": 3,
+    "hit_rate": 14.29,
+    "precision_at_k": 1.43,
+    "coverage": 70.65,
+    "avg_latency_ms": 44.3,
+    "distinct_items": 65
+   }
+  },
+  {
+   "strategy": "cf",
+   "label": "纯协同过滤",
+   "users": 60,
+   "hits": 22,
+   "hit_rate": 36.67,
+   "precision_at_k": 3.67,
+   "coverage": 81.52,
+   "avg_latency_ms": 70.2,
+   "distinct_items": 75,
+   "active": {
+    "users": 39,
+    "hits": 16,
+    "hit_rate": 41.03,
+    "precision_at_k": 4.1,
+    "coverage": 79.35,
+    "avg_latency_ms": 82.4,
+    "distinct_items": 73
+   },
+   "sparse": {
+    "users": 21,
+    "hits": 6,
+    "hit_rate": 28.57,
+    "precision_at_k": 2.86,
+    "coverage": 75.0,
+    "avg_latency_ms": 47.5,
+    "distinct_items": 69
+   }
+  },
+  {
+   "strategy": "hybrid",
+   "label": "融合 0.50/0.35/0.15",
+   "users": 60,
+   "hits": 21,
+   "hit_rate": 35.0,
+   "precision_at_k": 3.5,
+   "coverage": 82.61,
+   "avg_latency_ms": 71.0,
+   "distinct_items": 76,
+   "active": {
+    "users": 39,
+    "hits": 16,
+    "hit_rate": 41.03,
+    "precision_at_k": 4.1,
+    "coverage": 80.43,
+    "avg_latency_ms": 82.9,
+    "distinct_items": 74
+   },
+   "sparse": {
+    "users": 21,
+    "hits": 5,
+    "hit_rate": 23.81,
+    "precision_at_k": 2.38,
+    "coverage": 78.26,
+    "avg_latency_ms": 48.8,
+    "distinct_items": 72
+   }
+  },
+  {
+   "strategy": "hybrid-cf",
+   "label": "融合 0.70/0.20/0.10",
+   "users": 60,
+   "hits": 19,
+   "hit_rate": 31.67,
+   "precision_at_k": 3.17,
+   "coverage": 81.52,
+   "avg_latency_ms": 69.6,
+   "distinct_items": 75,
+   "active": {
+    "users": 39,
+    "hits": 13,
+    "hit_rate": 33.33,
+    "precision_at_k": 3.33,
+    "coverage": 78.26,
+    "avg_latency_ms": 80.4,
+    "distinct_items": 72
+   },
+   "sparse": {
+    "users": 21,
+    "hits": 6,
+    "hit_rate": 28.57,
+    "precision_at_k": 2.86,
+    "coverage": 75.0,
+    "avg_latency_ms": 49.6,
+    "distinct_items": 69
+   }
+  },
+  {
+   "strategy": "hybrid-content",
+   "label": "融合 0.30/0.60/0.10",
+   "users": 60,
+   "hits": 21,
+   "hit_rate": 35.0,
+   "precision_at_k": 3.5,
+   "coverage": 86.96,
+   "avg_latency_ms": 70.3,
+   "distinct_items": 80,
+   "active": {
+    "users": 39,
+    "hits": 14,
+    "hit_rate": 35.9,
+    "precision_at_k": 3.59,
+    "coverage": 83.7,
+    "avg_latency_ms": 80.6,
+    "distinct_items": 77
+   },
+   "sparse": {
+    "users": 21,
+    "hits": 7,
+    "hit_rate": 33.33,
+    "precision_at_k": 3.33,
+    "coverage": 72.83,
+    "avg_latency_ms": 51.2,
+    "distinct_items": 67
+   }
+  }
+ ],
+ "elapsed_sec": 36.4,
+ "generated_at": "2026-10-03 22:09:36"
+}

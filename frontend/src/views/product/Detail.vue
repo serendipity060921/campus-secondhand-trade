@@ -13,10 +13,15 @@ import { checkFavorite, operateFavorite } from '@/api/favorite'
 import { createOrder } from '@/api/order'
 import { useUserStore } from '@/store/user'
 import { conditionLabel, formatPrice, PRODUCT_STATUS, resolveDetailImages } from '@/utils/product'
+// v0.11 推荐模块：相关推荐面板
+import RecommendPanel from '@/components/RecommendPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
+/** 当前商品ID（v0.11 相关推荐用） */
+const productId = Number(route.params.id)
 
 const loading = ref(false)
 const notFound = ref(false)
@@ -268,6 +273,9 @@ onMounted(loadDetail)
         <el-divider content-position="left">商品描述</el-divider>
         <p class="description">{{ product.description || '卖家很懒，没有填写描述。' }}</p>
       </el-card>
+
+      <!-- v0.11 推荐模块：相关推荐（基于物品共现相似度，不足时用同分类热门补齐） -->
+      <RecommendPanel mode="similar" :product-id="productId" title="相关推荐" :size="4" />
 
       <!-- v0.08 下单确认框 -->
       <el-dialog v-model="orderDialogVisible" title="确认下单" width="480px">

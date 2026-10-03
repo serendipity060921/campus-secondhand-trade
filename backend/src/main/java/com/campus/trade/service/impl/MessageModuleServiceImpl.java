@@ -15,6 +15,7 @@ import com.campus.trade.mapper.MessageModuleMapper;
 import com.campus.trade.service.MessageModuleService;
 import com.campus.trade.service.MessageService;
 import com.campus.trade.service.ProductService;
+import com.campus.trade.service.UserBehaviorService;
 import com.campus.trade.service.UserService;
 import com.campus.trade.vo.ChatPeerVO;
 import com.campus.trade.vo.ConversationVO;
@@ -55,6 +56,8 @@ public class MessageModuleServiceImpl implements MessageModuleService {
     private final MessageModuleMapper messageModuleMapper;
     private final UserService userService;
     private final ProductService productService;
+    /** v0.11 推荐模块：行为埋点 */
+    private final UserBehaviorService userBehaviorService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -91,6 +94,15 @@ public class MessageModuleServiceImpl implements MessageModuleService {
 
         log.info("[私信发送] from={} to={} productId={} id={}",
                 fromUserId, dto.getToUserId(), dto.getProductId(), message.getId());
+
+        // v0.11 行为埋点：带商品的私信视为一次"询价"兴趣信号（失败不影响主流程）
+        if (dto.getProductId() != null) {
+            try {
+                userBehaviorService.record(fromUserId, dto.getProductId(), UserBehaviorService.TYPE_MESSAGE);
+            } catch (Exception e) {
+                log.warn("[行为埋点失败] 私信 userId={} productId={} 原因={}", fromUserId, dto.getProductId(), e.getMessage());
+            }
+        }
 
         MessageVO vo = new MessageVO();
         BeanUtils.copyProperties(message, vo);

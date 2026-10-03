@@ -289,8 +289,36 @@ INSERT INTO `category` (`parent_id`, `name`, `sort_order`, `status`) VALUES
     (8, '其他', 1, 1);
 
 /* =============================================================================
+ * 八、用户行为表（v0.11 推荐模块）
+ *    说明：本表为 v0.11 里程碑新增，用于支撑个性化推荐（Item-CF + 内容召回 + 热门）。
+ *          历史行为可用 db_v011_recommend.sql 从 favorite / orders / message 回填。
+ * ========================================================================== */
+
+DROP TABLE IF EXISTS `user_behavior`;
+CREATE TABLE `user_behavior` (
+  `id`            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '行为ID，主键',
+  `user_id`       BIGINT UNSIGNED NOT NULL                COMMENT '用户ID（外键 -> user.id）',
+  `product_id`    BIGINT UNSIGNED NOT NULL                COMMENT '商品ID（外键 -> product.id）',
+  `behavior_type` TINYINT         NOT NULL                COMMENT '行为类型：1浏览 2收藏 3私信 4下单',
+  `category_id`   BIGINT UNSIGNED DEFAULT NULL            COMMENT '冗余的商品分类ID，便于聚合用户偏好',
+  `weight`        DECIMAL(4,2)    NOT NULL DEFAULT 1.00   COMMENT '行为权重（兴趣强度，1~5）',
+  `behavior_count` INT            NOT NULL DEFAULT 1      COMMENT '同类行为累计发生次数',
+  `create_time`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '首次发生时间',
+  `update_time`   DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最近发生时间',
+  `deleted`       TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除：0未删除 1已删除',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_product_type` (`user_id`, `product_id`, `behavior_type`),
+  KEY `idx_user_time` (`user_id`, `update_time`),
+  KEY `idx_product` (`product_id`),
+  KEY `idx_type_time` (`behavior_type`, `update_time`),
+  CONSTRAINT `fk_behavior_user`    FOREIGN KEY (`user_id`)    REFERENCES `user` (`id`)    ON DELETE CASCADE,
+  CONSTRAINT `fk_behavior_product` FOREIGN KEY (`product_id`) REFERENCES `product` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户行为表（推荐算法数据源）';
+
+/* =============================================================================
  * 脚本结束。验证方式：
- *   SHOW TABLES;                                  -- 应输出 7 张表
+ *   SHOW TABLES;                                  -- 应输出 8 张表
  *   SHOW CREATE TABLE `orders`;                    -- 检查外键与索引
  *   SELECT COUNT(*) FROM `category`;               -- 应为 32
+ *   SHOW CREATE TABLE `user_behavior`;              -- v0.11 推荐模块数据源
  * ========================================================================== */
