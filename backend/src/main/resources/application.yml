@@ -93,3 +93,30 @@ campus:
     campus-bonus: 0.15
     # 冷启动（未登录 / 无行为）返回条数
     cold-start-size: 12
+
+# =============================================================================
+# 缓存与限流参数（v0.12）
+# 说明：campus.cache.enabled=false 可一键关闭缓存（用于压测对照实验），业务代码无需改动
+# =============================================================================
+  cache:
+    enabled: true
+    key-prefix: campus
+    # 各类缓存 TTL（秒）
+    product-list-ttl: 60
+    product-detail-ttl: 120
+    category-ttl: 600
+    recommend-ttl: 300
+    null-value-ttl: 30
+    # TTL 随机抖动比例：防止大批 Key 同时失效（缓存雪崩）
+    ttl-jitter: 0.2
+    # 浏览量去重窗口（秒）与批量回写阈值
+    view-dedup-seconds: 600
+    view-flush-threshold: 20
+    # 热门榜（ZSet）保留天数与行为加分
+    hot-list-ttl-days: 3
+    hot-score-view: 1.0
+    hot-score-favorite: 5.0
+    hot-score-message: 3.0
+    hot-score-order: 10.0
+    # 分布式锁 TTL（防缓存击穿）
+    lock-ttl: 10

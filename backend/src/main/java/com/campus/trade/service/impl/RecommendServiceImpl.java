@@ -76,6 +76,10 @@ public class RecommendServiceImpl implements RecommendService {
     private final UserBehaviorService userBehaviorService;
     private final UserBehaviorMapper userBehaviorMapper;
     private final RecommendProperties props;
+    /** v0.12：推荐结果缓存（最贵的接口，收益最大） */
+    private final com.campus.trade.service.CacheService cacheService;
+    private final com.campus.trade.common.cache.CacheKeys cacheKeys;
+    private final com.campus.trade.config.CacheProperties cacheProperties;
 
     // ------------------------------------------------------------------ 对外接口
 
@@ -83,7 +87,62 @@ public class RecommendServiceImpl implements RecommendService {
     public RecommendResultVO recommend(Long userId, Integer size, String strategy) {
         String mode = normalizeStrategy(strategy);
         int n = normalizeSize(size, props.getDefaultSize());
-        List<Product> candidates = loadCandidates();
+        // v0.12：按「用户 + 条数 + 策略」缓存推荐结果；用户产生新行为时主动失效该用户的缓存
+        String cacheKey = cacheKeys.recommend(userId, n, mode);
+        if (cacheService.exists(cacheKey)) {
+            RecommendResultVO cached = cacheService.get(cacheKey, RecommendResultVO.class);
+            if (cached != null) {
+                log.debug("[缓存命中] 推荐 userId={} size={} strategy={}", userId, n, mode);
+                return cached;
+            }
+        }
+        RecommendResultVO result = doRecommend(userId, n, mode);
+        cacheService.set(cacheKey, result, cacheProperties.getRecommendTtl());
+        return result;
+    }
+
+    @Override
+    public List<RecommendItemVO> hotList(Integer size) {
+        int n = normalizeSize(size == null ? 10 : size, 10);
+        List<Long> ids = cacheService.topHot(cacheKeys.hotList(), n);
+        List<RecommendItemVO> items = new ArrayList<>();
+        if (!ids.isEmpty()) {
+            // 一次 IN 查询取回榜单商品，过滤出在售的，并保持榜单顺序
+            Map<Long, Product> byId = productService.listByIds(ids).stream()
+                    .filter(p -> Integer.valueOf(STATUS_ON_SALE).equals(p.getStatus()))
+                    .collect(Collectors.toMap(Product::getId, p -> p, (a, b) -> a));
+            Set<Long> visible = new HashSet<>();
+            for (Long id : ids) {
+                Product p = byId.get(id);
+                if (p == null || !visible.add(id)) {
+                    continue;
+                }
+                RecommendItemVO vo = toVO(new Scored(p, 0.0, 0.0, 0.0, 0.0));
+                vo.setSourceType(3);
+                vo.setSourceLabel("热门榜");
+                vo.setReason("今日热门（按浏览/收藏/私信/下单行为实时计分）");
+                vo.setReasons(List.of(vo.getReason(), "浏览 " + p.getViewCount() + " · 收藏 " + p.getFavoriteCount()));
+                items.add(vo);
+            }
+        }
+        // 榜单不足（Redis 刚重启 / 新的一天）→ 用热门度排序补齐，保证接口永远有数据
+        if (items.size() < n) {
+            Set<Long> exists = items.stream().map(RecommendItemVO::getProductId).collect(Collectors.toSet());
+            for (RecommendItemVO vo : doRecommend(null, n, "hot").getItems()) {
+                if (items.size() >= n) {
+                    break;
+                }
+                if (exists.add(vo.getProductId())) {
+                    items.add(vo);
+                }
+            }
+        }
+        log.info("[热门榜] size={} 榜单命中={} 返回={}", n, ids.size(), items.size());
+        return items;
+    }
+
+    /** 推荐核心计算（缓存未命中时执行） */
+    private RecommendResultVO doRecommend(Long userId, int n, String mode) {        List<Product> candidates = loadCandidates();
         RecommendResultVO result = new RecommendResultVO();
         result.setBasis(new ArrayList<>());
 

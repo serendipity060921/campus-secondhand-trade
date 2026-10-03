@@ -18,6 +18,26 @@ spring:
       max-lifetime: 1800000
       connection-timeout: 30000
       connection-test-query: SELECT 1
+  # ---------------------------------------------------------------------------
+  # Redis 连接（v0.12 缓存与限流）
+  # 支持环境变量覆盖：REDIS_HOST / REDIS_PORT / REDIS_PASSWORD / REDIS_DB
+  # 本机 Redis（Windows 版）已注册为服务 RedisCampus，默认 6379、无密码
+  # ---------------------------------------------------------------------------
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DB:0}
+      timeout: 3000ms
+      connect-timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+          max-wait: 2000ms
+        shutdown-timeout: 200ms
 
 # 跨域允许的前端来源（Vite 开发服务器地址）
 app:

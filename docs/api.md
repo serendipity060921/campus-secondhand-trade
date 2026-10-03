@@ -44,9 +44,10 @@
 | --- | --- | --- |
 | 200 | 成功 | - |
 | 400 | 参数校验失败 | 字段级提示以「；」拼接返回 |
-| 401 | 未登录 / Token 无效 / Token 过期 | 前端拦截器会清 Token 并跳登录页 |
+| 401 | 未登录 / Token 无效 / Token 过期 / **已退出登录**（v0.12 Redis 黑名单） | 前端拦截器会清 Token 并跳登录页 |
 | 403 | 没有操作权限 | 非管理员访问管理员接口 |
 | 404 | 接口不存在 | 路径写错 |
+| **429** | **操作过于频繁**（v0.12 注解限流 `@RateLimit`） | 注册 10 次/5 分钟、登录 20 次/分钟、发消息 30 次/分钟、发布商品 10 次/5 分钟；本机回环地址默认跳过 |
 | 500 | 服务器内部错误 | 详见后端日志 |
 | 2001 | 用户名已被注册 | 注册 |
 | 2002 | 账号不存在 | 登录、查资料 |
@@ -293,6 +294,21 @@ curl "http://localhost:8080/api/product/recommend?size=10&strategy=hybrid-conten
 > 仅浏览过未收藏/未下单的商品得分乘 0.55；同一分类最多 3 条（多样性）；结果按 `score` 降序。
 > 错误码：`400` size 或 strategy 非法（`size 必须为 1~30 之间的整数`）。
 
+#### 热门榜（v0.12）
+
+| 项 | 值 |
+| --- | --- |
+| 方法/路径 | `GET /api/product/hot` |
+| 鉴权 | 否 |
+| 查询参数 | `size`（1~30，默认 10） |
+| 数据来源 | Redis ZSet `campus:hot:{yyyyMMdd}`，由用户行为实时加分（浏览 1 / 私信 3 / 收藏 5 / 下单 10），**读取不查数据库** |
+| 返回 | `List<RecommendItemVO>`，`sourceLabel = 热门榜`；榜单不足 `size` 条时用热门度排序补齐 |
+| 错误码 | `400` size 非法 |
+
+```bash
+curl "http://localhost:8080/api/product/hot?size=10"
+```
+
 #### 相似商品（详情页相关推荐）
 
 | 项 | 值 |
@@ -457,7 +473,7 @@ curl -X POST http://localhost:8080/api/order/create -H "Authorization: Bearer $T
 
 ---
 
-## 九、接口清单速查（共 39 个）
+## 九、接口清单速查（共 40 个）
 
 | # | 方法 | 路径 | 鉴权 |
 | --- | --- | --- | --- |
@@ -481,25 +497,26 @@ curl -X POST http://localhost:8080/api/order/create -H "Authorization: Bearer $T
 | 18 | GET | `/api/products/{id}` | 否（脚手架演示） |
 | 19 | GET | `/api/product/recommend` | 否（**v0.11 猜你喜欢**，带 Token 则个性化） |
 | 20 | GET | `/api/product/similar/{id}` | 否（**v0.11 相似商品**） |
-| 21 | GET | `/api/category/list` | 否 |
-| 22 | GET | `/api/categories` | 否（脚手架演示） |
-| 23 | POST | `/api/category/add` | **管理员** |
-| 24 | PUT | `/api/category/update` | **管理员** |
-| 25 | POST | `/api/favorite/operate` | 是 |
-| 26 | GET | `/api/favorite/list` | 是 |
-| 27 | GET | `/api/favorite/hasFavorite` | 是 |
-| 28 | POST | `/api/message/send` | 是 |
-| 29 | GET | `/api/message/conversationList` | 是 |
-| 30 | GET | `/api/message/history` | 是 |
-| 31 | PUT | `/api/message/read` | 是 |
-| 32 | GET | `/api/message/peer` | 是 |
-| 33 | POST | `/api/order/create` | 是 |
-| 34 | PUT | `/api/order/status` | 是 |
-| 35 | GET | `/api/order/buyList` | 是 |
-| 36 | GET | `/api/order/sellList` | 是 |
-| 37 | GET | `/api/order/{id}` | 是（仅买卖双方） |
-| 38 | GET | `/api/health` | 否 |
-| 39 | GET | `/api/health/db` | 否 |
+| 21 | GET | `/api/product/hot` | 否（**v0.12 热门榜**，读 Redis ZSet） |
+| 22 | GET | `/api/category/list` | 否 |
+| 23 | GET | `/api/categories` | 否（脚手架演示） |
+| 24 | POST | `/api/category/add` | **管理员** |
+| 25 | PUT | `/api/category/update` | **管理员** |
+| 26 | POST | `/api/favorite/operate` | 是 |
+| 27 | GET | `/api/favorite/list` | 是 |
+| 28 | GET | `/api/favorite/hasFavorite` | 是 |
+| 29 | POST | `/api/message/send` | 是 |
+| 30 | GET | `/api/message/conversationList` | 是 |
+| 31 | GET | `/api/message/history` | 是 |
+| 32 | PUT | `/api/message/read` | 是 |
+| 33 | GET | `/api/message/peer` | 是 |
+| 34 | POST | `/api/order/create` | 是 |
+| 35 | PUT | `/api/order/status` | 是 |
+| 36 | GET | `/api/order/buyList` | 是 |
+| 37 | GET | `/api/order/sellList` | 是 |
+| 38 | GET | `/api/order/{id}` | 是（仅买卖双方） |
+| 39 | GET | `/api/health` | 否 |
+| 40 | GET | `/api/health/db` | 否 |
 
 > 前端调用说明：所有请求经 `frontend/src/api/*.js` 封装，`request.js` 统一注入 Token、
 > 统一处理 `code != 200` 的错误提示，并在 401 时清理登录态跳转登录页。

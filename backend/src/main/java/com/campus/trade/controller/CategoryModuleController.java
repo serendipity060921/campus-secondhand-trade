@@ -29,22 +29,17 @@ import java.util.List;
 public class CategoryModuleController {
 
     private final CategoryService categoryService;
+    /** v0.12：分类列表走 Service 缓存版本 */
+    private final com.campus.trade.service.CategoryModuleService categoryModuleService;
 
     /**
-     * 分类列表。
+     * 分类列表（v0.12 起带 Redis 缓存，读取 TTL 600 秒；新增/修改分类时主动失效）。
      *
      * @param onlyTop true 时只返回一级分类（可选，默认返回全部）
      */
     @GetMapping("/list")
     public Result<List<CategoryVO>> list(@RequestParam(value = "onlyTop", required = false) Boolean onlyTop) {
-        LambdaQueryWrapper<Category> wrapper = new LambdaQueryWrapper<Category>()
-                .eq(Category::getStatus, 1)
-                .eq(Boolean.TRUE.equals(onlyTop), Category::getParentId, 0L)
-                .orderByAsc(Category::getParentId)
-                .orderByAsc(Category::getSortOrder)
-                .orderByAsc(Category::getId);
-        List<CategoryVO> list = categoryService.list(wrapper).stream().map(this::toVO).toList();
-        return Result.success(list);
+        return Result.success(categoryModuleService.list(onlyTop));
     }
 
     private CategoryVO toVO(Category category) {

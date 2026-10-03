@@ -51,6 +51,8 @@ public class FavoriteModuleServiceImpl implements FavoriteModuleService {
     private final ProductService productService;
     /** v0.11 推荐模块：行为埋点 */
     private final UserBehaviorService userBehaviorService;
+    /** v0.12：缓存失效入口（收藏数变化 → 详情/列表/推荐都要刷新） */
+    private final com.campus.trade.common.cache.CacheEvictor cacheEvictor;
 
     /**
      * v0.11 行为埋点（推荐算法数据源）。
@@ -116,6 +118,8 @@ public class FavoriteModuleServiceImpl implements FavoriteModuleService {
         }
 
         int total = syncFavoriteCount(productId);
+        // v0.12 缓存失效：收藏数变化会影响商品详情、商品列表与推荐结果
+        cacheEvictor.productChanged(productId);
         return FavoriteStatusVO.builder()
                 .productId(productId)
                 .favorited(operateType == TYPE_FAVORITE)

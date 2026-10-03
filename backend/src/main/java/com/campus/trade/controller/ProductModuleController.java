@@ -1,6 +1,7 @@
 package com.campus.trade.controller;
 
 import com.campus.trade.common.annotation.LoginRequired;
+import com.campus.trade.common.annotation.RateLimit;
 import com.campus.trade.common.context.UserContext;
 import com.campus.trade.common.exception.ProductException;
 import com.campus.trade.common.result.PageResult;
@@ -65,6 +66,8 @@ public class ProductModuleController {
      */
     @LoginRequired
     @PostMapping("/publish")
+    @RateLimit(key = "publish", limit = 10, window = 300, dimension = RateLimit.Dimension.USER,
+            message = "发布商品过于频繁")
     public Result<ProductDetailVO> publish(@Valid @RequestBody ProductPublishDTO dto) {
         ProductDetailVO vo = productModuleService.publish(dto, UserContext.getUserId());
         return Result.success("发布成功", vo);

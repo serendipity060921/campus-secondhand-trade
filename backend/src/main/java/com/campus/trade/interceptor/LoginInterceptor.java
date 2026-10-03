@@ -1,6 +1,7 @@
 package com.campus.trade.interceptor;
 
 import com.campus.trade.common.annotation.LoginRequired;
+import com.campus.trade.common.cache.TokenBlacklist;
 import com.campus.trade.common.context.LoginUser;
 import com.campus.trade.common.context.UserContext;
 import com.campus.trade.common.exception.BusinessException;
@@ -44,6 +45,8 @@ public class LoginInterceptor implements HandlerInterceptor {
 
     private final JwtUtil jwtUtil;
     private final JwtProperties jwtProperties;
+    /** v0.12：退出登录后的 Token 黑名单（Redis） */
+    private final TokenBlacklist tokenBlacklist;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -81,6 +84,13 @@ public class LoginInterceptor implements HandlerInterceptor {
         Long userId = Long.valueOf(claims.getSubject());
         String username = claims.get("username", String.class);
         Integer role = claims.get("role", Integer.class);
+
+        // ③.1 v0.12：Token 黑名单校验 —— 退出登录后的 Token 立即失效
+        if (tokenBlacklist.contains(token)) {
+            log.warn("[鉴权失败] Token 已退出登录（黑名单命中）: {} {}",
+                    request.getMethod(), request.getRequestURI());
+            throw UserException.tokenInvalid();
+        }
 
         // ④ 需要管理员的接口做角色校验（预留后台管理接口使用）
         if (loginRequired.admin() && (role == null || role != 1)) {

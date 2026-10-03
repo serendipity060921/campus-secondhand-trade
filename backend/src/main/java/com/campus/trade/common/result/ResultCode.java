@@ -18,6 +18,8 @@ public enum ResultCode {
     METHOD_NOT_ALLOWED(405, "请求方法不支持"),
     UNAUTHORIZED(401, "未登录或登录已过期"),
     FORBIDDEN(403, "没有操作权限"),
+    /** v0.12：注解式限流触发（@RateLimit） */
+    TOO_MANY_REQUESTS(429, "操作过于频繁，请稍后再试"),
 
     /* ---------- 业务（脚手架阶段预留） ---------- */
     BUSINESS_ERROR(1000, "业务处理失败"),

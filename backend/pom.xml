@@ -26,6 +26,22 @@
     </properties>
 
     <dependencies>
+        <!-- Redis（v0.12）：缓存、计数器、限流、热门榜、Token 黑名单，客户端用默认的 Lettuce -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+        <!-- Lettuce 连接池（使用 spring.data.redis.lettuce.pool.* 配置时必须引入） -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
+        <!-- AOP：注解式限流 @RateLimit 的切面实现 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+
         <!-- Web：REST 接口 + 内嵌 Tomcat -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

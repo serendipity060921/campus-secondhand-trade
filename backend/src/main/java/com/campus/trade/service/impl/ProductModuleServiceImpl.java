@@ -18,6 +18,10 @@ import com.campus.trade.service.ProductImageService;
 import com.campus.trade.service.ProductModuleService;
 import com.campus.trade.service.ProductService;
 import com.campus.trade.service.UserBehaviorService;
+import com.campus.trade.common.cache.CacheEvictor;
+import com.campus.trade.common.cache.CacheKeys;
+import com.campus.trade.config.CacheProperties;
+import com.campus.trade.service.CacheService;
 import com.campus.trade.service.UserService;
 import com.campus.trade.vo.ProductDetailVO;
 import com.campus.trade.vo.ProductVO;
@@ -62,6 +66,11 @@ public class ProductModuleServiceImpl implements ProductModuleService {
     private final UserService userService;
     /** v0.11 推荐模块：行为埋点 */
     private final UserBehaviorService userBehaviorService;
+    /** v0.12：缓存（列表 / 详情）、统一失效入口与缓存参数 */
+    private final CacheService cacheService;
+    private final CacheKeys cacheKeys;
+    private final CacheEvictor cacheEvictor;
+    private final CacheProperties cacheProperties;
 
     /* ==================== 1. 发布商品 ==================== */
 
@@ -104,6 +113,8 @@ public class ProductModuleServiceImpl implements ProductModuleService {
 
         log.info("[商品发布] id={} title={} sellerId={} 图片数={}",
                 product.getId(), product.getTitle(), sellerId, imageUrls.size());
+        // v0.12 缓存失效：新商品上架会影响商品列表与推荐结果
+        cacheEvictor.productChanged(product.getId());
         return toDetailVO(product, category, false);
     }
 
@@ -111,14 +122,29 @@ public class ProductModuleServiceImpl implements ProductModuleService {
 
     @Override
     public PageResult<ProductVO> pageList(ProductQueryDTO query) {
+        // v0.12：列表按"查询条件指纹"缓存（首页 QPS 最高、且同一批条件重复查询多）
+        String cacheKey = cacheKeys.productList(cacheKeys.conditionOf(cacheKeys.params(
+                "page", query.getPage(), "size", query.getSize(), "categoryId", query.getCategoryId(),
+                "keyword", query.getKeyword(), "minPrice", query.getMinPrice(),
+                "maxPrice", query.getMaxPrice(), "sort", query.getSort())));
+        if (cacheService.exists(cacheKey)) {
+            PageResult<ProductVO> cached = cacheService.get(cacheKey, PageResult.class);
+            if (cached != null) {
+                log.debug("[缓存命中] 商品列表 key={}", cacheKey);
+                return cached;
+            }
+        }
+
         LambdaQueryWrapper<Product> wrapper = buildBaseWrapper(query);
         // 列表只返回上架中的商品
         wrapper.eq(Product::getStatus, STATUS_ON_SALE);
 
         Page<Product> page = productService.page(
                 new Page<>(query.getPage(), query.getSize()), wrapper);
-        return new PageResult<>(page.getTotal(), page.getPages(), page.getCurrent(), page.getSize(),
-                toVOList(page.getRecords()));
+        PageResult<ProductVO> result = new PageResult<>(page.getTotal(), page.getPages(), page.getCurrent(),
+                page.getSize(), toVOList(page.getRecords()));
+        cacheService.set(cacheKey, result, cacheProperties.getProductListTtl());
+        return result;
     }
 
     @Override
@@ -138,47 +164,182 @@ public class ProductModuleServiceImpl implements ProductModuleService {
 
     @Override
     public ProductDetailVO detail(Long productId) {
+        // 浏览量统计（无论是否命中缓存都要计）——v0.12 改为 Redis 去重 + 计数，见 recordViewStat
+        recordViewStat(productId);
+
+        String cacheKey = cacheKeys.productDetail(productId);
+        // ① 缓存命中（Cache-Aside 的第一步）
+        if (cacheService.exists(cacheKey)) {
+            ProductDetailVO cached = cacheService.get(cacheKey, ProductDetailVO.class);
+            if (cached != null) {
+                log.debug("[缓存命中] 商品详情 id={}", productId);
+                // v0.12 缺陷修复：行为埋点必须放在缓存命中路径上，否则重复浏览学不到（v0.11 用例 R17）
+                recordBehaviorQuietly(cached.getSellerId(), productId);
+                return cached;
+            }
+            // 命中的是"空值缓存"：说明该商品确实不存在（防穿透），直接按不存在处理
+            log.debug("[缓存命中-空值] 商品详情 id={}", productId);
+            throw ProductException.notFound();
+        }
+
+        // ② 缓存未命中：用分布式锁保证同一热点商品只有一个线程回源（防击穿）
+        String lockKey = cacheKey + ":lock";
+        String lockValue = java.util.UUID.randomUUID().toString();
+        if (!cacheService.tryLock(lockKey, lockValue, cacheProperties.getLockTtl())) {
+            // 没抢到锁：短暂等待后重试读缓存（其他线程正在回源）
+            try {
+                Thread.sleep(60);
+            } catch (InterruptedException ignored) {
+                Thread.currentThread().interrupt();
+            }
+            ProductDetailVO waited = cacheService.get(cacheKey, ProductDetailVO.class);
+            if (waited != null) {
+                log.debug("[缓存击穿保护] 等待后命中商品详情 id={}", productId);
+                recordBehaviorQuietly(waited.getSellerId(), productId);
+                return waited;
+            }
+            // 仍未命中：退化为直接查库，不阻塞用户
+            return queryDetailAndCache(productId, null);
+        }
+        try {
+            return queryDetailAndCache(productId, cacheKey);
+        } finally {
+            cacheService.releaseLock(lockKey, lockValue);
+        }
+    }
+
+    /**
+     * v0.11 行为埋点（推荐算法数据源）。
+     *
+     * <p>三条纪律：① 未登录不记录；② 卖家浏览自己的商品不计入兴趣，避免自我强化；
+     * ③ 埋点失败绝不能影响商品详情正常返回，因此统一吞掉异常。
+     * 取用户一律用可空的 {@code UserContext.get()}，{@code getUserId()} 在匿名时会抛 401。</p>
+     */
+    private void recordBehaviorQuietly(Long sellerId, Long productId) {
+        LoginUser viewer = UserContext.get();
+        if (viewer == null || Objects.equals(viewer.userId(), sellerId)) {
+            return;
+        }
+        try {
+            userBehaviorService.record(viewer.userId(), productId, UserBehaviorService.TYPE_VIEW);
+        } catch (Exception e) {
+            log.warn("[行为埋点失败] 浏览 userId={} productId={} 原因={}",
+                    viewer.userId(), productId, e.getMessage());
+        }
+    }
+
+    /**
+     * 回源查询商品详情并写缓存（v0.12）。
+     *
+     * @param cacheKey 需要写入缓存的 Key；为 null 表示只查库不写缓存（等待锁超时的降级路径）
+     */
+    private ProductDetailVO queryDetailAndCache(Long productId, String cacheKey) {
         Product product = productService.getById(productId);
         if (product == null) {
+            if (cacheKey != null) {
+                cacheService.setNull(cacheKey, cacheProperties.getNullValueTtl());   // 防穿透
+            }
             throw ProductException.notFound();
         }
 
         // v0.10 缺陷修复（BUG-02）：待审核(0) 商品只有卖家本人和管理员可见，
         // 其他人按"商品不存在"处理，避免未审核内容提前外泄。
         // 公开接口的当前登录用户由 LoginInterceptor 的可选鉴权写入（未登录则为 null）。
+        LoginUser current = UserContext.get();
         if (Integer.valueOf(STATUS_PENDING).equals(product.getStatus())) {
-            LoginUser current = UserContext.get();
             boolean isOwner = current != null && Objects.equals(current.userId(), product.getSellerId());
             boolean isAdmin = current != null && current.isAdmin();
             if (!isOwner && !isAdmin) {
                 log.info("[商品详情] 待审核商品对外隐藏 productId={} 访问者={}", productId,
                         current == null ? "匿名" : current.userId());
+                // v0.12 缺陷修复：这里**不能**写空值缓存！
+                // "待审核商品是否可见"取决于访问者身份（卖家本人/管理员可见），
+                // 若把对该访问者的"不可见"缓存起来，卖家和管理员随后也会被误判为 3001。
+                // 空值缓存只用于"商品确实不存在"的情况（见上面的 product == null 分支）。
                 throw ProductException.notFound();
             }
         }
 
-        // 浏览量 +1（一条 SQL 原子自增，避免并发覆盖）
-        productService.update(new LambdaUpdateWrapper<Product>()
-                .setSql("view_count = view_count + 1")
-                .eq(Product::getId, productId));
-        product.setViewCount(product.getViewCount() == null ? 1 : product.getViewCount() + 1);
-
         Category category = product.getCategoryId() == null ? null : categoryService.getById(product.getCategoryId());
+        ProductDetailVO vo = toDetailVO(product, category, true);
 
-        // v0.11 行为埋点：记录浏览行为（推荐算法数据源）。
-        // 说明：① 未登录不记录；② 卖家看自己的商品不计入兴趣，避免自我强化；
-        //      ③ 埋点失败绝不能影响商品详情正常返回，因此统一吞掉异常；
-        //      ④ 取用户一律用可空的 UserContext.get()，getUserId() 在匿名时会抛 401。
-        LoginUser viewer = UserContext.get();
-        try {
-            if (viewer != null && !Objects.equals(viewer.userId(), product.getSellerId())) {
-                userBehaviorService.record(viewer.userId(), productId, UserBehaviorService.TYPE_VIEW);
+        // 缓存时把浏览量口径统一为"数据库值 + Redis 待回写值"，避免缓存里的浏览量长期不动。
+        //
+        // v0.12 缺陷修复（关键）：**待审核(status=0) 商品不写缓存**。
+        // 原因：待审核商品的"可见性"取决于访问者身份（卖家本人/管理员可见，其他人 3001），
+        // 而缓存 Key 只按商品 ID 维度划分、不含身份信息 ——
+        // 一旦把卖家视角的详情写入公共缓存，匿名用户随后也会命中并看到未审核内容。
+        // 结论：只缓存"与访问者身份无关"的数据，这是缓存设计的一条重要纪律。
+        if (cacheKey != null && !Integer.valueOf(STATUS_PENDING).equals(product.getStatus())) {
+            long pending = cacheService.getCounter(cacheKeys.viewCounter(productId));
+            if (pending > 0 && vo.getViewCount() != null) {
+                vo.setViewCount(vo.getViewCount() + (int) pending);
             }
-        } catch (Exception e) {
-            log.warn("[行为埋点失败] 浏览 userId={} productId={} 原因={}",
-                    viewer == null ? "匿名" : viewer.userId(), productId, e.getMessage());
+            cacheService.set(cacheKey, vo, cacheProperties.getProductDetailTtl());
         }
-        return toDetailVO(product, category, true);
+
+        // v0.11 行为埋点（缓存命中路径也会调用，见 detail 方法）
+        recordBehaviorQuietly(product.getSellerId(), productId);
+        return vo;
+    }
+
+    /**
+     * 浏览量统计（v0.12）：Redis 去重 + 计数，达到阈值再批量回写数据库。
+     *
+     * <p>改造前：每次访问详情都执行 {@code UPDATE product SET view_count = view_count + 1}，
+     * 热点商品会把数据库写压力放大；改造后：</p>
+     * <ol>
+     *   <li><b>去重</b>：同一访问者（登录用户或 IP）在 N 秒内重复访问只计一次，
+     *       抑制"刷新刷浏览量"；</li>
+     *   <li><b>计数</b>：去重通过后在 Redis 累加，达到阈值（默认 20）再一次性写库，
+     *       把 N 次写库压成 1 次；</li>
+     *   <li><b>兜底</b>：Redis 不可用时直接写库，保证浏览量不丢。</li>
+     * </ol>
+     */
+    private void recordViewStat(Long productId) {
+        if (!cacheService.enabled()) {
+            productService.update(new LambdaUpdateWrapper<Product>()
+                    .setSql("view_count = view_count + 1")
+                    .eq(Product::getId, productId));
+            return;
+        }
+        LoginUser viewer = UserContext.get();
+        String visitor = viewer != null ? "u" + viewer.userId() : "ip" + clientIp();
+        String dedupKey = cacheKeys.viewDedup(productId, visitor);
+        boolean first = cacheService.tryLock(dedupKey, "1", cacheProperties.getViewDedupSeconds());
+        if (!first) {
+            return;      // 窗口内重复访问，不计数
+        }
+        String counterKey = cacheKeys.viewCounter(productId);
+        long pending = cacheService.increment(counterKey, 3600);
+        if (pending >= cacheProperties.getViewFlushThreshold()) {
+            // 达到阈值：一次性回写数据库并清零计数
+            productService.update(new LambdaUpdateWrapper<Product>()
+                    .setSql("view_count = view_count + " + pending)
+                    .eq(Product::getId, productId));
+            cacheService.resetCounter(counterKey);
+            log.debug("[浏览量回写] productId={} 回写 {} 次", productId, pending);
+        }
+    }
+
+    /** 取客户端 IP（用于浏览量去重维度） */
+    private String clientIp() {
+        try {
+            org.springframework.web.context.request.ServletRequestAttributes attributes =
+                    (org.springframework.web.context.request.ServletRequestAttributes)
+                            org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
+            if (attributes == null) {
+                return "unknown";
+            }
+            jakarta.servlet.http.HttpServletRequest request = attributes.getRequest();
+            String forwarded = request.getHeader("X-Forwarded-For");
+            if (forwarded != null && !forwarded.isBlank()) {
+                return forwarded.split(",")[0].trim();
+            }
+            return request.getRemoteAddr();
+        } catch (Exception e) {
+            return "unknown";
+        }
     }
 
     /* ==================== 4. 上下架 ==================== */
@@ -223,6 +384,8 @@ public class ProductModuleServiceImpl implements ProductModuleService {
         }
         productService.updateById(update);
         log.info("[上下架成功] productId={} {} -> {} 操作人={}", productId, current, status, userId);
+        // v0.12 缓存失效：上下架会改变列表可见性与详情状态
+        cacheEvictor.productChanged(productId);
     }
 
     /* ==================== 5. 图片入库 ==================== */
@@ -257,6 +420,8 @@ public class ProductModuleServiceImpl implements ProductModuleService {
             productService.updateById(update);
         }
         log.info("[商品图片入库] productId={} 新增 {} 张", productId, urls.size());
+        // v0.12 缓存失效：详情里的图片列表变了
+        cacheEvictor.productChanged(productId);
     }
 
     /* ==================== 内部方法 ==================== */

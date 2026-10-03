@@ -1,6 +1,7 @@
 package com.campus.trade.controller;
 
 import com.campus.trade.common.annotation.LoginRequired;
+import com.campus.trade.common.annotation.RateLimit;
 import com.campus.trade.common.context.UserContext;
 import com.campus.trade.common.exception.ProductException;
 import com.campus.trade.common.result.PageResult;
@@ -47,6 +48,8 @@ public class FavoriteController {
      */
     @LoginRequired
     @PostMapping("/operate")
+    @RateLimit(key = "favorite", limit = 60, window = 60, dimension = RateLimit.Dimension.USER,
+            message = "操作过于频繁")
     public Result<FavoriteStatusVO> operate(@Valid @RequestBody FavoriteDTO dto) {
         FavoriteStatusVO vo = favoriteModuleService.operate(dto.getProductId(), dto.getType(), UserContext.getUserId());
         boolean favorited = Boolean.TRUE.equals(vo.getFavorited());

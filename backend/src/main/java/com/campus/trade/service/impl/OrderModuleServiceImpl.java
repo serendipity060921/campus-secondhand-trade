@@ -69,6 +69,8 @@ public class OrderModuleServiceImpl implements OrderModuleService {
     private final UserService userService;
     /** v0.11 推荐模块：行为埋点 */
     private final UserBehaviorService userBehaviorService;
+    /** v0.12：缓存失效入口（订单状态联动商品状态） */
+    private final com.campus.trade.common.cache.CacheEvictor cacheEvictor;
 
     /* ==================== 1. 创建订单 ==================== */
 
@@ -124,6 +126,8 @@ public class OrderModuleServiceImpl implements OrderModuleService {
         } catch (Exception e) {
             log.warn("[行为埋点失败] 下单 userId={} productId={} 原因={}", buyerId, product.getId(), e.getMessage());
         }
+        // v0.12 缓存失效：商品转为"交易中"，列表与详情都要刷新
+        cacheEvictor.productChanged(product.getId());
         return toDetailVO(order, buyerId);
     }
 
@@ -187,6 +191,8 @@ public class OrderModuleServiceImpl implements OrderModuleService {
             log.info("[订单取消] orderNo={} 原因={}", order.getOrderNo(), update.getCancelReason());
         }
 
+        // v0.12 缓存失效：订单状态变更会联动商品状态（交易中/已售出/回到在售）
+        cacheEvictor.productChanged(order.getProductId());
         return toDetailVO(orderService.getById(order.getId()), userId);
     }
 

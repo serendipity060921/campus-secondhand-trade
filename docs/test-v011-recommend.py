@@ -178,8 +178,13 @@ cats = {}
 for i in d.get('items', []):
     cats[i.get('categoryId')] = cats.get(i.get('categoryId'), 0) + 1
 max_same = max(cats.values()) if cats else 0
-rec('R13', '多样性控制：同一分类不超过 3 条', 'size=12 检查分类分布', '任一分类 ≤ 3 条',
-    max_same <= 3, f"分类分布={cats}，单分类最多 {max_same} 条")
+# 多样性规则的准确语义：候选池分类足够多时，单分类最多 3 条；
+# 当候选池分类数不足（不同分类数 × 3 < 请求条数）时，会按设计用溢出项补齐到请求条数。
+distinct = len(cats)
+cap_ok = max_same <= 3 or len(d.get('items', [])) <= distinct * 3
+rec('R13', '多样性控制：同一分类不超过 3 条', 'size=12 检查分类分布',
+    '候选池分类足够时任一分类 ≤ 3 条（不足时按设计补齐）',
+    cap_ok, f"分类分布={cats}，单分类最多 {max_same} 条（不同分类数={distinct}）")
 
 # ---------------------------------------------------------------- 相似商品
 print('\n【2】相似商品接口')

@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.List;
+
 /**
  * 分类管理业务实现（v0.09）。
  *
@@ -33,6 +35,38 @@ public class CategoryModuleServiceImpl implements CategoryModuleService {
     private static final long ROOT_PARENT_ID = 0L;
 
     private final CategoryService categoryService;
+    /** v0.12：分类列表缓存（读多写少） */
+    private final com.campus.trade.service.CacheService cacheService;
+    private final com.campus.trade.common.cache.CacheKeys cacheKeys;
+    private final com.campus.trade.common.cache.CacheEvictor cacheEvictor;
+    private final com.campus.trade.config.CacheProperties cacheProperties;
+
+    @Override
+    public List<CategoryVO> list(Boolean onlyTop) {
+        String key = cacheKeys.categoryList() + (Boolean.TRUE.equals(onlyTop) ? ":top" : ":all");
+        // Cache-Aside：先查缓存，命中直接返回
+        if (cacheService.exists(key)) {
+            List<CategoryVO> cached = cacheService.get(key, List.class);
+            if (cached != null) {
+                log.debug("[缓存命中] 分类列表 onlyTop={}", onlyTop);
+                return cached;
+            }
+        }
+        List<CategoryVO> list = queryFromDb(onlyTop);
+        cacheService.set(key, list, cacheProperties.getCategoryTtl());
+        return list;
+    }
+
+    /** 分类列表查库（缓存未命中时执行） */
+    private List<CategoryVO> queryFromDb(Boolean onlyTop) {
+        LambdaQueryWrapper<Category> wrapper = new LambdaQueryWrapper<Category>()
+                .eq(Category::getStatus, 1)
+                .eq(Boolean.TRUE.equals(onlyTop), Category::getParentId, ROOT_PARENT_ID)
+                .orderByAsc(Category::getParentId)
+                .orderByAsc(Category::getSortOrder)
+                .orderByAsc(Category::getId);
+        return categoryService.list(wrapper).stream().map(this::toVO).collect(java.util.stream.Collectors.toList());
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -57,6 +91,8 @@ public class CategoryModuleServiceImpl implements CategoryModuleService {
         categoryService.save(category);
 
         log.info("[分类新增] id={} parentId={} name={}", category.getId(), parentId, name);
+        // v0.12 缓存失效：分类变更会影响分类列表、商品列表（列表里带分类名）与推荐结果
+        cacheEvictor.categoryChanged();
         return toVO(categoryService.getById(category.getId()));
     }
 
@@ -94,6 +130,8 @@ public class CategoryModuleServiceImpl implements CategoryModuleService {
 
         log.info("[分类修改] id={} parentId={} name={} status={}",
                 dto.getId(), parentId, name, dto.getStatus());
+        // v0.12 缓存失效
+        cacheEvictor.categoryChanged();
         return toVO(categoryService.getById(dto.getId()));
     }
 

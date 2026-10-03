@@ -6,6 +6,7 @@ import com.campus.trade.common.exception.ProductException;
 import com.campus.trade.common.result.Result;
 import com.campus.trade.config.RecommendProperties;
 import com.campus.trade.service.RecommendService;
+import com.campus.trade.vo.RecommendItemVO;
 import com.campus.trade.vo.RecommendResultVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,6 +57,21 @@ public class RecommendController {
                                              @RequestParam(value = "size", required = false) Integer size) {
         checkSize(size);
         return Result.success(recommendService.similar(id, size));
+    }
+
+    /**
+     * 热门榜（v0.12）。
+     *
+     * <p>数据来自 Redis ZSet（{@code campus:hot:yyyyMMdd}），由用户行为实时加分，
+     * 读取时只需一次 ZREVRANGE，不需要查数据库 —— 典型的"用缓存承接高频读"场景。</p>
+     *
+     * @param size 返回条数（1~30，默认 10）
+     */
+    @GetMapping("/hot")
+    public Result<java.util.List<RecommendItemVO>> hot(
+            @RequestParam(value = "size", required = false) Integer size) {
+        checkSize(size);
+        return Result.success(recommendService.hotList(size));
     }
 
     /** size 参数校验：1 ~ max-size，非法直接 400（与 v0.09 搜索接口一致的口径） */

@@ -3,6 +3,7 @@ package com.campus.trade.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.campus.trade.config.RecommendProperties;
+import com.campus.trade.config.CacheProperties;
 import com.campus.trade.entity.Product;
 import com.campus.trade.entity.UserBehavior;
 import com.campus.trade.mapper.UserBehaviorMapper;
@@ -37,6 +38,11 @@ public class UserBehaviorServiceImpl extends ServiceImpl<UserBehaviorMapper, Use
 
     private final ProductService productService;
     private final RecommendProperties properties;
+    /** v0.12：热门榜（ZSet）、用户推荐缓存失效与热门加分参数 */
+    private final com.campus.trade.service.CacheService cacheService;
+    private final com.campus.trade.common.cache.CacheKeys cacheKeys;
+    private final com.campus.trade.common.cache.CacheEvictor cacheEvictor;
+    private final CacheProperties cacheProperties;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -66,6 +72,7 @@ public class UserBehaviorServiceImpl extends ServiceImpl<UserBehaviorMapper, Use
             exists.setWeight(weight);
             exists.setUpdateTime(LocalDateTime.now());
             updateById(exists);
+            afterRecorded(userId, productId, behaviorType);
             return;
         }
 
@@ -91,6 +98,38 @@ public class UserBehaviorServiceImpl extends ServiceImpl<UserBehaviorMapper, Use
                 updateById(again);
             }
         }
+        afterRecorded(userId, productId, behaviorType);
+    }
+
+    /**
+     * 行为入库后的缓存动作（v0.12）。
+     *
+     * <p>做两件事：</p>
+     * <ol>
+     *   <li><b>热门榜加分</b>：写入 ZSet（按天分桶、保留若干天），
+     *       这样"热门榜/热门推荐"可以直接读榜单，不必每次全表聚合；</li>
+     *   <li><b>推荐缓存失效</b>：只清理该用户自己的推荐缓存（其他用户不受影响），
+     *       保证"刚看过什么，下次推荐就能体现"。</li>
+     * </ol>
+     */
+    private void afterRecorded(Long userId, Long productId, int behaviorType) {
+        try {
+            cacheService.addHotScore(cacheKeys.hotList(), productId, hotScoreOf(behaviorType),
+                    cacheProperties.getHotListTtlDays());
+            cacheEvictor.userRecommendChanged(userId);
+        } catch (Exception e) {
+            log.warn("[行为后续处理失败] userId={} productId={} 原因={}", userId, productId, e.getMessage());
+        }
+    }
+
+    /** 不同行为对热门榜的贡献分（浏览 1 / 私信 3 / 收藏 5 / 下单 10） */
+    private double hotScoreOf(int behaviorType) {
+        return switch (behaviorType) {
+            case UserBehaviorService.TYPE_FAVORITE -> cacheProperties.getHotScoreFavorite();
+            case UserBehaviorService.TYPE_MESSAGE -> cacheProperties.getHotScoreMessage();
+            case UserBehaviorService.TYPE_ORDER -> cacheProperties.getHotScoreOrder();
+            default -> cacheProperties.getHotScoreView();
+        };
     }
 
     @Override

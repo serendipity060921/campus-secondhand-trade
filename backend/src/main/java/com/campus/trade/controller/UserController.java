@@ -1,6 +1,8 @@
 package com.campus.trade.controller;
 
 import com.campus.trade.common.annotation.LoginRequired;
+import com.campus.trade.common.annotation.RateLimit;
+import com.campus.trade.common.cache.TokenBlacklist;
 import com.campus.trade.common.context.UserContext;
 import com.campus.trade.common.result.Result;
 import com.campus.trade.dto.LoginDTO;
@@ -8,6 +10,7 @@ import com.campus.trade.dto.RegisterDTO;
 import com.campus.trade.service.AuthService;
 import com.campus.trade.vo.LoginVO;
 import com.campus.trade.vo.UserVO;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,12 +39,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final AuthService authService;
+    /** v0.12：退出登录后把 Token 加入 Redis 黑名单，使其立即失效 */
+    private final TokenBlacklist tokenBlacklist;
 
     /**
      * 用户注册。
      * <p>参数校验：用户名/密码/昵称非空 + 长度与格式校验；用户名重复返回 2001。</p>
      */
     @PostMapping("/register")
+    @RateLimit(key = "register", limit = 10, window = 300, message = "注册过于频繁")
     public Result<UserVO> register(@Valid @RequestBody RegisterDTO dto) {
         UserVO userVO = authService.register(dto);
         return Result.success("注册成功", userVO);
@@ -52,6 +58,7 @@ public class UserController {
      * <p>成功返回 JWT Token 与用户基础信息；账号不存在返回 2002，密码错误返回 2003。</p>
      */
     @PostMapping("/login")
+    @RateLimit(key = "login", limit = 20, window = 60, message = "登录尝试过于频繁")
     public Result<LoginVO> login(@Valid @RequestBody LoginDTO dto) {
         LoginVO loginVO = authService.login(dto);
         return Result.success("登录成功", loginVO);
@@ -69,13 +76,14 @@ public class UserController {
 
     /**
      * 退出登录（需要携带 Token）。
-     * <p>JWT 是无状态的，服务端不保存会话；此处仅做前端 Token 清理的确认接口。
-     * 若后续需要"立即失效"，可把 Token 加入 Redis 黑名单并在此处写入。</p>
+     * <p>JWT 是无状态的，服务端不保存会话；v0.12 起会把当前 Token 写入 Redis 黑名单
+     * （TTL = 该 Token 剩余有效期），因此退出后即使 Token 被复制也无法继续使用。</p>
      */
     @LoginRequired
     @PostMapping("/logout")
-    public Result<Void> logout() {
+    public Result<Void> logout(HttpServletRequest request) {
         log.info("[退出登录] userId={} username={}", UserContext.getUserId(), UserContext.getUsername());
+        tokenBlacklist.add(TokenBlacklist.resolveToken(request));
         return Result.success("退出登录成功", null);
     }
 }

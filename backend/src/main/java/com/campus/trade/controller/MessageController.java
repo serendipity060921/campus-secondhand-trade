@@ -1,6 +1,7 @@
 package com.campus.trade.controller;
 
 import com.campus.trade.common.annotation.LoginRequired;
+import com.campus.trade.common.annotation.RateLimit;
 import com.campus.trade.common.context.UserContext;
 import com.campus.trade.common.exception.MessageException;
 import com.campus.trade.common.result.PageResult;
@@ -54,6 +55,8 @@ public class MessageController {
      */
     @LoginRequired
     @PostMapping("/send")
+    @RateLimit(key = "send-msg", limit = 30, window = 60, dimension = RateLimit.Dimension.USER,
+            message = "发送消息过于频繁")
     public Result<MessageVO> send(@Valid @RequestBody MessageSendDTO dto) {
         MessageVO vo = messageModuleService.send(dto, UserContext.getUserId());
         return Result.success("发送成功", vo);

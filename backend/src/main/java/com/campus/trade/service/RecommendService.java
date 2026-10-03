@@ -37,4 +37,12 @@ public interface RecommendService {
      * @param size      返回条数
      */
     RecommendResultVO similar(Long productId, Integer size);
+
+    /**
+     * 热门榜（v0.12）：直接读 Redis ZSet（由用户行为实时加分），不查数据库；
+     * 榜单为空时退化为热门度排序。
+     *
+     * @param size 返回条数
+     */
+    java.util.List<com.campus.trade.vo.RecommendItemVO> hotList(Integer size);
 }
