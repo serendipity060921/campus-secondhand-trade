@@ -316,9 +316,60 @@ CREATE TABLE `user_behavior` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '用户行为表（推荐算法数据源）';
 
 /* =============================================================================
+ * 表 9：举报表 report（v0.13 管理后台）
+ * 业务：用户举报违规商品或不良用户，管理员在后台处理（处理/忽略并留痕）
+ * ========================================================================== */
+DROP TABLE IF EXISTS `report`;
+CREATE TABLE `report` (
+  `id`               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '举报ID，主键',
+  `reporter_id`      BIGINT UNSIGNED NOT NULL                COMMENT '举报人ID（外键 -> user.id）',
+  `target_type`      TINYINT         NOT NULL DEFAULT 1      COMMENT '举报对象类型：1商品 2用户',
+  `target_id`        BIGINT UNSIGNED NOT NULL                COMMENT '举报对象ID（商品ID或用户ID）',
+  `reason_type`      TINYINT         NOT NULL DEFAULT 4      COMMENT '举报原因：1虚假信息 2违禁物品 3辱骂骚扰 4其他',
+  `content`          VARCHAR(500)    DEFAULT NULL            COMMENT '补充说明',
+  `image_url`        VARCHAR(255)    DEFAULT NULL            COMMENT '证据图片地址',
+  `status`           TINYINT         NOT NULL DEFAULT 0      COMMENT '处理状态：0待处理 1已处理 2已忽略',
+  `handle_admin_id`  BIGINT UNSIGNED DEFAULT NULL            COMMENT '处理人（管理员ID）',
+  `handle_result`    VARCHAR(255)    DEFAULT NULL            COMMENT '处理结果说明',
+  `handle_time`      DATETIME        DEFAULT NULL            COMMENT '处理时间',
+  `create_time`      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '举报时间',
+  `update_time`      DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted`          TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除：0未删除 1已删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_reporter` (`reporter_id`),
+  KEY `idx_target` (`target_type`, `target_id`),
+  KEY `idx_status_time` (`status`, `create_time`),
+  CONSTRAINT `fk_report_reporter` FOREIGN KEY (`reporter_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '举报表';
+
+/* =============================================================================
+ * 表 10：管理员操作日志表 admin_log（v0.13 管理后台）
+ * 业务：记录管理端关键写操作（审核商品、启禁用用户、处理举报），用于责任追溯
+ * ========================================================================== */
+DROP TABLE IF EXISTS `admin_log`;
+CREATE TABLE `admin_log` (
+  `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '日志ID，主键',
+  `admin_id`    BIGINT UNSIGNED NOT NULL                COMMENT '操作管理员ID（外键 -> user.id）',
+  `admin_name`  VARCHAR(50)     DEFAULT NULL            COMMENT '管理员用户名（冗余，便于查日志）',
+  `action`      VARCHAR(50)     NOT NULL                COMMENT '操作类型：AUDIT_PRODUCT / OFFLINE_PRODUCT / DISABLE_USER / ENABLE_USER / HANDLE_REPORT',
+  `target_type` VARCHAR(20)     DEFAULT NULL            COMMENT '对象类型：PRODUCT / USER / REPORT',
+  `target_id`   BIGINT UNSIGNED DEFAULT NULL            COMMENT '对象ID',
+  `detail`      VARCHAR(500)    DEFAULT NULL            COMMENT '操作详情',
+  `ip`          VARCHAR(64)     DEFAULT NULL            COMMENT '操作人IP',
+  `create_time` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+  `deleted`     TINYINT         NOT NULL DEFAULT 0      COMMENT '逻辑删除：0未删除 1已删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_admin_time` (`admin_id`, `create_time`),
+  KEY `idx_action` (`action`),
+  CONSTRAINT `fk_admin_log_admin` FOREIGN KEY (`admin_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci COMMENT = '管理员操作日志表';
+
+/* =============================================================================
  * 脚本结束。验证方式：
- *   SHOW TABLES;                                  -- 应输出 8 张表
+ *   SHOW TABLES;                                  -- 应输出 10 张表
  *   SHOW CREATE TABLE `orders`;                    -- 检查外键与索引
  *   SELECT COUNT(*) FROM `category`;               -- 应为 32
  *   SHOW CREATE TABLE `user_behavior`;              -- v0.11 推荐模块数据源
+ *   SHOW CREATE TABLE `report`;                     -- v0.13 举报表
+ *   SHOW CREATE TABLE `admin_log`;                  -- v0.13 管理员操作日志表
  * ========================================================================== */

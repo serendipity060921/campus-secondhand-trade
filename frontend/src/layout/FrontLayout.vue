@@ -101,6 +101,11 @@ async function handleLogout() {
                   <el-dropdown-item @click="router.push('/orders/sold')">我卖出的</el-dropdown-item>
                   <el-dropdown-item @click="router.push('/favorites')">我的收藏</el-dropdown-item>
                   <el-dropdown-item @click="router.push('/product/mine')">我的商品</el-dropdown-item>
+                  <!-- v0.13：管理员才显示后台入口 -->
+                  <el-dropdown-item v-if="userStore.isAdmin" divided
+                                    @click="router.push('/admin/dashboard')">
+                    🛠 管理后台
+                  </el-dropdown-item>
                   <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>

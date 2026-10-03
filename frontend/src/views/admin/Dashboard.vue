@@ -1,0 +1,304 @@
+<script setup>
+/**
+ * 管理后台 · 数据看板（v0.13）
+ *
+ * 三块内容：
+ *   ① 概览卡片：用户/商品/订单/成交额/今日新增/待办
+ *   ② 近 7 天趋势折线（用户、商品、订单、成交额 双 Y 轴）
+ *   ③ 分类分布饼图 + 订单/商品状态环形图
+ *
+ * 图表用 ECharts 按需引入（只注册用到的图表与组件），避免整包体积。
+ */
+import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import * as echarts from 'echarts/core'
+import { BarChart, LineChart, PieChart } from 'echarts/charts'
+import {
+  GridComponent,
+  LegendComponent,
+  TitleComponent,
+  TooltipComponent
+} from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import { getDashboard } from '@/api/admin'
+
+echarts.use([LineChart, PieChart, BarChart, GridComponent, TooltipComponent,
+  LegendComponent, TitleComponent, CanvasRenderer])
+
+const router = useRouter()
+const loading = ref(false)
+const overview = ref({})
+const generatedAt = ref('')
+
+const trendRef = ref()
+const categoryRef = ref()
+const orderStatusRef = ref()
+const productStatusRef = ref()
+
+let charts = []
+
+const money = (v) => `￥${Number(v || 0).toFixed(2)}`
+
+function initChart(el, option) {
+  if (!el) {
+    return
+  }
+  const chart = echarts.init(el)
+  chart.setOption(option)
+  charts.push(chart)
+  return chart
+}
+
+function renderTrend(data) {
+  const days = data.userTrend.map((i) => i.label)
+  const gmv = data.orderTrend.map((i) => Number(i.amount || 0))
+  initChart(trendRef.value, {
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['新增用户', '新增商品', '新增订单', '成交额'], bottom: 0 },
+    grid: { left: 45, right: 60, top: 30, bottom: 45 },
+    xAxis: { type: 'category', data: days, axisLabel: { fontSize: 11 } },
+    yAxis: [
+      { type: 'value', name: '数量', minInterval: 1 },
+      { type: 'value', name: '金额(元)' }
+    ],
+    series: [
+      { name: '新增用户', type: 'line', smooth: true, data: data.userTrend.map((i) => i.value), itemStyle: { color: '#409eff' } },
+      { name: '新增商品', type: 'line', smooth: true, data: data.productTrend.map((i) => i.value), itemStyle: { color: '#67c23a' } },
+      { name: '新增订单', type: 'line', smooth: true, data: data.orderTrend.map((i) => i.value), itemStyle: { color: '#e6a23c' } },
+      { name: '成交额', type: 'bar', yAxisIndex: 1, data: gmv, barWidth: 14, itemStyle: { color: '#f56c6c', opacity: 0.75 } }
+    ]
+  })
+}
+
+function renderPie(el, title, data, colors) {
+  initChart(el, {
+    title: { text: title, left: 'center', top: 0, textStyle: { fontSize: 13, color: '#606266' } },
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { bottom: 0, type: 'scroll', textStyle: { fontSize: 11 } },
+    color: colors,
+    series: [{
+      type: 'pie',
+      radius: ['38%', '62%'],
+      center: ['50%', '48%'],
+      avoidLabelOverlap: true,
+      label: { fontSize: 11, formatter: '{b}\n{c}' },
+      data: data.map((i) => ({ name: i.label, value: i.value }))
+    }]
+  })
+}
+
+async function load() {
+  loading.value = true
+  try {
+    const res = await getDashboard()
+    const data = res.data
+    overview.value = data.overview
+    generatedAt.value = data.generatedAt
+    // 等待 DOM 渲染后再初始化图表
+    setTimeout(() => {
+      disposeCharts()
+      renderTrend(data)
+      renderPie(categoryRef.value, '商品分类分布', data.categoryDist,
+        ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#9c27b0', '#00bcd4', '#ff9800', '#795548', '#607d8b', '#3f51b5', '#8bc34a'])
+      renderPie(orderStatusRef.value, '订单状态分布', data.orderStatusDist, ['#e6a23c', '#67c23a', '#909399'])
+      renderPie(productStatusRef.value, '商品状态分布', data.productStatusDist,
+        ['#f56c6c', '#67c23a', '#e6a23c', '#909399', '#409eff', '#9c27b0'])
+    }, 50)
+  } finally {
+    loading.value = false
+  }
+}
+
+function disposeCharts() {
+  charts.forEach((c) => c.dispose())
+  charts = []
+}
+
+function handleResize() {
+  charts.forEach((c) => c.resize())
+}
+
+onMounted(() => {
+  load()
+  window.addEventListener('resize', handleResize)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleResize)
+  disposeCharts()
+})
+</script>
+
+<template>
+  <div v-loading="loading">
+    <!-- 待办提醒 -->
+    <el-alert v-if="overview.pendingAuditCount || overview.pendingReportCount" type="warning"
+              :closable="false" show-icon class="todo-alert">
+      <template #title>
+        待办事项：
+        <el-link v-if="overview.pendingAuditCount" type="primary" @click="router.push('/admin/products')">
+          {{ overview.pendingAuditCount }} 件商品待审核
+        </el-link>
+        <span v-if="overview.pendingAuditCount && overview.pendingReportCount"> · </span>
+        <el-link v-if="overview.pendingReportCount" type="primary" @click="router.push('/admin/reports')">
+          {{ overview.pendingReportCount }} 条举报待处理
+        </el-link>
+      </template>
+    </el-alert>
+
+    <!-- 概览卡片 -->
+    <el-row :gutter="14">
+      <el-col :xs="12" :sm="8" :md="4">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-label">用户总数</div>
+          <div class="stat-value">{{ overview.userCount || 0 }}</div>
+          <div class="stat-sub">今日 +{{ overview.todayNewUsers || 0 }}</div>
+        </el-card>
+      </el-col>
+      <el-col :xs="12" :sm="8" :md="4">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-label">商品总数</div>
+          <div class="stat-value">{{ overview.productCount || 0 }}</div>
+          <div class="stat-sub">在售 {{ overview.onSaleCount || 0 }} · 今日 +{{ overview.todayNewProducts || 0 }}</div>
+        </el-card>
+      </el-col>
+      <el-col :xs="12" :sm="8" :md="4">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-label">订单总数</div>
+          <div class="stat-value">{{ overview.orderCount || 0 }}</div>
+          <div class="stat-sub">已完成 {{ overview.finishedOrderCount || 0 }} · 今日 +{{ overview.todayNewOrders || 0 }}</div>
+        </el-card>
+      </el-col>
+      <el-col :xs="12" :sm="8" :md="4">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-label">累计成交额</div>
+          <div class="stat-value price">{{ money(overview.gmv) }}</div>
+          <div class="stat-sub">近 7 天 {{ money(overview.gmv7d) }}</div>
+        </el-card>
+      </el-col>
+      <el-col :xs="12" :sm="8" :md="4">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-label">待审核商品</div>
+          <div class="stat-value warn">{{ overview.pendingAuditCount || 0 }}</div>
+          <div class="stat-sub">
+            <el-link type="primary" @click="router.push('/admin/products')">去审核</el-link>
+          </div>
+        </el-card>
+      </el-col>
+      <el-col :xs="12" :sm="8" :md="4">
+        <el-card shadow="hover" class="stat-card">
+          <div class="stat-label">待处理举报</div>
+          <div class="stat-value warn">{{ overview.pendingReportCount || 0 }}</div>
+          <div class="stat-sub">
+            <el-link type="primary" @click="router.push('/admin/reports')">去处理</el-link>
+          </div>
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <!-- 趋势 -->
+    <el-card shadow="never" class="chart-card">
+      <template #header>
+        <div class="card-header">
+          <b>近 7 天趋势</b>
+          <span class="text-muted">数据截至 {{ generatedAt }}</span>
+        </div>
+      </template>
+      <div ref="trendRef" class="chart chart-lg" />
+    </el-card>
+
+    <!-- 分布 -->
+    <el-row :gutter="14">
+      <el-col :xs="24" :md="12">
+        <el-card shadow="never" class="chart-card">
+          <div ref="categoryRef" class="chart" />
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :md="6">
+        <el-card shadow="never" class="chart-card">
+          <div ref="orderStatusRef" class="chart" />
+        </el-card>
+      </el-col>
+      <el-col :xs="24" :md="6">
+        <el-card shadow="never" class="chart-card">
+          <div ref="productStatusRef" class="chart" />
+        </el-card>
+      </el-col>
+    </el-row>
+
+    <el-card shadow="never">
+      <el-descriptions :column="4" border size="small" title="其他数据">
+        <el-descriptions-item label="私信/留言总数">{{ overview.messageCount || 0 }}</el-descriptions-item>
+        <el-descriptions-item label="收藏总数">{{ overview.favoriteCount || 0 }}</el-descriptions-item>
+        <el-descriptions-item label="在售商品占比">
+          {{ overview.productCount ? Math.round((overview.onSaleCount / overview.productCount) * 100) : 0 }}%
+        </el-descriptions-item>
+        <el-descriptions-item label="订单完成率">
+          {{ overview.orderCount ? Math.round((overview.finishedOrderCount / overview.orderCount) * 100) : 0 }}%
+        </el-descriptions-item>
+      </el-descriptions>
+    </el-card>
+  </div>
+</template>
+
+<style scoped>
+.todo-alert {
+  margin-bottom: 14px;
+}
+
+.stat-card {
+  margin-bottom: 14px;
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #909399;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #303133;
+  margin: 6px 0 2px;
+}
+
+.stat-value.price {
+  color: #f56c6c;
+  font-size: 22px;
+}
+
+.stat-value.warn {
+  color: #e6a23c;
+}
+
+.stat-sub {
+  font-size: 12px;
+  color: #909399;
+  min-height: 20px;
+}
+
+.chart-card {
+  margin-bottom: 14px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chart {
+  width: 100%;
+  height: 300px;
+}
+
+.chart-lg {
+  height: 330px;
+}
+
+.text-muted {
+  color: #909399;
+  font-size: 12px;
+}
+</style>

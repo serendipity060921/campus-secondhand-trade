@@ -71,6 +71,8 @@ public class ProductModuleServiceImpl implements ProductModuleService {
     private final CacheKeys cacheKeys;
     private final CacheEvictor cacheEvictor;
     private final CacheProperties cacheProperties;
+    /** v0.13：发布审核开关 */
+    private final com.campus.trade.config.AuditProperties auditProperties;
 
     /* ==================== 1. 发布商品 ==================== */
 
@@ -96,11 +98,13 @@ public class ProductModuleServiceImpl implements ProductModuleService {
         product.setConditionLevel(dto.getConditionLevel());
         product.setCampus(dto.getCampus());
         product.setTradePlace(dto.getTradePlace());
-        // v0.05 直接上架；等后台审核里程碑（v0.07）上线后，这里改成 STATUS_PENDING(0) 即可
-        product.setStatus(STATUS_ON_SALE);
+        // v0.13：发布审核开关。campus.audit.enabled=true 时新商品进入「待审核」，
+        // 由管理后台审核通过后才上架（默认 false = 沿用 v0.05 以来"发布即上架"的行为）
+        boolean auditRequired = auditProperties.isEnabled();
+        product.setStatus(auditRequired ? STATUS_PENDING : STATUS_ON_SALE);
         product.setViewCount(0);
         product.setFavoriteCount(0);
-        product.setShelfTime(LocalDateTime.now());
+        product.setShelfTime(auditRequired ? null : LocalDateTime.now());
         product.setCoverImage(imageUrls.isEmpty() ? null : imageUrls.get(0));
         product.setDeleted(0);
 
@@ -111,8 +115,9 @@ public class ProductModuleServiceImpl implements ProductModuleService {
             saveImages(product.getId(), imageUrls, 0);
         }
 
-        log.info("[商品发布] id={} title={} sellerId={} 图片数={}",
-                product.getId(), product.getTitle(), sellerId, imageUrls.size());
+        log.info("[商品发布] id={} title={} sellerId={} 图片数={} 状态={}",
+                product.getId(), product.getTitle(), sellerId, imageUrls.size(),
+                auditRequired ? "待审核" : "在售");
         // v0.12 缓存失效：新商品上架会影响商品列表与推荐结果
         cacheEvictor.productChanged(product.getId());
         return toDetailVO(product, category, false);

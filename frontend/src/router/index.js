@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { getToken } from '@/utils/auth'
+import { ElMessage } from 'element-plus'
+import { getStoredUser, getToken } from '@/utils/auth'
 import FrontLayout from '@/layout/FrontLayout.vue'
 
 /**
@@ -129,6 +130,39 @@ const routes = [
     meta: { title: '注册' }
   },
   {
+    // v0.13 管理后台：独立布局（左侧菜单），所有子页面都要求管理员角色
+    path: '/admin',
+    component: () => import('@/layout/AdminLayout.vue'),
+    redirect: '/admin/dashboard',
+    meta: { requiresAuth: true, requiresAdmin: true },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'AdminDashboard',
+        component: () => import('@/views/admin/Dashboard.vue'),
+        meta: { title: '数据看板', requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'products',
+        name: 'AdminProducts',
+        component: () => import('@/views/admin/ProductAudit.vue'),
+        meta: { title: '商品管理', requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'users',
+        name: 'AdminUsers',
+        component: () => import('@/views/admin/UserManage.vue'),
+        meta: { title: '用户管理', requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: 'reports',
+        name: 'AdminReports',
+        component: () => import('@/views/admin/ReportManage.vue'),
+        meta: { title: '举报处理', requiresAuth: true, requiresAdmin: true }
+      }
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/NotFound.vue'),
@@ -142,7 +176,12 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 })
 })
 
-/** 全局前置守卫：登录校验（脚手架阶段仅打通流程，登录接口待实现） */
+/**
+ * 全局前置守卫：登录校验 + 管理员校验（v0.13）
+ *
+ * meta.requiresAuth = true  → 未登录跳登录页（并带上 redirect）
+ * meta.requiresAdmin = true → 非管理员（role != 1）拒绝进入后台，跳回首页并提示
+ */
 router.beforeEach((to, from, next) => {
   document.title = to.meta?.title ? `${to.meta.title} - 校园二手交易平台` : '校园二手交易平台'
 
@@ -150,6 +189,14 @@ router.beforeEach((to, from, next) => {
   if (to.meta?.requiresAuth && !token) {
     next({ path: '/login', query: { redirect: to.fullPath } })
     return
+  }
+  if (to.meta?.requiresAdmin) {
+    const user = getStoredUser()
+    if (!user || user.role !== 1) {
+      ElMessage.error('需要管理员权限')
+      next({ path: '/home' })
+      return
+    }
   }
   next()
 })

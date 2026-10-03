@@ -65,6 +65,10 @@
 | 6002 | 不能购买自己发布的商品 | 下单 |
 | 6003 / 6004 / 6005 | 订单不存在 / 无权操作该订单 / 订单状态不允许 | 订单 |
 | 7001 / 7002 / 7003 / 7004 | 分类重名 / 分类不存在 / 上级分类不存在 / 上级不能是自己 | 分类管理 |
+| **8001 / 8002** | **举报不存在 / 举报已处理** | **v0.13 举报处理** |
+| **8003** | **商品状态不允许审核**（只有待审核商品可审核） | **v0.13 商品审核** |
+| **8004 / 8005** | **不能禁用当前管理员 / 用户状态值非法** | **v0.13 用户管理** |
+| **8006 / 8007** | **不能举报自己的内容 / 举报对象不存在** | **v0.13 举报提交** |
 
 ---
 
@@ -473,7 +477,64 @@ curl -X POST http://localhost:8080/api/order/create -H "Authorization: Bearer $T
 
 ---
 
-## 九、接口清单速查（共 40 个）
+## 九、管理后台与举报接口（v0.13）
+
+> 后台接口全部位于 `/api/admin/**`，由 `AdminController` 类级别标注 `@LoginRequired(admin = true)`
+> 统一保护：**未登录返回 401，非管理员返回 403「没有操作权限」**。
+
+### 9.1 数据看板
+
+| 项 | 值 |
+| --- | --- |
+| 方法/路径 | `GET /api/admin/dashboard` |
+| 鉴权 | 管理员 |
+| 返回 | `DashboardVO`：`overview`（用户/商品/在售/订单/已完成/成交额/近 7 天成交额/今日新增/待审核/待处理举报/私信/收藏）、`userTrend`/`productTrend`/`orderTrend`（近 7 天，缺失日期补 0）、`categoryDist`、`orderStatusDist`、`productStatusDist`、`generatedAt` |
+
+### 9.2 商品管理
+
+| 方法 | 路径 | 参数 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/api/admin/product/list` | `page`、`size`、`status`(0~5，可空)、`keyword`、`sellerId` | 全状态商品列表，含卖家与审核信息 |
+| PUT | `/api/admin/product/audit` | body：`{productId, approve, remark}` | 审核：`approve=true` 上架、`false` 驳回并记录理由；非待审核 → 8003 |
+| PUT | `/api/admin/product/offline` | `productId`、`reason` | 强制下架（可操作他人商品）；交易中/已售出 → 3003 |
+
+### 9.3 用户管理
+
+| 方法 | 路径 | 参数 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/api/admin/user/list` | `page`、`size`、`keyword`、`role`、`status` | 用户列表，含发布/成交/被举报统计 |
+| PUT | `/api/admin/user/status` | body：`{userId, status}` | 启用(1)/禁用(0)；禁用后登录返回 2004；不能禁用自己(8004)、不能禁用其它管理员(400) |
+
+### 9.4 举报处理与操作日志
+
+| 方法 | 路径 | 参数 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/api/admin/report/list` | `status`(可空)、`page`、`size` | 举报列表，含举报对象标题与状态标签 |
+| PUT | `/api/admin/report/handle` | body：`{reportId, action, result}` | `action=1` 处理 / `2` 忽略；重复处理 → 8002 |
+| GET | `/api/admin/log/list` | `page`、`size` | 管理员操作日志（最新在前） |
+
+### 9.5 举报提交（普通用户）
+
+| 方法 | 路径 | 鉴权 | 说明 |
+| --- | --- | --- | --- |
+| POST | `/api/report/submit` | 登录 | body：`{targetType(1商品/2用户), targetId, reasonType(1~4), content?, imageUrl?}`；限流 10 次/10 分钟；不能举报自己(8006) |
+| GET | `/api/report/mine` | 登录 | 我的举报记录（分页） |
+
+```bash
+# 管理员审核商品
+curl -X PUT "http://localhost:8080/api/admin/product/audit" \
+  -H "Authorization: Bearer <adminToken>" -H "Content-Type: application/json" \
+  -d '{"productId":261,"approve":true,"remark":"资料完整，审核通过"}'
+
+# 用户举报商品
+curl -X POST "http://localhost:8080/api/report/submit" \
+  -H "Authorization: Bearer <token>" -H "Content-Type: application/json" \
+  -d '{"targetType":1,"targetId":6,"reasonType":2,"content":"疑似违禁物品"}'
+```
+
+---
+
+## 十、接口清单速查（共 51 个）
 
 | # | 方法 | 路径 | 鉴权 |
 | --- | --- | --- | --- |
@@ -517,6 +578,17 @@ curl -X POST http://localhost:8080/api/order/create -H "Authorization: Bearer $T
 | 38 | GET | `/api/order/{id}` | 是（仅买卖双方） |
 | 39 | GET | `/api/health` | 否 |
 | 40 | GET | `/api/health/db` | 否 |
+| 41 | GET | `/api/admin/dashboard` | 是（**v0.13 管理员**：数据看板） |
+| 42 | GET | `/api/admin/product/list` | 是（v0.13 管理员：全状态商品列表） |
+| 43 | PUT | `/api/admin/product/audit` | 是（v0.13 管理员：商品审核通过/驳回） |
+| 44 | PUT | `/api/admin/product/offline` | 是（v0.13 管理员：强制下架） |
+| 45 | GET | `/api/admin/user/list` | 是（v0.13 管理员：用户列表） |
+| 46 | PUT | `/api/admin/user/status` | 是（v0.13 管理员：启用/禁用用户） |
+| 47 | GET | `/api/admin/report/list` | 是（v0.13 管理员：举报列表） |
+| 48 | PUT | `/api/admin/report/handle` | 是（v0.13 管理员：处理举报） |
+| 49 | GET | `/api/admin/log/list` | 是（v0.13 管理员：操作日志） |
+| 50 | POST | `/api/report/submit` | 是（v0.13 举报商品/用户） |
+| 51 | GET | `/api/report/mine` | 是（v0.13 我的举报记录） |
 
 > 前端调用说明：所有请求经 `frontend/src/api/*.js` 封装，`request.js` 统一注入 Token、
 > 统一处理 `code != 200` 的错误提示，并在 401 时清理登录态跳转登录页。

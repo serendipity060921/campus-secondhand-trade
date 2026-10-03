@@ -13,6 +13,8 @@ import { checkFavorite, operateFavorite } from '@/api/favorite'
 import { createOrder } from '@/api/order'
 import { useUserStore } from '@/store/user'
 import { conditionLabel, formatPrice, PRODUCT_STATUS, resolveDetailImages } from '@/utils/product'
+// v0.13：举报商品（重命名避免与本地处理函数同名）
+import { submitReport as submitReportApi } from '@/api/report'
 // v0.11 推荐模块：相关推荐面板
 import RecommendPanel from '@/components/RecommendPanel.vue'
 
@@ -97,6 +99,44 @@ async function submitOrder() {
 
 const images = computed(() => (product.value ? resolveDetailImages(product.value) : []))
 const statusInfo = computed(() => PRODUCT_STATUS[product.value?.status] || { label: '未知', type: 'info' })
+
+/* ---------------- v0.13 举报商品 ---------------- */
+const reportDialogVisible = ref(false)
+const reportSubmitting = ref(false)
+const reportForm = reactive({ reasonType: null, content: '' })
+
+function openReportDialog() {
+  if (!userStore.isLogin) {
+    ElMessage.warning('请先登录后再举报')
+    router.push({ path: '/login', query: { redirect: route.fullPath } })
+    return
+  }
+  reportForm.reasonType = null
+  reportForm.content = ''
+  reportDialogVisible.value = true
+}
+
+async function submitReport() {
+  if (!reportForm.reasonType) {
+    ElMessage.warning('请选择举报原因')
+    return
+  }
+  reportSubmitting.value = true
+  try {
+    const res = await submitReportApi({
+      targetType: 1,
+      targetId: product.value.id,
+      reasonType: reportForm.reasonType,
+      content: reportForm.content
+    })
+    ElMessage.success(res.message || '举报已提交')
+    reportDialogVisible.value = false
+  } catch (e) {
+    /* 不能举报自己的内容(8006) 等由拦截器提示 */
+  } finally {
+    reportSubmitting.value = false
+  }
+}
 
 async function loadDetail() {
   loading.value = true
@@ -264,6 +304,8 @@ onMounted(loadDetail)
                 <span><el-button type="danger" disabled>立即购买</el-button></span>
               </el-tooltip>
               <el-button v-else type="danger" @click="openOrderDialog">立即购买</el-button>
+              <!-- v0.13 举报：非自己的商品可举报违规（提交后由管理员在后台处理） -->
+              <el-button v-if="!isSelfProduct" text type="info" @click="openReportDialog">举报商品</el-button>
               <el-button text type="primary" @click="router.push('/home')">← 返回商品列表</el-button>
             </div>
           </el-col>
@@ -309,6 +351,33 @@ onMounted(loadDetail)
         <template #footer>
           <el-button @click="orderDialogVisible = false">再想想</el-button>
           <el-button type="danger" :loading="orderSubmitting" @click="submitOrder">确认下单</el-button>
+        </template>
+      </el-dialog>
+
+      <!-- v0.13 举报商品弹窗 -->
+      <el-dialog v-model="reportDialogVisible" title="举报商品" width="480px">
+        <el-form label-width="86px">
+          <el-form-item label="商品">
+            <span>{{ product.title }}</span>
+          </el-form-item>
+          <el-form-item label="举报原因">
+            <el-select v-model="reportForm.reasonType" placeholder="请选择举报原因" class="w-full">
+              <el-option label="虚假信息（描述与实际不符）" :value="1" />
+              <el-option label="违禁物品" :value="2" />
+              <el-option label="辱骂骚扰" :value="3" />
+              <el-option label="其他" :value="4" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="补充说明">
+            <el-input v-model="reportForm.content" type="textarea" :rows="3" maxlength="500" show-word-limit
+                      placeholder="请补充具体情况，方便管理员核实" />
+          </el-form-item>
+        </el-form>
+        <el-alert type="warning" :closable="false" show-icon
+                  title="请如实举报；恶意举报会被记录，可能影响你的信用分。" />
+        <template #footer>
+          <el-button @click="reportDialogVisible = false">取消</el-button>
+          <el-button type="danger" :loading="reportSubmitting" @click="submitReport">提交举报</el-button>
         </template>
       </el-dialog>
     </template>

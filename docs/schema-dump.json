@@ -1,5 +1,87 @@
 {
  "schema": {
+  "admin_log": [
+   [
+    "id",
+    "bigint unsigned",
+    "NO",
+    "",
+    "PRI",
+    "日志ID，主键"
+   ],
+   [
+    "admin_id",
+    "bigint unsigned",
+    "NO",
+    "",
+    "MUL",
+    "操作管理员ID（外键 -> user.id）"
+   ],
+   [
+    "admin_name",
+    "varchar(50)",
+    "YES",
+    "",
+    "",
+    "管理员用户名（冗余，便于查日志）"
+   ],
+   [
+    "action",
+    "varchar(50)",
+    "NO",
+    "",
+    "MUL",
+    "操作类型：AUDIT_PRODUCT / DISABLE_USER / HANDLE_REPORT ..."
+   ],
+   [
+    "target_type",
+    "varchar(20)",
+    "YES",
+    "",
+    "",
+    "对象类型：PRODUCT / USER / REPORT"
+   ],
+   [
+    "target_id",
+    "bigint unsigned",
+    "YES",
+    "",
+    "",
+    "对象ID"
+   ],
+   [
+    "detail",
+    "varchar(500)",
+    "YES",
+    "",
+    "",
+    "操作详情（如\"驳回：图片含违禁内容\"）"
+   ],
+   [
+    "ip",
+    "varchar(64)",
+    "YES",
+    "",
+    "",
+    "操作人IP"
+   ],
+   [
+    "create_time",
+    "datetime",
+    "NO",
+    "CURRENT_TIMESTAMP",
+    "",
+    "操作时间"
+   ],
+   [
+    "deleted",
+    "tinyint",
+    "NO",
+    "0",
+    "",
+    "逻辑删除：0未删除 1已删除"
+   ]
+  ],
   "category": [
    [
     "id",
@@ -652,6 +734,120 @@
     "逻辑删除：0未删除 1已删除"
    ]
   ],
+  "report": [
+   [
+    "id",
+    "bigint unsigned",
+    "NO",
+    "",
+    "PRI",
+    "举报ID，主键"
+   ],
+   [
+    "reporter_id",
+    "bigint unsigned",
+    "NO",
+    "",
+    "MUL",
+    "举报人ID（外键 -> user.id）"
+   ],
+   [
+    "target_type",
+    "tinyint",
+    "NO",
+    "1",
+    "MUL",
+    "举报对象类型：1商品 2用户"
+   ],
+   [
+    "target_id",
+    "bigint unsigned",
+    "NO",
+    "",
+    "",
+    "举报对象ID（商品ID或用户ID）"
+   ],
+   [
+    "reason_type",
+    "tinyint",
+    "NO",
+    "4",
+    "",
+    "举报原因：1虚假信息 2违禁物品 3辱骂骚扰 4其他"
+   ],
+   [
+    "content",
+    "varchar(500)",
+    "YES",
+    "",
+    "",
+    "补充说明"
+   ],
+   [
+    "image_url",
+    "varchar(255)",
+    "YES",
+    "",
+    "",
+    "证据图片地址"
+   ],
+   [
+    "status",
+    "tinyint",
+    "NO",
+    "0",
+    "MUL",
+    "处理状态：0待处理 1已处理 2已忽略"
+   ],
+   [
+    "handle_admin_id",
+    "bigint unsigned",
+    "YES",
+    "",
+    "",
+    "处理人（管理员ID）"
+   ],
+   [
+    "handle_result",
+    "varchar(255)",
+    "YES",
+    "",
+    "",
+    "处理结果说明"
+   ],
+   [
+    "handle_time",
+    "datetime",
+    "YES",
+    "",
+    "",
+    "处理时间"
+   ],
+   [
+    "create_time",
+    "datetime",
+    "NO",
+    "CURRENT_TIMESTAMP",
+    "",
+    "举报时间"
+   ],
+   [
+    "update_time",
+    "datetime",
+    "NO",
+    "CURRENT_TIMESTAMP",
+    "",
+    "更新时间"
+   ],
+   [
+    "deleted",
+    "tinyint",
+    "NO",
+    "0",
+    "",
+    "逻辑删除：0未删除 1已删除"
+   ]
+  ],
   "user": [
    [
     "id",
@@ -890,16 +1086,24 @@
   ]
  },
  "counts": {
+  "admin_log": "0",
   "category": "33",
   "favorite": "4",
   "message": "9",
   "orders": "4",
-  "product": "14",
+  "product": "17",
   "product_image": "10",
+  "report": "3",
   "user": "4",
-  "user_behavior": "15"
+  "user_behavior": "16"
  },
  "fks": [
+  [
+   "admin_log",
+   "admin_id",
+   "user",
+   "id"
+  ],
   [
    "favorite",
    "product_id",
@@ -970,6 +1174,12 @@
    "product_image",
    "product_id",
    "product",
+   "id"
+  ],
+  [
+   "report",
+   "reporter_id",
+   "user",
    "id"
   ],
   [
