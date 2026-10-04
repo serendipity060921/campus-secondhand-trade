@@ -98,6 +98,9 @@ public class AdminServiceImpl implements AdminService {
     private final ReportModuleService reportModuleService;
     private final AdminStatMapper adminStatMapper;
     private final CacheEvictor cacheEvictor;
+    /** v0.14：在线人数统计（看板）+ 禁用用户时踢下线 */
+    private final com.campus.trade.service.OnlineStatusService onlineStatusService;
+    private final com.campus.trade.websocket.ChatSessionRegistry chatSessionRegistry;
 
     /* ==================== 1. 数据看板 ==================== */
 
@@ -119,6 +122,8 @@ public class AdminServiceImpl implements AdminService {
                 .eq(Order::getStatus, 3)));
         overview.setMessageCount(messageService.count());
         overview.setFavoriteCount(favoriteService.count());
+        // v0.14：当前在线人数（WebSocket 心跳写入 Redis 的 ZSet）
+        overview.setOnlineCount(onlineStatusService.onlineCount());
 
         // 金额与今日新增
         BigDecimal gmv = adminStatMapper.sumGmv();
@@ -282,6 +287,14 @@ public class AdminServiceImpl implements AdminService {
         writeLog(adminId, USER_STATUS_NORMAL == dto.getStatus() ? "ENABLE_USER" : "DISABLE_USER",
                 "USER", user.getId(),
                 (USER_STATUS_NORMAL == dto.getStatus() ? "启用用户：" : "禁用用户：") + user.getUsername());
+        // v0.14：禁用账号时立即断开其 WebSocket 连接（否则被禁用户仍能实时收发消息）
+        if (USER_STATUS_DISABLED == dto.getStatus()) {
+            int closed = chatSessionRegistry.closeUser(user.getId());
+            onlineStatusService.offline(user.getId());
+            if (closed > 0) {
+                log.info("[禁用用户] 已断开其 {} 个实时连接 userId={}", closed, user.getId());
+            }
+        }
         log.info("[用户状态变更] userId={} status={} 管理员={}", user.getId(), dto.getStatus(), adminId);
         return toUserVOList(List.of(userService.getById(user.getId()))).get(0);
     }

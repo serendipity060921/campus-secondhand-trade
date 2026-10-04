@@ -48,3 +48,20 @@ export function markMessageRead(data) {
 export function getChatPeer(peerId) {
   return request({ url: '/message/peer', method: 'get', params: { peerId } })
 }
+
+/**
+ * 未读私信总数（v0.14，顶栏角标）
+ * GET /api/message/unreadTotal
+ */
+export function getMessageUnreadTotal() {
+  return request({ url: '/message/unreadTotal', method: 'get' })
+}
+
+/**
+ * 查询在线状态（v0.14）
+ * GET /api/message/online
+ * @param {number} [peerId] 不传则查询自己
+ */
+export function getOnlineStatus(peerId) {
+  return request({ url: '/message/online', method: 'get', params: { peerId } })
+}

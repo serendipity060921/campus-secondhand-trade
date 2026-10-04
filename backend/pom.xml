@@ -48,6 +48,12 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- WebSocket：v0.14 实时私信（底层用 Tomcat 的 WebSocket 实现，无需额外容器） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-websocket</artifactId>
+        </dependency>
+
         <!-- 参数校验：@Valid / @NotBlank 等 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

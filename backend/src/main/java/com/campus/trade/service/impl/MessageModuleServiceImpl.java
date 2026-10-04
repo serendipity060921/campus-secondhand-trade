@@ -58,6 +58,8 @@ public class MessageModuleServiceImpl implements MessageModuleService {
     private final ProductService productService;
     /** v0.11 推荐模块：行为埋点 */
     private final UserBehaviorService userBehaviorService;
+    /** v0.14 实时推送（WebSocket） */
+    private final com.campus.trade.service.ChatPushService chatPushService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -107,6 +109,14 @@ public class MessageModuleServiceImpl implements MessageModuleService {
         MessageVO vo = new MessageVO();
         BeanUtils.copyProperties(message, vo);
         vo.setProductTitle(product == null ? null : product.getTitle());
+        // v0.14：带上发送人昵称，接收方弹出提醒时可以直接显示"新私信来自 xxx"
+        User sender = userService.getById(fromUserId);
+        vo.setFromNickname(sender == null ? null : sender.getNickname());
+
+        // v0.14 实时推送：推给接收人的所有连接 + 回推给发送人的其它标签页。
+        // 放在这里而不是 Controller，是为了让"REST 接口"与"WebSocket"两条发送路径都具备推送能力。
+        // pushMessage 内部已做异常兜底：即使推送失败，消息也已经入库，对方拉历史仍能看到。
+        chatPushService.pushMessage(vo);
         return vo;
     }
 
@@ -145,7 +155,23 @@ public class MessageModuleServiceImpl implements MessageModuleService {
 
         int rows = messageService.getBaseMapper().update(null, wrapper);
         log.info("[私信已读] userId={} peerId={} ids={} 更新条数={}", userId, dto.getPeerId(), dto.getMessageIds(), rows);
+
+        // v0.14 已读回执：告诉对方"你发给我的消息已经被读了"，对方界面可实时把消息标记为已读
+        if (rows > 0 && dto.getPeerId() != null) {
+            chatPushService.pushRead(userId, dto.getPeerId());
+        }
         return rows;
+    }
+
+    @Override
+    public long unreadTotal(Long userId) {
+        if (userId == null) {
+            return 0;
+        }
+        return messageService.count(new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<Message>()
+                .eq(Message::getType, TYPE_PRIVATE)
+                .eq(Message::getToUserId, userId)
+                .eq(Message::getIsRead, UNREAD));
     }
 
     @Override

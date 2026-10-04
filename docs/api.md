@@ -520,6 +520,39 @@ curl -X POST http://localhost:8080/api/order/create -H "Authorization: Bearer $T
 | POST | `/api/report/submit` | 登录 | body：`{targetType(1商品/2用户), targetId, reasonType(1~4), content?, imageUrl?}`；限流 10 次/10 分钟；不能举报自己(8006) |
 | GET | `/api/report/mine` | 登录 | 我的举报记录（分页） |
 
+### 9.6 实时私信（v0.14）
+
+| 方法 | 路径 | 鉴权 | 说明 |
+| --- | --- | --- | --- |
+| GET | `/api/message/unreadTotal` | 登录 | 未读私信总数（顶栏角标） |
+| GET | `/api/message/online` | 登录 | 查询在线状态：`peerId` 可选（不传查自己）；返回 `{userId, online, onlineCount}` |
+| **WS** | **`/ws/chat?token=<JWT>`** | 握手校验 | 实时私信通道（协议见下） |
+
+**WebSocket 协议**（JSON 信封，`type` 区分；详细设计见 [实时通信说明.md](实时通信说明.md)）：
+
+```jsonc
+// 客户端 → 服务端
+{"type":"chat","toUserId":7,"content":"还在吗？","productId":6}
+{"type":"read","peerId":7}                      // 或 {"type":"read","messageIds":[1,2]}
+{"type":"ping"}
+{"type":"queryOnline","userIds":[5,7,6]}
+
+// 服务端 → 客户端
+{"type":"welcome","data":{"userId":5,"unreadTotal":2},"ts":...}
+{"type":"chat","data":{ /* MessageVO，含 fromNickname */ },"ts":...}
+{"type":"read","data":{"readerId":7,"peerId":5},"ts":...}
+{"type":"online","data":{"userId":7,"online":true},"ts":...}
+{"type":"pong","ts":...}
+{"type":"error","code":5001,"message":"不能给自己发送消息","ts":...}
+```
+
+**握手失败返回**：无 token / 非法 token / 已登出（黑名单）→ **401**；账号被禁用 → **403**。
+
+```bash
+# 用 wscat 或浏览器控制台测试
+# new WebSocket('ws://localhost:8080/ws/chat?token=' + localStorage.getItem('campus_trade_token'))
+```
+
 ```bash
 # 管理员审核商品
 curl -X PUT "http://localhost:8080/api/admin/product/audit" \
@@ -534,7 +567,7 @@ curl -X POST "http://localhost:8080/api/report/submit" \
 
 ---
 
-## 十、接口清单速查（共 51 个）
+## 十、接口清单速查（共 53 个）
 
 | # | 方法 | 路径 | 鉴权 |
 | --- | --- | --- | --- |
@@ -578,17 +611,19 @@ curl -X POST "http://localhost:8080/api/report/submit" \
 | 38 | GET | `/api/order/{id}` | 是（仅买卖双方） |
 | 39 | GET | `/api/health` | 否 |
 | 40 | GET | `/api/health/db` | 否 |
-| 41 | GET | `/api/admin/dashboard` | 是（**v0.13 管理员**：数据看板） |
-| 42 | GET | `/api/admin/product/list` | 是（v0.13 管理员：全状态商品列表） |
-| 43 | PUT | `/api/admin/product/audit` | 是（v0.13 管理员：商品审核通过/驳回） |
-| 44 | PUT | `/api/admin/product/offline` | 是（v0.13 管理员：强制下架） |
-| 45 | GET | `/api/admin/user/list` | 是（v0.13 管理员：用户列表） |
-| 46 | PUT | `/api/admin/user/status` | 是（v0.13 管理员：启用/禁用用户） |
-| 47 | GET | `/api/admin/report/list` | 是（v0.13 管理员：举报列表） |
-| 48 | PUT | `/api/admin/report/handle` | 是（v0.13 管理员：处理举报） |
-| 49 | GET | `/api/admin/log/list` | 是（v0.13 管理员：操作日志） |
-| 50 | POST | `/api/report/submit` | 是（v0.13 举报商品/用户） |
-| 51 | GET | `/api/report/mine` | 是（v0.13 我的举报记录） |
+| 41 | GET | `/api/message/unreadTotal` | 是（v0.14 未读私信总数） |
+| 42 | GET | `/api/message/online` | 是（v0.14 在线状态查询） |
+| 43 | GET | `/api/admin/dashboard` | 是（**v0.13 管理员**：数据看板） |
+| 44 | GET | `/api/admin/product/list` | 是（v0.13 管理员：全状态商品列表） |
+| 45 | PUT | `/api/admin/product/audit` | 是（v0.13 管理员：商品审核通过/驳回） |
+| 46 | PUT | `/api/admin/product/offline` | 是（v0.13 管理员：强制下架） |
+| 47 | GET | `/api/admin/user/list` | 是（v0.13 管理员：用户列表） |
+| 48 | PUT | `/api/admin/user/status` | 是（v0.13 管理员：启用/禁用用户） |
+| 49 | GET | `/api/admin/report/list` | 是（v0.13 管理员：举报列表） |
+| 50 | PUT | `/api/admin/report/handle` | 是（v0.13 管理员：处理举报） |
+| 51 | GET | `/api/admin/log/list` | 是（v0.13 管理员：操作日志） |
+| 52 | POST | `/api/report/submit` | 是（v0.13 举报商品/用户） |
+| 53 | GET | `/api/report/mine` | 是（v0.13 我的举报记录） |
 
 > 前端调用说明：所有请求经 `frontend/src/api/*.js` 封装，`request.js` 统一注入 Token、
 > 统一处理 `code != 200` 的错误提示，并在 401 时清理登录态跳转登录页。

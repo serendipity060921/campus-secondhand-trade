@@ -36,6 +36,8 @@ import java.util.List;
  *   <tr><td>GET</td><td>/api/message/history</td><td>与某人的聊天记录（分页，最新在前）</td></tr>
  *   <tr><td>PUT</td><td>/api/message/read</td><td>标记已读（按聊天对象或按消息ID）</td></tr>
  *   <tr><td>GET</td><td>/api/message/peer</td><td>聊天对象公开信息（聊天窗口顶部展示，配套接口）</td></tr>
+ *   <tr><td>GET</td><td>/api/message/unreadTotal</td><td><b>v0.14</b> 未读私信总数（顶部角标）</td></tr>
+ *   <tr><td>GET</td><td>/api/message/online</td><td><b>v0.14</b> 查询某人是否在线（会话列表/聊天窗口展示）</td></tr>
  * </table>
  */
 @Slf4j
@@ -48,6 +50,34 @@ public class MessageController {
     private static final long MAX_PAGE_SIZE = 100L;
 
     private final MessageModuleService messageModuleService;
+    /** v0.14 在线状态（Redis） */
+    private final com.campus.trade.service.OnlineStatusService onlineStatusService;
+
+    /**
+     * 未读私信总数（v0.14）。
+     * <p>前端顶栏角标使用；WebSocket 连接建立时服务端也会主动下发一次（welcome 帧）。</p>
+     */
+    @LoginRequired
+    @GetMapping("/unreadTotal")
+    public Result<Long> unreadTotal() {
+        return Result.success(messageModuleService.unreadTotal(UserContext.getUserId()));
+    }
+
+    /**
+     * 查询在线状态（v0.14）。
+     * <p>不传 peerId 时返回当前登录用户自己的在线状态。</p>
+     */
+    @LoginRequired
+    @GetMapping("/online")
+    public Result<java.util.Map<String, Object>> online(
+            @RequestParam(value = "peerId", required = false) Long peerId) {
+        Long target = peerId == null ? UserContext.getUserId() : peerId;
+        java.util.Map<String, Object> data = new java.util.HashMap<>(3);
+        data.put("userId", target);
+        data.put("online", onlineStatusService.isOnline(target));
+        data.put("onlineCount", onlineStatusService.onlineCount());
+        return Result.success(data);
+    }
 
     /**
      * 发送私信。

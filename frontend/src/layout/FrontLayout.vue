@@ -1,15 +1,27 @@
 <script setup>
 /**
  * 前台基础布局：顶部导航 + 内容区 + 页脚
+ *
+ * v0.14：登录后建立 WebSocket 实时连接，用于①消息角标②新私信提醒；
+ *        退出登录时断开连接并清空实时状态。
  */
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
+import { useChatStore } from '@/store/chat'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const chatStore = useChatStore()
+
+// v0.14：登录状态下初始化实时连接（含页面刷新：从 localStorage 恢复登录态后重连）
+onMounted(() => {
+  if (userStore.isLogin) {
+    chatStore.init()
+  }
+})
 
 /* ---------------- v0.09 顶部全局搜索 ---------------- */
 const searchKeyword = ref('')
@@ -47,6 +59,8 @@ function goLogin() {
 }
 
 async function handleLogout() {
+  // v0.14：先断开实时连接再退出，避免退出后仍收到推送
+  chatStore.reset()
   await userStore.logout()
   ElMessage.success('已退出登录')
   router.push('/home')
@@ -61,14 +75,19 @@ async function handleLogout() {
         <div class="logo" @click="router.push('/home')">
           <span class="logo-icon">♻</span>
           <span class="logo-text">校园二手交易平台</span>
-          <el-tag size="small" type="success" effect="plain">v0.05 商品模块</el-tag>
+          <el-tag size="small" type="success" effect="plain">v0.14 实时私信</el-tag>
         </div>
 
         <el-menu :default-active="activeMenu" mode="horizontal" class="nav-menu" router :ellipsis="false">
           <el-menu-item index="/home">首页</el-menu-item>
           <el-menu-item index="/product/publish">发布商品</el-menu-item>
           <el-menu-item index="/product/mine">我的商品</el-menu-item>
-          <el-menu-item index="/messages">消息</el-menu-item>
+          <el-menu-item index="/messages">
+            消息
+            <!-- v0.14：未读私信角标（WebSocket 实时更新） -->
+            <el-badge v-if="chatStore.unreadTotal > 0" :value="chatStore.unreadTotal"
+                      :max="99" class="msg-badge" />
+          </el-menu-item>
           <el-menu-item index="/orders/bought">订单</el-menu-item>
           <el-menu-item index="/profile">个人中心</el-menu-item>
         </el-menu>
@@ -130,9 +149,9 @@ async function handleLogout() {
     <!-- 页脚 -->
     <el-footer class="layout-footer">
       <div class="page-container">
-        <p>校园二手交易平台 · 毕业设计项目 · 版本 v0.05（商品核心模块）</p>
+        <p>校园二手交易平台 · 毕业设计项目 · 版本 v0.14（WebSocket 实时私信）</p>
         <p class="text-muted">
-          技术栈：Spring Boot 3 + MyBatis-Plus + MySQL 8 + Vue 3 + Vite + Element Plus ·
+          技术栈：Spring Boot 3 + MyBatis-Plus + MySQL 8 + Redis + WebSocket + Vue 3 + Vite + Element Plus ·
           <el-link type="info" :underline="false" @click="router.push('/dev/health')">连通性自检</el-link>
         </p>
       </div>
@@ -183,6 +202,12 @@ async function handleLogout() {
 .nav-menu {
   flex: 1;
   border-bottom: none;
+}
+
+/* v0.14：顶部导航的未读消息角标 */
+.msg-badge {
+  margin-left: 6px;
+  margin-top: -2px;
 }
 
 .header-right {

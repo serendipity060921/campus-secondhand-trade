@@ -41,4 +41,9 @@ public interface MessageModuleService {
 
     /** 聊天对象公开信息（聊天窗口顶部展示） */
     ChatPeerVO peer(Long peerId, Long userId);
+
+    /**
+     * 我的未读私信总数（v0.14：前端顶部角标 + WebSocket 连接建立时下发的欢迎包）。
+     */
+    long unreadTotal(Long userId);
 }

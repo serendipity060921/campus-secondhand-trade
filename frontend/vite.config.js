@@ -31,6 +31,12 @@ export default defineConfig({
       '/upload': {
         target: 'http://127.0.0.1:8080',
         changeOrigin: true
+      },
+      // v0.14：实时私信 WebSocket（ws: true 让 Vite 代理升级协议，前端只需连同源的 /ws/chat）
+      '/ws': {
+        target: 'ws://127.0.0.1:8080',
+        ws: true,
+        changeOrigin: true
       }
     }
   },

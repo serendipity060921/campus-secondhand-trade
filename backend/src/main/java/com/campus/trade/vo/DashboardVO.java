@@ -74,5 +74,7 @@ public class DashboardVO implements Serializable {
         private Long messageCount = 0L;
         /** 收藏总数 */
         private Long favoriteCount = 0L;
+        /** 当前在线人数（v0.14：WebSocket 心跳，来自 Redis） */
+        private Long onlineCount = 0L;
     }
 }

@@ -1,6 +1,6 @@
 <script setup>
 /**
- * 聊天窗口页（v0.07，需要登录）
+ * 聊天窗口页（v0.07 建立，v0.14 改为 WebSocket 实时通信）
  *
  * 路由：/chat/:userId?productId=xxx
  *   - :userId    聊天对象ID（从"私聊卖家"进入时即卖家ID）
@@ -8,20 +8,24 @@
  *
  * 功能：
  *   ① 加载对方信息 + 最近 20 条聊天记录（后端返回最新在前，这里翻转成正序展示）
- *   ② 打开即把对方发给我的消息标记为已读
+ *   ② 打开即把对方发给我的消息标记为已读，并订阅对方的已读回执（自己发的消息显示"已读"）
  *   ③ 上滑/点按钮加载更早的历史消息（分页）
- *   ④ 输入框发送消息（Enter 发送，Shift+Enter 换行）
- *   ⑤ 5 秒轮询拉取新消息（毕设阶段用轮询模拟实时；后续可升级 WebSocket）
+ *   ④ 输入框发送消息（Enter 发送，Shift+Enter 换行）——优先走 WebSocket，失败降级 REST
+ *   ⑤ v0.14：消息由服务端推送（不再 5 秒轮询）；WebSocket 断开时每 15 秒轮询兜底
+ *   ⑥ v0.14：顶部显示对方"在线/离线"状态（Redis 心跳判定）
  */
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getChatPeer, getMessageHistory, markMessageRead, sendMessage } from '@/api/message'
 import { useUserStore } from '@/store/user'
+import { useChatStore } from '@/store/chat'
+import chatSocket from '@/utils/websocket'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const chatStore = useChatStore()
 
 const PEER_ID = Number(route.params.userId)
 const PRODUCT_ID = route.query.productId ? Number(route.query.productId) : null
@@ -31,6 +35,7 @@ const loading = ref(false)
 const sending = ref(false)
 const loadingMore = ref(false)
 const peer = ref(null)
+const peerOnline = ref(false)
 const messages = ref([]) // 正序：旧 -> 新
 const total = ref(0)
 const loadedPages = ref(0)
@@ -126,23 +131,35 @@ async function loadMore() {
   }
 }
 
-/** 把对方发给我的未读消息标记为已读 */
+/** 把对方发给我的未读消息标记为已读（优先 WebSocket，失败降级 REST） */
 async function markReadIfNeeded() {
   const hasUnread = messages.value.some((m) => !isMine(m) && m.isRead === 0)
-  if (hasUnread) {
+  if (!hasUnread) {
+    return
+  }
+  const viaSocket = chatStore.readBySocket({ peerId: PEER_ID })
+  if (!viaSocket) {
     try {
       await markMessageRead({ peerId: PEER_ID })
-      messages.value.forEach((m) => {
-        if (!isMine(m)) m.isRead = 1
-      })
     } catch (e) {
-      /* 忽略 */
+      return
     }
   }
+  messages.value.forEach((m) => {
+    if (!isMine(m)) m.isRead = 1
+  })
+  // 角标与服务端对齐（自己已读的消息要从"未读总数"里扣掉）
+  chatStore.fetchUnreadTotal()
 }
 
-/** 轮询新消息：拉第一页，把本地没有的追加进来 */
+/**
+ * 轮询兜底（v0.14）：只在 WebSocket 不可用时启用，避免"实时通道断了就收不到消息"。
+ * 连接正常时完全依赖服务端推送，不再有定时请求。
+ */
 async function pollNew() {
+  if (chatStore.connected) {
+    return
+  }
   try {
     const res = await getMessageHistory({ peerId: PEER_ID, page: 1, size: PAGE_SIZE })
     const known = new Set(messages.value.map((m) => m.id))
@@ -158,6 +175,73 @@ async function pollNew() {
   }
 }
 
+/* ---------------- v0.14 实时消息处理 ---------------- */
+
+/** 服务端推送新私信：只处理与当前聊天对象相关的，其余交给全局角标 */
+function onIncoming(msg) {
+  const data = msg.data
+  if (!data || (data.fromUserId !== PEER_ID && data.toUserId !== PEER_ID)) {
+    return
+  }
+  if (messages.value.some((m) => m.id === data.id)) {
+    return
+  }
+  messages.value.push(data)
+  total.value += 1
+  loadedPages.value = Math.max(loadedPages.value, 1)
+  scrollToBottom()
+  // 对方发来的消息：立即标记已读（走 WebSocket，失败则退回 REST）
+  if (!isMine(data)) {
+    markReadIfNeeded()
+  }
+}
+
+/** 对方已读回执：把我发出的消息标记为已读 */
+function onReadReceipt(msg) {
+  const data = msg.data
+  if (!data || data.readerId !== PEER_ID) {
+    return
+  }
+  messages.value.forEach((m) => {
+    if (isMine(m)) m.isRead = 1
+  })
+}
+
+/** 在线状态变化 */
+function onOnline(msg) {
+  const data = msg.data
+  if (Array.isArray(data)) {
+    data.forEach((item) => {
+      if (item.userId === PEER_ID) peerOnline.value = item.online
+    })
+  } else if (data && data.userId === PEER_ID) {
+    peerOnline.value = data.online
+  }
+}
+
+let unsubscribe = []
+let timer = null
+
+onMounted(async () => {
+  chatStore.setActivePeer(PEER_ID)
+  await loadPeer()
+  await loadFirst()
+  // 订阅实时事件 + 查询对方在线状态
+  unsubscribe.push(chatSocket.on('chat', onIncoming))
+  unsubscribe.push(chatSocket.on('read', onReadReceipt))
+  unsubscribe.push(chatSocket.on('online', onOnline))
+  chatStore.queryOnline([PEER_ID])
+  // 兜底轮询：连接可用时函数内部会直接返回，不产生请求
+  timer = setInterval(pollNew, 15000)
+})
+
+onUnmounted(() => {
+  unsubscribe.forEach((fn) => fn())
+  unsubscribe = []
+  if (timer) clearInterval(timer)
+  chatStore.setActivePeer(null)
+})
+
 async function handleSend() {
   const content = inputContent.value.trim()
   if (!content) {
@@ -170,16 +254,27 @@ async function handleSend() {
   }
   sending.value = true
   try {
-    const res = await sendMessage({
+    // v0.14：优先走 WebSocket 实时通道（服务端入库后会推给双方），
+    // 连接不可用（未建立/断线）时降级为 REST 接口，保证消息不丢
+    const viaSocket = chatStore.sendBySocket({
       toUserId: PEER_ID,
       content,
-      productId: PRODUCT_ID || undefined
+      productId: PRODUCT_ID
     })
-    messages.value.push(res.data)
-    total.value += 1
-    loadedPages.value = Math.max(loadedPages.value, 1)
+    if (!viaSocket) {
+      const res = await sendMessage({
+        toUserId: PEER_ID,
+        content,
+        productId: PRODUCT_ID || undefined
+      })
+      if (!messages.value.some((m) => m.id === res.data.id)) {
+        messages.value.push(res.data)
+        total.value += 1
+        loadedPages.value = Math.max(loadedPages.value, 1)
+      }
+      await scrollToBottom()
+    }
     inputContent.value = ''
-    await scrollToBottom()
   } catch (e) {
     /* 错误提示由 axios 拦截器统一处理 */
   } finally {
@@ -194,16 +289,6 @@ function onEnter(event) {
   handleSend()
 }
 
-let timer = null
-onMounted(async () => {
-  await loadPeer()
-  await loadFirst()
-  timer = setInterval(pollNew, 5000)
-})
-
-onUnmounted(() => {
-  if (timer) clearInterval(timer)
-})
 </script>
 
 <template>
@@ -219,6 +304,11 @@ onUnmounted(() => {
             <el-tag v-if="peer?.self" size="small" type="warning">这是你自己</el-tag>
           </div>
           <div class="peer-meta">
+            <!-- v0.14：在线状态（Redis 心跳判定，WebSocket 实时更新） -->
+            <el-tag :type="peerOnline ? 'success' : 'info'" size="small" effect="plain" class="online-tag">
+              {{ peerOnline ? '● 在线' : '○ 离线' }}
+            </el-tag>
+            <span v-if="!chatStore.connected" class="reconnecting">实时连接中断，已切换为轮询</span>
             <span v-if="peer?.campus">{{ peer.campus }}</span>
             <span v-if="peer?.creditScore !== undefined"> · 信用分 {{ peer.creditScore }}</span>
           </div>
@@ -272,7 +362,9 @@ onUnmounted(() => {
           @keydown.enter="onEnter"
         />
         <div class="input-actions">
-          <span class="text-muted">每 5 秒自动刷新新消息</span>
+          <span class="text-muted">
+            {{ chatStore.connected ? '● 实时推送已连接（WebSocket）' : '○ 实时连接中断，已切换为 15 秒轮询' }}
+          </span>
           <el-button type="primary" :loading="sending" :disabled="peer?.self" @click="handleSend">发送</el-button>
         </div>
       </div>
@@ -309,6 +401,22 @@ onUnmounted(() => {
 }
 
 .peer-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.online-tag {
+  font-size: 11px;
+}
+
+.reconnecting {
+  font-size: 11px;
+  color: #e6a23c;
+}
+
+.peer-meta-text {
   font-size: 12px;
   color: #909399;
   margin-top: 2px;

@@ -20,6 +20,9 @@ public class MessageVO implements Serializable {
     /** 发送人ID */
     private Long fromUserId;
 
+    /** 发送人昵称（v0.14：实时推送时前端用于弹出"新私信来自 xxx"提醒） */
+    private String fromNickname;
+
     /** 接收人ID */
     private Long toUserId;
 
