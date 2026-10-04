@@ -176,14 +176,14 @@ cd D:\campus-secondhand-trade\frontend &&  pnpm dev
 
 :: 2) 第一部分（浏览器 E2E：主业务闭环 + 页面越权 + 异常场景），需先安装 playwright
 pip install playwright            :: 复用系统 Edge，无需下载浏览器内核
-python docs\e2e-browser-test.py    :: 结果与截图输出到 docs/test-evidence/
+python tests/e2e/e2e-browser-test.py    :: 结果与截图输出到 docs/test-evidence/
 
 :: 3) 第二、三部分（接口功能 + 越权专项 + 模块检查）
-python docs\test-suite-v0.10.py    :: 127 条：冒烟 14 + 功能 86 + 越权 27
-python docs\api-extra-test.py      :: 17 条：各模块数据层补充校验
+python tests/api/test-suite-v0.10.py    :: 127 条：冒烟 14 + 功能 86 + 越权 27
+python tests/api/api-extra-test.py      :: 17 条：各模块数据层补充校验
 
 :: 4) 重新生成文档
-python docs\gen-test-doc.py
+python tools/gen-test-doc.py
 ```
 
 浏览器手工验证要点（若需人工复核）：

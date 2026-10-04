@@ -7,7 +7,7 @@
   第四部分 异常场景（浏览器侧）
 
 运行前提：MySQL 3306 + 后端 8080 + 前端 5173 均已启动
-执行：python docs/e2e-browser-test.py
+执行：python tests/e2e/e2e-browser-test.py
 产物：docs/test-evidence/*.png（截图证据）、%TEMP%/dsh-sqlval/e2e_result.json
 """
 import json
@@ -24,7 +24,7 @@ from playwright.sync_api import sync_playwright
 # 入口可用环境变量覆盖（E2E_BASE / API_BASE），便于验证 Nginx 部署形态
 BASE = os.environ.get('E2E_BASE', 'http://127.0.0.1:5173')
 API = os.environ.get('API_BASE', 'http://127.0.0.1:8080/api')
-MYSQL = r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe'
+MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
 EV = pathlib.Path(r'D:\campus-secondhand-trade\docs\test-evidence')
 EV.mkdir(parents=True, exist_ok=True)
 TMP = pathlib.Path(os.environ.get('TEMP', '.')) / 'dsh-sqlval'

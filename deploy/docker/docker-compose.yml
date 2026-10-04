@@ -42,9 +42,9 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       # 首次初始化自动导入（按文件名顺序执行）
-      - ../../db_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      - ../../db_v011_recommend.sql:/docker-entrypoint-initdb.d/02-recommend.sql:ro
-      - ../../db_v013_admin.sql:/docker-entrypoint-initdb.d/03-admin.sql:ro
+      - ../../db/schema/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ../../db/schema/02-recommend.sql:/docker-entrypoint-initdb.d/02-recommend.sql:ro
+      - ../../db/schema/03-admin.sql:/docker-entrypoint-initdb.d/03-admin.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
       interval: 10s

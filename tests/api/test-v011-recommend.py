@@ -6,7 +6,7 @@
   · 算法层：排除规则、冷启动、多样性、排序、可解释性
   · 数据层：行为埋点（浏览/收藏/下单）、埋点幂等、行为权重
 
-执行：python docs/test-v011-recommend.py
+执行：python tests/api/test-v011-recommend.py
 前提：后端 8080 + MySQL 3306 已启动
 产物：%TEMP%/dsh-sqlval/v011_result.json
 """
@@ -21,7 +21,7 @@ import urllib.request
 import uuid
 
 API = 'http://127.0.0.1:8080/api'
-MYSQL = r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe'
+MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
 TMP = pathlib.Path(os.environ.get('TEMP', '.')) / 'dsh-sqlval'
 RESULTS = []
 

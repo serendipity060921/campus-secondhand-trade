@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """由三套测试结果 JSON 生成 v0.10 测试用例文档与测试报告
 
-用法：python docs/gen-test-doc.py
+用法：python tools/gen-test-doc.py
 依赖：%TEMP%/dsh-sqlval/ 下的 e2e_result.json、v010_result.json、api_extra_result.json
 """
 import json
@@ -9,7 +9,9 @@ import os
 import pathlib
 
 TMP = pathlib.Path(os.environ.get('TEMP', '.')) / 'dsh-sqlval'
-DOCS = pathlib.Path(r'D:\campus-secondhand-trade\docs')
+# 相对定位项目根目录，便于在其他机器/CI 上运行（v0.16 结构整理）
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+DOCS = ROOT / 'docs'
 
 e2e = json.loads((TMP / 'e2e_result.json').read_text(encoding='utf-8'))
 api = json.loads((TMP / 'v010_result.json').read_text(encoding='utf-8'))
@@ -176,7 +178,7 @@ w('')
 w('测试账号：管理员 `admin/123456`、学生 `stu_test01/abc12345`、演示账号 `stu_demo/123456`；'
   f"本轮自动化临时账号：账号A `{e2e['a_user']}`、账号B `{e2e['b_user']}`、第三方 `e2ec{e2e['tag']}`、补充用例卖家 `{extra['seller']}`。")
 w('')
-w('复现方式：`python docs/e2e-browser-test.py`、`python docs/test-suite-v0.10.py`、`python docs/api-extra-test.py`')
+w('复现方式：`python tests/e2e/e2e-browser-test.py`、`python tests/api/test-suite-v0.10.py`、`python tests/api/api-extra-test.py`')
 
 (DOCS / 'test-cases.md').write_text('\n'.join(L), encoding='utf-8')
 print('已生成 docs/test-cases.md：', len(L), '行')

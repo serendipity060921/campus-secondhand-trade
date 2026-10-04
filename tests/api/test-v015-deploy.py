@@ -9,8 +9,8 @@
   · 缓存与实时通信在部署形态下依然可用（回归关键能力）
 
 执行：
-  python docs/test-v015-deploy.py                       # 默认验证 http://127.0.0.1:8081
-  WEB_BASE=http://localhost python docs/test-v015-deploy.py
+  python tests/api/test-v015-deploy.py                       # 默认验证 http://127.0.0.1:8081
+  WEB_BASE=http://localhost python tests/api/test-v015-deploy.py
 """
 import json
 import os
@@ -28,7 +28,7 @@ import asyncio
 WEB = os.environ.get('WEB_BASE', 'http://127.0.0.1:8081').rstrip('/')
 BACKEND = os.environ.get('BACKEND_BASE', 'http://127.0.0.1:8080').rstrip('/')
 WS_URL = WEB.replace('http://', 'ws://').replace('https://', 'wss://') + '/ws/chat'
-MYSQL = r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe'
+MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
 RESULTS = []
 
 

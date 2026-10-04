@@ -10,8 +10,8 @@
   · 举报：用户提交（含不能举报自己、对象不存在）、管理端处理/忽略、重复处理拦截
   · 操作日志：审核/禁用/处理举报均留痕
 
-执行：python docs/test-v013-admin.py
-前提：后端 8080、MySQL 3306、Redis 6379 已启动，并已执行 db_v013_admin.sql
+执行：python tests/api/test-v013-admin.py
+前提：后端 8080、MySQL 3306、Redis 6379 已启动，并已执行 db/schema/03-admin.sql
 """
 import json
 import os
@@ -23,7 +23,7 @@ import urllib.request
 import uuid
 
 API = 'http://127.0.0.1:8080/api'
-MYSQL = r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe'
+MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
 TMP = pathlib.Path(os.environ.get('TEMP', '.')) / 'dsh-sqlval'
 RESULTS = []
 
@@ -144,7 +144,7 @@ print('\n【3】商品审核流程')
 
 pending_pid = int(one("SELECT id FROM product WHERE deleted=0 AND status=0 ORDER BY id LIMIT 1"))
 if not pending_pid:
-    print('  没有待审核商品，跳过审核用例（请先执行 db_v013_admin.sql）')
+    print('  没有待审核商品，跳过审核用例（请先执行 db/schema/03-admin.sql）')
 else:
     before_home = call('GET', '/product/list?page=1&size=100')
     in_home_before = any(p['id'] == pending_pid for p in before_home['data']['records'])

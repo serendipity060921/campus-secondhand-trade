@@ -9,7 +9,7 @@
   · 限流：@RateLimit 注解（固定窗口 + Lua 原子计数），本机默认跳过
   · 安全：退出登录后 Token 立即失效（Redis 黑名单）
 
-执行：python docs/test-v012-cache.py
+执行：python tests/api/test-v012-cache.py
 前提：后端 8080、MySQL 3306、Redis 6379 已启动
 """
 import json
@@ -23,8 +23,8 @@ import urllib.request
 import uuid
 
 API = 'http://127.0.0.1:8080/api'
-MYSQL = r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe'
-REDIS = r'D:\major\tool\redis\redis-cli.exe'
+MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
+REDIS = os.environ.get('REDIS_CLI', r'D:\major\tool\redis\redis-cli.exe')
 TMP = pathlib.Path(os.environ.get('TEMP', '.')) / 'dsh-sqlval'
 RESULTS = []
 

@@ -1,16 +1,19 @@
 # -*- coding: utf-8 -*-
 """由 information_schema 生成 docs/数据库说明.md（保证文档与真实库结构一致）
 
-用法：python docs/gen-db-doc.py
+用法：python tools/gen-db-doc.py
 依赖：mysql CLI 可执行；库 campus_trade 已建好
 """
+import os
 import json
 import pathlib
 import subprocess
 
-MYSQL = r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe'
-OUT = pathlib.Path(__file__).with_name('数据库说明.md')
-DUMP = pathlib.Path(__file__).with_name('schema-dump.json')
+MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
+# 脚本位于 tools/，生成物仍输出到 docs/（v0.16 结构整理后修正）
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+OUT = ROOT / 'docs' / '数据库说明.md'
+DUMP = pathlib.Path(__file__).with_name('schema-dump.json')   # dump 与脚本同目录
 
 
 def sql(query):
@@ -71,7 +74,7 @@ w('# 校园二手交易平台 · 数据库说明书')
 w('')
 w(f'> 数据库：`campus_trade`（MySQL 8.4.4）　|　共 **{len(ORDER)} 张表**、'
   f'**{len(columns)} 个字段**、**{len(fks)} 个外键**')
-w('> 本文档的字段表由 `information_schema` 自动导出（`python docs/gen-db-doc.py` 可重新生成），与数据库真实结构完全一致。')
+w('> 本文档的字段表由 `information_schema` 自动导出（`python tools/gen-db-doc.py` 可重新生成），与数据库真实结构完全一致。')
 w('')
 w('---')
 w('')
@@ -207,7 +210,7 @@ w('> 而"结构"回答的是"这个对象有哪些属性、每个属性什么类
 w('')
 w('---')
 w('')
-w('相关文档：[需求与设计](../spec.md) · [接口文档](./api.md) · [建表脚本](../db_schema.sql) · '
+w('相关文档：[需求与设计](../spec.md) · [接口文档](./api.md) · [建表脚本](../db/schema/01-schema.sql) · '
   '[推荐算法说明](./推荐算法说明.md) · [测试用例](./test-cases.md)')
 
 OUT.write_text('\n'.join(L), encoding='utf-8')

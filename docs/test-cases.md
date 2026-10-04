@@ -298,4 +298,4 @@
 
 测试账号：管理员 `admin/123456`、学生 `stu_test01/abc12345`、演示账号 `stu_demo/123456`；本轮自动化临时账号：账号A `e2ea2b177`、账号B `e2eb2b177`、第三方 `e2ec2b177`、补充用例卖家 `apx874ac`。
 
-复现方式：`python docs/e2e-browser-test.py`、`python docs/test-suite-v0.10.py`、`python docs/api-extra-test.py`
+复现方式：`python tests/e2e/e2e-browser-test.py`、`python tests/api/test-suite-v0.10.py`、`python tests/api/api-extra-test.py`

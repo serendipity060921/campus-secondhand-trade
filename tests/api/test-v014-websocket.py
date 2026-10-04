@@ -13,7 +13,7 @@
   · 离线消息：对方不在线时消息仍入库，登录后可查到（不丢消息）
   · 管理联动：禁用账号会立即断开其 WebSocket 连接
 
-执行：python docs/test-v014-websocket.py
+执行：python tests/api/test-v014-websocket.py
 前提：后端 8080、MySQL 3306、Redis 6379 已启动
 """
 import asyncio
@@ -30,8 +30,8 @@ import websockets
 
 API = 'http://127.0.0.1:8080/api'
 WS = 'ws://127.0.0.1:8080/ws/chat'
-MYSQL = r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe'
-REDIS = r'D:\major\tool\redis\redis-cli.exe'
+MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
+REDIS = os.environ.get('REDIS_CLI', r'D:\major\tool\redis\redis-cli.exe')
 TMP = pathlib.Path(os.environ.get('TEMP', '.')) / 'dsh-sqlval'
 RESULTS = []
 STU_ID, DEMO_ID, ADMIN_ID = 5, 7, 1

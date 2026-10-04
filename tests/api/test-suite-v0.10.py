@@ -20,7 +20,7 @@ import uuid
 
 BASE = 'http://127.0.0.1:8080/api'
 TMP = r'C:\Users\26859\AppData\Local\Temp\dsh-sqlval'
-MYSQL = r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe'
+MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
 JWT_SECRET = 'campus-secondhand-trade-jwt-secret-key-2026-graduation-project'
 
 

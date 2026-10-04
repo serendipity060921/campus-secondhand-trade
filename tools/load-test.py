@@ -16,6 +16,7 @@
 
 产物：tools/load-test-<label>.json
 """
+import os
 import argparse
 import http.client
 import json
@@ -25,7 +26,7 @@ import subprocess
 import threading
 import time
 
-MYSQL = r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe'
+MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
 OUT_DIR = pathlib.Path(__file__).parent
 
 SCENARIOS = [

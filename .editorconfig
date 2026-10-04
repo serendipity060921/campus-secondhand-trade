@@ -1,0 +1,41 @@
+# =============================================================================
+# EditorConfig：让不同编辑器/IDE 的缩进、编码、换行保持一致
+# （VS Code / IDEA 均原生支持，无需安装插件）
+# =============================================================================
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Java / SQL
+[*.java]
+indent_size = 4
+
+[*.sql]
+indent_size = 2
+
+# 前端（Vue / JS / JSON / CSS）
+[*.{js,vue,json,css,scss,html}]
+indent_size = 2
+
+# Markdown 允许行尾空格（用于强制换行），不做 trim
+[*.md]
+trim_trailing_whitespace = false
+
+# YAML
+[*.{yml,yaml}]
+indent_size = 2
+
+# Windows 脚本用 CRLF（与 .gitattributes 保持一致）
+[*.{bat,cmd,ps1}]
+end_of_line = crlf
+
+# 生成物与依赖目录不参与格式化
+[{dist,node_modules,target}/**]
+insert_final_newline = false

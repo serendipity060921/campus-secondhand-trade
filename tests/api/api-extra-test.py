@@ -6,7 +6,7 @@
   - 收藏：重复收藏不产生多条记录（数据库计数）、商品下架后收藏列表不展示
   - 私信：会话列表最新消息与未读数、聊天记录分页、已读标记
   - 用户：密码 BCrypt 密文、JWT 过期 401、非法 ID 不抛 500
-执行：python docs/api-extra-test.py
+执行：python tests/api/api-extra-test.py
 """
 import base64
 import hashlib
@@ -23,7 +23,7 @@ import urllib.request
 import uuid
 
 API = 'http://127.0.0.1:8080/api'
-MYSQL = r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe'
+MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
 TMP = pathlib.Path(os.environ.get('TEMP', '.')) / 'dsh-sqlval'
 JWT_SECRET = 'campus-secondhand-trade-jwt-secret-key-2026-graduation-project'
 RESULTS = []

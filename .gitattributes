@@ -1,0 +1,37 @@
+# =============================================================================
+# 换行符与文件类型规范（v0.16 结构整理时补上）
+#
+# 为什么需要它：项目在 Windows 上开发，若不做规范，git 会不断提示
+#   "LF will be replaced by CRLF the next time Git touches it"，
+# 不同机器/CI 上还可能因为换行符差异产生"整文件改动"的假 diff。
+# 这里的策略是：**仓库内一律存 LF**，只在检出的 Windows 专用脚本上保留 CRLF。
+# =============================================================================
+
+# 默认：文本文件自动识别，仓库内统一为 LF
+* text=auto eol=lf
+
+# Windows 专用脚本保留 CRLF（避免 cmd/PowerShell 解析问题）
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# 二进制文件禁止做换行转换
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.webp  binary
+*.bmp   binary
+*.ico   binary
+*.jar   binary
+*.zip   binary
+*.xlsx  binary
+*.woff  binary
+*.woff2 binary
+
+# 让 GitHub 的语言统计与文件识别更准确
+docs/**             linguist-documentation
+*.md                linguist-documentation
+*.sql               linguist-language=SQL
+tests/**            linguist-detectable=false
+tools/**            linguist-detectable=false
