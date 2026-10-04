@@ -45,6 +45,10 @@ public class HealthController {
     @Value("${spring.profiles.active:dev}")
     private String profile;
 
+    /** v0.15：是否开放数据库详情探针（生产建议 false） */
+    @Value("${app.health.detail-enabled:true}")
+    private boolean detailEnabled;
+
     /** 后端存活检查 */
     @GetMapping
     public Result<HealthVO> health() {
@@ -59,9 +63,18 @@ public class HealthController {
         return Result.success("后端服务运行正常", vo);
     }
 
-    /** 数据库连通性检查：执行真实 count 查询 */
+    /**
+     * 数据库连通性检查：执行真实 count 查询。
+     *
+     * <p>v0.15 生产化：该接口会暴露库表统计（用户数/商品数等），
+     * 因此增加开关 {@code app.health.detail-enabled}（生产默认 false），
+     * 关闭时返回 403，仅保留 {@code /api/health} 存活探针供负载均衡与容器健康检查使用。</p>
+     */
     @GetMapping("/db")
     public Result<Map<String, Object>> dbHealth() {
+        if (!detailEnabled) {
+            return Result.error(403, "生产环境已关闭数据库详情探针（app.health.detail-enabled=false）");
+        }
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("database", "campus_trade");
         data.put("driverCheck", "ok");

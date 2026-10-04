@@ -35,3 +35,10 @@ logs/
 *.log
 backend/src/main/resources/static/upload/
 backend/uploads/
+
+# ---------- 部署相关（v0.15）----------
+# 含密码与 JWT 密钥的环境变量文件：绝对不能提交
+deploy/docker/.env
+deploy/windows/env.ps1
+deploy/windows/logs/
+deploy/windows/uploads/

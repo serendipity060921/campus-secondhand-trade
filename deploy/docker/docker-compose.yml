@@ -1,0 +1,154 @@
+# =============================================================================
+# 校园二手交易平台 · 一键部署编排（v0.15）
+#
+# 启动：docker compose --env-file deploy/docker/.env -f deploy/docker/docker-compose.yml up -d
+# 查看：docker compose -f deploy/docker/docker-compose.yml ps
+# 日志：docker compose -f deploy/docker/docker-compose.yml logs -f backend
+# 停止：docker compose -f deploy/docker/docker-compose.yml down
+# 清库：docker compose -f deploy/docker/docker-compose.yml down -v   # ⚠️ 会删除数据卷
+#
+# 编排要点：
+#   ① MySQL / Redis 都配了 healthcheck，后端用 condition: service_healthy 等它们真就绪再启动，
+#      避免"数据库还在初始化，后端已连不上并退出"的经典问题；
+#   ② 数据库首次启动会自动执行 initdb 里的 3 个 SQL（建表 + 推荐表 + 举报/日志表），
+#      无需手工导入；
+#   ③ 上传目录与日志目录挂到命名卷，容器重建不丢数据；
+#   ④ 前端 Nginx 同时承担静态资源与 /api、/ws 反代，只对外暴露一个端口。
+# =============================================================================
+
+name: campus-trade
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # 数据库
+  # ---------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.4
+    container_name: campus-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?必须在 .env 中设置 MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DB:-campus_trade}
+      MYSQL_USER: ${MYSQL_USER:-campus}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?必须在 .env 中设置 MYSQL_PASSWORD}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+      - --lower_case_table_names=1
+      - --max_connections=300
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # 首次初始化自动导入（按文件名顺序执行）
+      - ../../db_schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ../../db_v011_recommend.sql:/docker-entrypoint-initdb.d/02-recommend.sql:ro
+      - ../../db_v013_admin.sql:/docker-entrypoint-initdb.d/03-admin.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
+    networks: [campus-net]
+
+  # ---------------------------------------------------------------------------
+  # 缓存 / 限流 / 在线状态
+  # ---------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: campus-redis
+    restart: unless-stopped
+    command:
+      - redis-server
+      - --appendonly
+      - "no"                                  # 纯缓存用途，允许重启丢数据
+      - --maxmemory
+      - 256mb
+      - --maxmemory-policy
+      - allkeys-lru
+    environment:
+      TZ: Asia/Shanghai
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks: [campus-net]
+
+  # ---------------------------------------------------------------------------
+  # 后端（Spring Boot）
+  # ---------------------------------------------------------------------------
+  backend:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/backend.Dockerfile
+    image: campus-trade-backend:v0.15
+    container_name: campus-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_DB: ${MYSQL_DB:-campus_trade}
+      MYSQL_USER: ${MYSQL_USER:-campus}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET:?必须在 .env 中设置 JWT_SECRET（≥32 字节）}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost}
+      AUDIT_ENABLED: ${AUDIT_ENABLED:-true}
+      CACHE_ENABLED: ${CACHE_ENABLED:-true}
+      HEALTH_DETAIL_ENABLED: ${HEALTH_DETAIL_ENABLED:-false}
+      UPLOAD_PATH: /app/uploads
+      LOG_PATH: /app/logs
+      TZ: Asia/Shanghai
+    volumes:
+      - upload-data:/app/uploads
+      - log-data:/app/logs
+    # 不对宿主机暴露 8080：外部统一经前端 Nginx 访问，减少攻击面
+    expose:
+      - "8080"
+    networks: [campus-net]
+
+  # ---------------------------------------------------------------------------
+  # 前端（Nginx：静态资源 + 反向代理 + WebSocket 升级）
+  # ---------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ../..
+      dockerfile: deploy/docker/frontend.Dockerfile
+    image: campus-trade-frontend:v0.15
+    container_name: campus-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${WEB_PORT:-80}:80"
+    environment:
+      TZ: Asia/Shanghai
+    networks: [campus-net]
+
+# -----------------------------------------------------------------------------
+# 数据卷：数据库数据、上传图片、应用日志
+# -----------------------------------------------------------------------------
+volumes:
+  mysql-data:
+    name: campus-mysql-data
+  upload-data:
+    name: campus-upload-data
+  log-data:
+    name: campus-log-data
+
+networks:
+  campus-net:
+    name: campus-net
+    driver: bridge

@@ -21,8 +21,9 @@ import uuid
 
 from playwright.sync_api import sync_playwright
 
-BASE = 'http://127.0.0.1:5173'
-API = 'http://127.0.0.1:8080/api'
+# 入口可用环境变量覆盖（E2E_BASE / API_BASE），便于验证 Nginx 部署形态
+BASE = os.environ.get('E2E_BASE', 'http://127.0.0.1:5173')
+API = os.environ.get('API_BASE', 'http://127.0.0.1:8080/api')
 MYSQL = r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe'
 EV = pathlib.Path(r'D:\campus-secondhand-trade\docs\test-evidence')
 EV.mkdir(parents=True, exist_ok=True)
@@ -200,7 +201,7 @@ with sync_playwright() as pw:
         shot(A, '1.1-A注册成功跳登录')
         db = one(f"SELECT COUNT(*) FROM `user` WHERE username='{A_USER}'")
         ok = '注册成功' in t and db == '1'
-        return ok, f"提示「{t}」；跳转 {A.url.split('5173')[1]}；数据库 user 表记录数={db}", '1.1-A注册成功跳登录', None
+        return ok, f"提示「{t}」；跳转 {A.url.replace(BASE, '')}；数据库 user 表记录数={db}", '1.1-A注册成功跳登录', None
     step('1.1', '一、主业务闭环', '账号A注册', f'username={A_USER}, password={A_PASS}', '注册成功并跳转登录页，数据库新增记录', s11)
 
     # ---- 1.2 账号A 登录 ----
@@ -210,7 +211,7 @@ with sync_playwright() as pw:
         nick = A.locator('.user-info, .header-right').first.inner_text() if A.locator('.header-right').count() else ''
         shot(A, '1.2-A登录后首页')
         ok = bool(tok) and '/home' in A.url
-        return ok, f"登录后 URL={A.url.split('5173')[1]}，Token 已写入 localStorage（{str(tok)[:18]}…），导航显示「{nick.strip()[:12]}」", '1.2-A登录后首页', None
+        return ok, f"登录后 URL={A.url.replace(BASE, '')}，Token 已写入 localStorage（{str(tok)[:18]}…），导航显示「{nick.strip()[:12]}」", '1.2-A登录后首页', None
     step('1.2', '一、主业务闭环', '账号A登录', f'{A_USER}/{A_PASS}', '登录成功，跳转首页，Token 生效', s12)
 
     # ---- 1.3 账号A 完善资料 + 上传头像 ----
@@ -282,7 +283,7 @@ with sync_playwright() as pw:
         login(B, B_USER, B_PASS)
         shot(B, '1.5-B登录后首页')
         ok = '注册成功' in t and '/home' in B.url
-        return ok, f"B 注册提示「{t}」，登录后 URL={B.url.split('5173')[1]}", '1.5-B登录后首页', None
+        return ok, f"B 注册提示「{t}」，登录后 URL={B.url.replace(BASE, '')}", '1.5-B登录后首页', None
     step('1.5', '一、主业务闭环', '账号B注册并登录', f'{B_USER}/{B_PASS}', 'B 注册登录成功，与 A 会话完全隔离', s15a)
 
     def s15b():
@@ -297,7 +298,7 @@ with sync_playwright() as pw:
         shot(B, '1.5b-B打开商品详情')
         ok = PRODUCT_TITLE in body and '88.50' in body.replace('￥', '').replace('88.5', '88.50')
         return (ok,
-                f"首页商品卡片 {n} 个；详情页 URL={B.url.split('5173')[1]}，标题与价格（88.5）"
+                f"首页商品卡片 {n} 个；详情页 URL={B.url.replace(BASE, '')}，标题与价格（88.5）"
                 f"{'正常展示' if PRODUCT_TITLE in body else '未展示'}",
                 '1.5b-B打开商品详情', None)
     step('1.5b', '一、主业务闭环', '账号B浏览首页并打开A的商品详情',
@@ -356,7 +357,7 @@ with sync_playwright() as pw:
         shot(B, '1.7a-B私聊卖家')
         cnt = one(f"SELECT COUNT(*) FROM message WHERE product_id={PID} AND content LIKE '%E2E 测试消息%'")
         ok = ('E2E 测试消息' in body) or cnt == '1'
-        return ok, f"进入聊天页 {B.url.split('5173')[1]}，发送提示「{t}」；数据库消息数={cnt}", '1.7a-B私聊卖家', None
+        return ok, f"进入聊天页 {B.url.replace(BASE, '')}，发送提示「{t}」；数据库消息数={cnt}", '1.7a-B私聊卖家', None
     step('1.7a', '一、主业务闭环', '账号B在商品详情私聊卖家并发送消息',
          '点击【私聊卖家】→ 输入消息 → 发送', '跳转聊天页，消息发送成功并保存到数据库', s17a)
 

@@ -288,8 +288,8 @@ curl http://localhost:8080/api/health/db     # 直连后端（含 MySQL 查询�
 | **v0.11** | **个性化推荐模块** | 用户行为埋点表、Item-CF + 内容召回 + 热门三路融合、猜你喜欢/相似商品接口、离线评测实验（6 种策略对比）、首页与详情页推荐位（详见第十八节） |
 | **v0.12** | **Redis 缓存与限流** | 商品列表/详情/分类/推荐缓存、穿透·雪崩·击穿防护、浏览量 Redis 去重与批量回写、行为热门榜（ZSet）、注解式限流（Lua）、JWT 登出黑名单、**压测：QPS 提升约 10 倍、数据库负载下降 99.9%**（详见第十九节） |
 | **v0.13** | **管理后台与数据看板** | 后台布局与路由守卫、ECharts 数据看板（概览/7 天趋势/分类与状态分布）、商品审核（通过·驳回）、强制下架、用户启用禁用、举报提交与处理、管理员操作日志（详见第二十节） |
-| v0.14（计划） | WebSocket 实时私信 | 替换 5 秒轮询、在线状态、心跳与断线重连 |
-| v0.15（计划） | 部署与交付 | Nginx 反向代理、Docker Compose 一键启动、前端打包部署说明 |
+| **v0.14** | **WebSocket 实时私信** | 替换 5 秒轮询：握手鉴权、心跳保活、指数退避重连、已读回执、在线状态（Redis ZSet）、多端在线、离线消息不丢、WS 通道限流、REST 兜底（详见第二十一节） |
+| **v0.15** | **部署与交付** | 生产配置分离（环境变量注入/日志滚动/限流收紧/健康探针关闭）、Nginx 反向代理（SPA 回退 + `/api` 反代 + **`/ws` 协议升级**）、Docker Compose 一键编排、Windows 原生一键启停脚本、部署验证用例 **28/28**、E2E **31/31 经 Nginx 通过**（详见第二十二节） |
 
 ---
 
@@ -1477,3 +1477,177 @@ curl -X PUT $BASE/category/update -H "Authorization: Bearer $ADM" -H "Content-Ty
 | --- | --- | --- | --- |
 | 1 | 提交举报返回 500 | 未处理举报的 `handle_admin_id` 为 null，而 VO 转换用了 `Map.of()` 创建的**不可变 Map** —— 它对 null 查询直接抛 NPE | 改用 `HashMap` 并判空（NPE 消失，用例 F3~F6 通过） |
 | 2 | 测试清理误删演示账号数据 | 清理模式 `username LIKE 'ad%'` 同时匹配了演示账号 `admin`，删用户因外键回滚、删收藏/私信/行为却执行成功 | 改为精确正则 `^ad[0-9a-f]{5}$`，重建被误删数据并重算收藏计数 |
+
+---
+
+## 二十一、v0.14 WebSocket 实时私信
+
+> 详细设计（握手鉴权、消息协议、可靠性设计、在线状态、问题复盘）见
+> **[docs/实时通信说明.md](docs/实时通信说明.md)**（论文"实时通信"章节素材）。
+
+### 21.1 为什么改：轮询 → 推送
+
+| 指标 | v0.07 轮询（5 秒） | v0.14 WebSocket |
+| --- | --- | --- |
+| 消息到达延迟 | 0 ~ 5 秒 | 通常 **< 100 毫秒** |
+| 空闲请求量 | 每客户端 12 次/分钟 | 2.4 次/分钟（心跳，25 秒一次） |
+| 传输内容 | 每次拉整页历史 | 只推新增的那一条 |
+| 实时能力 | 无 | 已读回执、在线状态、未读角标、弹窗提醒 |
+
+### 21.2 连接与协议
+
+```
+ws://localhost:8080/ws/chat?token=<JWT>
+  握手阶段：校验签名/有效期 → 查 Redis 黑名单（登出） → 查账号是否被禁用
+           任一项不通过 → 401 / 403（不建立连接）
+  连接成功 → 下发 welcome{userId, unreadTotal} → 通知会话对象"我上线了"
+```
+
+| 方向 | type | 说明 |
+| --- | --- | --- |
+| C→S | `chat` | `{toUserId, content, productId?}` 发送私信 |
+| C→S | `read` | `{peerId}` 或 `{messageIds}` 标记已读 |
+| C→S | `ping` / `queryOnline` | 心跳 / 批量查在线状态 |
+| S→C | `welcome` / `chat` / `read` / `online` / `pong` / `error` | 未读总数、新私信、已读回执、在线变化、心跳响应、业务错误 |
+
+**业务规则只有一份**：WS 的 `chat`/`read` 直接调用 v0.07 的 `MessageModuleService`，
+所以"不能给自己发(5001)""接收人不存在(5002)""只能标记自己收到的消息已读"等校验在两条通道上完全一致；
+WS 不走拦截器，因此在 handler 内用同一套 Redis 计数器补上"30 条/分钟"限流，防止绕过接口刷消息。
+
+### 21.3 可靠性设计
+
+| 场景 | 处理 |
+| --- | --- |
+| 消息丢失 | 推送不替代落库：先入库再推送，推送失败只记 warn；对方离线时消息仍在库里，登录后拉历史可见 |
+| 断线 | 前端指数退避重连（1s→2s→…→30s），重连后重新下发 welcome 校准未读；401 不重连 |
+| 连接假死 | 25 秒心跳写入 Redis（score=时间戳），超过 90 秒无心跳即判离线 |
+| 通道不可用 | 聊天页降级为 15 秒轮询（连接正常时该逻辑直接返回，不产生请求）；发送失败自动改走 REST |
+| 多端在线 | `userId → 全部连接` 注册表；多标签页都收消息，全部关闭才算离线 |
+| 账号被禁用 | 管理端禁用时立即断开其实时连接 |
+| 并发写连接 | `WebSocketSession` 非线程安全，推送时加锁串行化 |
+| 异常 | 业务异常转 `error` 帧，畸形 JSON 也只回 error，连接保持存活 |
+
+### 21.4 在线状态（Redis ZSet）
+
+- `campus:online:zset`：member = userId，score = 最近心跳秒级时间戳；
+- 用 `ZRANGEBYSCORE` 取在线窗口内成员（**不用 `ZMSCORE`，它在 Redis 6.2 才引入**，本项目 Redis 5.0 不支持）；
+- 在线人数 = 先 `ZREMRANGEBYSCORE` 清过期成员再 `ZCARD` → 管理后台"当前在线人数"卡片；
+- 内存会话表仍是单实例内的权威答案，Redis 负责跨实例共享与统计。
+
+### 21.5 新增/改动清单
+
+| 类型 | 内容 |
+| --- | --- |
+| 依赖 | 后端 `spring-boot-starter-websocket`；前端无新依赖（原生 WebSocket API）；测试用 Python `websockets` |
+| 后端新增 | `config/WebSocketConfig`、`websocket/{ChatWebSocketHandler,ChatHandshakeInterceptor,ChatSessionRegistry,WsEnvelope,WsInboundMessage}`、`service/{OnlineStatusService,ChatPushService}` |
+| 后端改动 | `MessageModuleServiceImpl`（发送/已读后调用推送、未读总数、带上发送人昵称）、`MessageController`（+未读总数、在线状态 2 个接口）、`AdminServiceImpl`（禁用账号踢下线 + 看板在线人数）、`DashboardVO`（+onlineCount） |
+| 前端新增 | `utils/websocket.js`（单例连接/心跳/退避重连/事件订阅）、`store/chat.js`（实时状态）、`views/message/*` 与 `layout/FrontLayout.vue` 接入 |
+| 前端改动 | `Chat.vue`（推送替代轮询、已读回执、在线徽标、REST 兜底）、`ConversationList.vue`（在线状态、实时刷新）、`FrontLayout.vue`（未读角标 + 新消息提醒 + 登出断开）、`vite.config.js`（`/ws` 代理，`ws: true`） |
+| 接口 | 新增 2 个 REST（`/message/unreadTotal`、`/message/online`）+ 1 个 WebSocket 端点，总接口数 **53** |
+| 测试 | [docs/test-v014-websocket.py](docs/test-v014-websocket.py)（**24 条全部通过**）、[docs/e2e-v014-websocket.py](docs/e2e-v014-websocket.py)（双浏览器实时验证，5 张截图） |
+| 文档 | [docs/实时通信说明.md](docs/实时通信说明.md) |
+
+### 21.6 兼容性与回归
+
+| 项 | 说明 |
+| --- | --- |
+| 既有接口 | v0.07 的 5 个私信接口签名与行为不变（WebSocket 只是新增通道，REST 仍可使用） |
+| 数据库 | **无表结构变更**（复用 message 表；在线状态放 Redis） |
+| 前端 | 聊天页/会话列表/顶栏改造，其余页面不变 |
+| 回归 | v0.14（24 条）+ v0.13（31 条）+ v0.12（19 条）+ v0.11（21 条）+ v0.10（127+17 条）**全部通过** |
+
+### 21.7 开发中修复的问题
+
+| # | 问题 | 原因 | 修复 |
+| --- | --- | --- | --- |
+| 1 | WS 批量查在线状态全部返回"离线"，REST 单查却是在线 | `ZMSCORE` 是 **Redis 6.2** 命令，本项目 Redis 5.0.14.1 报 `unknown command`，异常被兜底 catch 吞掉变成"静默错误结果" | 改用 `ZRANGEBYSCORE`（Redis 1.0 起支持）取在线成员再求交集；并给 catch 补 `log.warn` |
+| 2 | "登出后 Token 失效"用例把主账号 Token 一起拉黑 | JWT 的 `iat/exp` 只到**秒**，同一秒内为同一用户签发的 Token **完全相同** | 黑名单用例改用独立临时账号（代码注释说明）；文档记录"需要多会话隔离时应引入 jti" |
+
+---
+
+## 二十二、v0.15 部署与交付
+
+> 完整部署手册（架构图、环境要求、两条部署路径、生产配置清单、运维手册、安全加固、4 个踩坑记录、未验证项声明）
+> 见 **[docs/部署说明.md](docs/部署说明.md)**（论文"部署与运维"章节素材）。
+
+### 22.1 交付内容
+
+| 路径 | 内容 | 验证状态 |
+| --- | --- | --- |
+| `deploy/windows/` | `nginx.conf` + `start.ps1` + `stop.ps1`（一键启停，含依赖检查与密钥自动生成） | ✅ **已真机验证** |
+| `deploy/docker/` | `docker-compose.yml` + 两个多阶段 `Dockerfile` + 容器版 `nginx.conf` + `.env.example` | ⚠️ 配置完成，**本机无管理员权限装不了 Docker，未真机验证**（已在文档声明） |
+| `backend/src/main/resources/application-prod.yml` | 生产配置：环境变量注入、日志滚动、限流收紧、健康探针关闭 | ✅ 已真机验证 |
+| `docs/test-v015-deploy.py` | 部署验证用例 28 条 | ✅ **28/28 通过** |
+
+### 22.2 部署架构
+
+```
+浏览器 ──► Nginx（80 / 本机 8081）
+              ├── /            → Vue 打包产物（SPA history 回退）
+              ├── /api/        → 反向代理 → Spring Boot:8080
+              ├── /ws/         → 反向代理 + WebSocket 协议升级
+              └── /health      → 运维探活
+                                   Spring Boot:8080 ──► MySQL:3306
+                                                    └──► Redis:6379
+```
+
+### 22.3 一键部署（Windows 原生，已实测）
+
+```powershell
+# 启动：检查依赖 → 首次自动生成 JWT 密钥 → 起 jar(prod) → 起 Nginx
+powershell -ExecutionPolicy Bypass -File deploy\windows\start.ps1
+# 停止
+powershell -ExecutionPolicy Bypass -File deploy\windows\stop.ps1
+```
+
+Docker 路径（需在有 Docker 的机器上执行）：
+
+```bash
+cd deploy/docker && cp .env.example .env   # 改密码与 JWT_SECRET
+docker compose --env-file .env up -d --build
+```
+
+### 22.4 实测结果（真实数据）
+
+| 验证项 | 结果 |
+| --- | --- |
+| 一键启动脚本 | ✅ 依赖检查 → 生成密钥 → 后端就绪（约 11 秒）→ Nginx 就绪 |
+| 运行环境 | `profile=prod`、`version=v0.15`、JDK 17.0.2 |
+| **部署验证用例 28 条** | ✅ **28/28 通过**（SPA 回退、`/api` 反代、`/health`、`/upload`、**WebSocket 升级**、生产配置生效、缓存/在线状态、数据与日志文件、核心业务闭环） |
+| **端到端测试 31 条（经 Nginx）** | ✅ **31/31 通过**（含主业务闭环、越权、并发抢购、异常场景，38 张截图） |
+| 实时私信（双浏览器经 Nginx） | ✅ A 发消息 B 不刷新即可见、在线状态、已读回执、未读角标、刷新重连，**0 个 JS 错误** |
+| 管理后台（经 Nginx） | ✅ 看板 4 张图表、审核通过后前台立即可见 |
+| 业务 API 回归（生产配置） | 236/239 —— 3 条失败均为**生产限流**所致（1 条断言的是开发配置的"本机免限流"，2 条因注册限流导致测试账号建不出来），属预期 |
+| 生产加固实测 | `/api/health/db` → **403**；本机连续登录 22 次 → **20 成功 + 2 限流**（证明限流不再跳过本机） |
+| 日志与上传 | ✅ 日志写文件（滚动 50MB/保留 30 天）；上传目录独立可挂载 |
+
+### 22.5 生产加固清单
+
+| 项 | 加固前 | 加固后 |
+| --- | --- | --- |
+| 数据库详情探针 | 公开返回库表统计 | `HEALTH_DETAIL_ENABLED=false` → 403 |
+| 限流跳过本机 | 开发 `true` | 生产强制 `false`（本机同样受限） |
+| JWT 密钥 | 配置写死 | 环境变量注入，缺失即启动失败 |
+| 日志 | 仅控制台 | 文件 + 滚动 + 保留 30 天 + 关闭 SQL 明细 |
+| 后端端口 | 对外暴露 8080 | 容器只 `expose`，对外仅 Nginx |
+| 容器权限 | root | 非 root 用户运行 |
+| 静态缓存 | 无 | hash 资源 30 天缓存；`index.html` 强制不缓存（防发版白屏） |
+| 密钥文件 | — | `.env` / `env.ps1` 进 `.gitignore` |
+
+### 22.6 部署踩坑记录（都已修掉并写进文档）
+
+| # | 坑 | 原因 | 修复 |
+| --- | --- | --- | --- |
+| 1 | `/health` 经 Nginx 返回 **Tomcat 400** | `upstream` 配了 `keepalive`，但该 location 缺 `proxy_http_version 1.1` + `Connection ""`，连接复用被后端判为非法请求 | 代理头统一提到 **server 级**下发，仅 `/ws/` 覆盖 `Connection: upgrade` |
+| 2 | Nginx 起不来（`bind() failed 10013`） | 本机 **80 端口被 Steam++（Watt Toolkit）占用** | 本机改用 8081（一行 `listen`），生产用 80；文档记录排查命令 |
+| 3 | `start.ps1` 在 Windows PowerShell 5.1 报"缺少 }" | 脚本是无 BOM 的 UTF-8，PS 5.1 按 ANSI 解码中文注释导致语法错乱 | 脚本改存 **UTF-8 with BOM**，并加解析器语法校验 |
+| 4 | E2E 经 8081 跑时 5 条报 `IndexError` | 脚本硬编码 `A.url.split('5173')[1]` 截取路径，端口一变就崩 | 改为 `A.url.replace(BASE, '')`，并支持 `E2E_BASE`/`API_BASE` 环境变量 → 换端口后 **31/31 通过** |
+
+### 22.7 未验证项（如实声明）
+
+| 项 | 状态 | 说明 |
+| --- | --- | --- |
+| Docker Compose 真机运行 | ❌ | 本机无管理员权限，装不了 WSL2/Docker Desktop；配置按生产规范编写，建议在服务器上 `docker compose up -d --build` 验证 |
+| HTTPS / 域名 / 证书 | ❌ | 生产需 `certbot` + 443 server 块 + `wss://` |
+| 多实例负载均衡 | ❌ | WebSocket 会话表在单实例内存中，多实例需 Redis Pub/Sub 转发 |
+| 监控告警 / CI-CD | ❌ | 可接入 Prometheus + Grafana；CI 可自动跑测试套件并构建镜像 |

@@ -8,12 +8,14 @@
   4. 回前台首页 → 审核通过的商品已出现在列表中（业务闭环）
   5. 举报处理 / 用户管理页面截图
 """
+import os
 import pathlib
 import re
 
 from playwright.sync_api import sync_playwright
 
-BASE = 'http://127.0.0.1:5173'
+# 入口可用环境变量覆盖：E2E_BASE=http://127.0.0.1:8081 即可验证 Nginx 部署形态
+BASE = os.environ.get('E2E_BASE', 'http://127.0.0.1:5173')
 EV = pathlib.Path(r'D:\campus-secondhand-trade\docs\test-evidence')
 EV.mkdir(parents=True, exist_ok=True)
 shots = []

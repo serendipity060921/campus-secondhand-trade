@@ -1,28 +1,134 @@
 # =============================================================================
-# 生产环境配置（prod）—— 脚手架阶段仅提供模板，部署时按实际环境修改
+# 生产环境配置（prod）—— v0.15 部署与交付
+#
+# 设计原则：**所有环境相关的值都从环境变量注入，配置文件里不出现任何真实密码与密钥**。
+#   · 有默认值的：端口、地址类（便于本地验证）
+#   · 无默认值、必须注入的：数据库密码、JWT 密钥（缺失即启动失败，属于"快速失败"设计，
+#     避免出现"用脚手架默认密钥上线"这种典型事故）
+#
+# 启动方式（详见 docs/部署说明.md）：
+#   java -jar campus-trade-backend-0.0.3.jar --spring.profiles.active=prod
+#   或在 docker-compose 中通过 environment 注入
 # =============================================================================
+
+server:
+  port: ${SERVER_PORT:8080}
+  tomcat:
+    # 生产线程池：比开发环境更大，避免高并发下请求排队
+    threads:
+      max: 200
+      min-spare: 20
+    max-connections: 8192
+    accept-count: 200
+    # 反向代理（Nginx）之后要取真实客户端 IP，否则限流会把所有用户当成同一个 IP
+    remoteip:
+      remote-ip-header: X-Forwarded-For
+      protocol-header: X-Forwarded-Proto
+
 spring:
+  # ---------------------------------------------------------------------------
+  # 数据源：应用账号使用独立的 campus 账号（最小权限），密码必须注入
+  # ---------------------------------------------------------------------------
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DB:campus_trade}?useUnicode=true&characterEncoding=utf8&useSSL=true&serverTimezone=Asia/Shanghai
-    username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:请改成真实密码}
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/${MYSQL_DB:campus_trade}?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true
+    username: ${MYSQL_USER:campus}
+    password: ${MYSQL_PASSWORD}
     hikari:
       minimum-idle: 10
       maximum-pool-size: 50
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-timeout: 10000
+      connection-test-query: SELECT 1
+      pool-name: CampusTradeHikariPool
 
+  # ---------------------------------------------------------------------------
+  # Redis：密码可选（内网可无密码，公网必须设置）
+  # ---------------------------------------------------------------------------
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DB:0}
+      timeout: 3000ms
+      connect-timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 32
+          max-idle: 16
+          min-idle: 4
+          max-wait: 2000ms
+        shutdown-timeout: 200ms
+
+# 生产不做请求体日志（可能记录敏感数据）
+  mvc:
+    log-request-details: false
+
+# 生产关闭 MyBatis 的 SQL 明细打印（信息量大且可能泄露数据）
 mybatis-plus:
   configuration:
-    # 生产环境关闭 SQL 打印
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
 
+# =============================================================================
+# 应用配置
+# =============================================================================
+app:
+  version: v0.15
+  jwt:
+    # 生产必须注入（长度 ≥ 32 字节，否则启动直接失败）
+    secret: ${JWT_SECRET}
+    expire-seconds: ${JWT_EXPIRE_SECONDS:7200}
+  cors:
+    # 生产只允许正式域名；多个来源用逗号分隔
+    allowed-origins: ${CORS_ORIGINS:http://localhost}
+  upload:
+    # 上传目录：容器部署时挂载数据卷（否则容器重建后图片丢失）
+    path: ${UPLOAD_PATH:./uploads}
+    url-prefix: /upload
+    max-size: 5242880
+    max-count: 9
+  health:
+    # 生产关闭数据库详情探针，只保留 /api/health 存活检查
+    detail-enabled: ${HEALTH_DETAIL_ENABLED:false}
+
+# =============================================================================
+# 业务开关（生产值）
+# =============================================================================
+campus:
+  audit:
+    # 生产建议开启"先审后发"，避免违规内容直接上架
+    enabled: ${AUDIT_ENABLED:true}
+  cache:
+    enabled: ${CACHE_ENABLED:true}
+    # ★ 生产必须为 false：开发时跳过本机限流是为了方便压测，
+    #   线上若为 true，所有内网来源的请求都不会被限流（重要！）
+    rate-limit-skip-local: false
+
+# =============================================================================
+# 日志：输出到文件 + 按大小滚动 + 保留 30 天
+# =============================================================================
 logging:
+  file:
+    name: ${LOG_PATH:./logs}/campus-trade.log
+  logback:
+    rollingpolicy:
+      max-file-size: 50MB
+      max-history: 30
+      total-size-cap: 2GB
   level:
-    root: warn
+    root: info
     com.campus.trade: info
 
-app:
-  version: v0.03
-  cors:
-    allowed-origins:
-      - https://your-domain.com
+# =============================================================================
+# 健康检查端点（供容器/负载均衡探活使用）
+# =============================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
