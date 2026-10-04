@@ -11,6 +11,7 @@ import { ElMessage } from 'element-plus'
 import { loginUser } from '@/api/user'
 import { useUserStore } from '@/store/user'
 import { getHealth } from '@/api/common'
+import { APP_VERSION } from '@/utils/version'
 
 const route = useRoute()
 const router = useRouter()
@@ -83,7 +84,7 @@ async function checkBackend() {
       <template #header>
         <div class="card-header">
           <span class="title">校园二手交易平台</span>
-          <el-tag size="small" type="success" effect="plain">v0.04</el-tag>
+          <el-tag size="small" type="success" effect="plain">{{ APP_VERSION }}</el-tag>
         </div>
       </template>
 

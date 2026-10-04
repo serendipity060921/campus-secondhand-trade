@@ -116,6 +116,19 @@ if (-not (Test-Path $JarPath)) {
     Pop-Location
 }
 
+# jar 完整性检查：Spring Boot 可执行 jar 内嵌全部依赖，正常约 41 MB。
+# 若在后端运行中执行 repackage（Windows 会锁住 jar），会留下几百 KB 的"瘦包"，
+# 表现为进程启动后立刻退出、健康检查一直失败 —— 这里提前拦掉并给出明确提示。
+if (Test-Path $JarPath) {
+    $jarMB = [math]::Round((Get-Item $JarPath).Length / 1MB, 1)
+    if ($jarMB -lt 10) {
+        Write-Warn2 "jar 大小异常（$jarMB MB，正常约 41 MB）：可能是在后端运行中打包导致的残次品。"
+        Write-Warn2 "请先执行 stop.ps1 停止后端，再执行：cd backend; mvnw.cmd -DskipTests clean package"
+        exit 1
+    }
+    Write-Ok "jar 校验通过（$jarMB MB）"
+}
+
 if (Test-Port '127.0.0.1' 8080) {
     Write-Warn2 '8080 已被占用（可能是开发态后端），先停止它再运行本脚本'
 } else {

@@ -10,6 +10,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getHealth, getDbHealth, getCategories, getProducts } from '@/api/common'
+import { APP_VERSION, APP_VERSION_LABEL } from '@/utils/version'
 
 const loading = ref(false)
 const health = ref(null)
@@ -49,7 +50,8 @@ onMounted(loadAll)
         <div>
           <h2>欢迎使用校园二手交易平台</h2>
           <p class="text-muted">
-            当前版本 v0.03 · 里程碑：搭建前后端分离项目脚手架（暂无业务逻辑，仅验证链路连通）
+            当前版本 {{ APP_VERSION }} · {{ APP_VERSION_LABEL.replace(APP_VERSION + ' ', '') }}
+            ｜ 本页为脚手架阶段的连通性自检看板，业务功能请从「首页」进入
           </p>
         </div>
         <el-button type="primary" :loading="loading" @click="loadAll">重新检测连通性</el-button>

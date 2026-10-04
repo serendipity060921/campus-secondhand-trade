@@ -39,7 +39,7 @@ public class HealthController {
     @Value("${spring.application.name}")
     private String applicationName;
 
-    @Value("${app.version:v0.03}")
+    @Value("${app.version:v0.15}")
     private String version;
 
     @Value("${spring.profiles.active:dev}")

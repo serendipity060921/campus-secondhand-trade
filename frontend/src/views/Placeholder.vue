@@ -4,13 +4,14 @@
  * 后续里程碑用真实页面替换即可。
  */
 import { useRoute } from 'vue-router'
+import { APP_VERSION } from '@/utils/version'
 
 const route = useRoute()
 </script>
 
 <template>
   <el-card shadow="never">
-    <el-result icon="info" :title="`${route.meta.title || '该功能'}正在开发中`" sub-title="当前里程碑：v0.03 前后端分离脚手架">
+    <el-result icon="info" :title="`${route.meta.title || '该功能'}正在开发中`" :sub-title="`当前版本：${APP_VERSION}`">
       <template #extra>
         <el-button type="primary" @click="$router.push('/home')">返回首页</el-button>
       </template>

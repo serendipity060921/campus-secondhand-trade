@@ -9,6 +9,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { registerUser } from '@/api/user'
+import { APP_VERSION } from '@/utils/version'
 
 const router = useRouter()
 const formRef = ref()
@@ -80,7 +81,7 @@ async function handleRegister() {
       <template #header>
         <div class="card-header">
           <span class="title">注册新账号</span>
-          <el-tag size="small" type="success" effect="plain">v0.04</el-tag>
+          <el-tag size="small" type="success" effect="plain">{{ APP_VERSION }}</el-tag>
         </div>
       </template>
 

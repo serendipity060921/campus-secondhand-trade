@@ -10,6 +10,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
 import { useChatStore } from '@/store/chat'
+import { APP_VERSION, APP_VERSION_LABEL } from '@/utils/version'
 
 const route = useRoute()
 const router = useRouter()
@@ -75,7 +76,7 @@ async function handleLogout() {
         <div class="logo" @click="router.push('/home')">
           <span class="logo-icon">♻</span>
           <span class="logo-text">校园二手交易平台</span>
-          <el-tag size="small" type="success" effect="plain">v0.14 实时私信</el-tag>
+          <el-tag size="small" type="success" effect="plain">{{ APP_VERSION }}</el-tag>
         </div>
 
         <el-menu :default-active="activeMenu" mode="horizontal" class="nav-menu" router :ellipsis="false">
@@ -149,7 +150,7 @@ async function handleLogout() {
     <!-- 页脚 -->
     <el-footer class="layout-footer">
       <div class="page-container">
-        <p>校园二手交易平台 · 毕业设计项目 · 版本 v0.14（WebSocket 实时私信）</p>
+        <p>校园二手交易平台 · 毕业设计项目 · 版本 {{ APP_VERSION }}（{{ APP_VERSION_LABEL.replace(APP_VERSION + ' ', '') }}）</p>
         <p class="text-muted">
           技术栈：Spring Boot 3 + MyBatis-Plus + MySQL 8 + Redis + WebSocket + Vue 3 + Vite + Element Plus ·
           <el-link type="info" :underline="false" @click="router.push('/dev/health')">连通性自检</el-link>
