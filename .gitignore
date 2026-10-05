@@ -51,3 +51,4 @@ deploy/windows/uploads/
 
 # Impeccable 构建产物：plate 派生自 frontend/public/demo-images/*.png（见 docs/ui-comps/README.md）
 assets/plates/
+__pycache__/
