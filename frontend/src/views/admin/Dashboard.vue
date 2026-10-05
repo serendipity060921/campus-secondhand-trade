@@ -75,14 +75,18 @@ function renderPie(el, title, data, colors) {
   initChart(el, {
     title: { text: title, left: 'center', top: 0, textStyle: { fontSize: 13, color: chartPalette.muted() } },
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    legend: { bottom: 0, type: 'scroll', textStyle: { fontSize: 11 } },
+    // 图例给出完整名称，标签只补"名称 + 数量"一行 —— 单行比双行更不易重叠；
+    // 图例项调小以在窄卡片里也能完整显示。
+    legend: { bottom: 0, type: 'scroll', textStyle: { fontSize: 11 }, itemWidth: 8, itemHeight: 8 },
     color: colors,
     series: [{
       type: 'pie',
-      radius: ['38%', '62%'],
-      center: ['50%', '48%'],
+      radius: ['28%', '48%'],
+      center: ['50%', '44%'],
       avoidLabelOverlap: true,
-      label: { fontSize: 11, formatter: '{b}\n{c}' },
+      minAngle: 3,                                   // 极小占比的扇区也保留可见角度，避免"信息只剩颜色"
+      label: { fontSize: 10, formatter: '{b} {c}' },
+      labelLine: { length: 4, length2: 4 },
       data: data.map((i) => ({ name: i.label, value: i.value }))
     }]
   })
@@ -245,29 +249,29 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .todo-alert {
-  margin-bottom: 14px;
+  margin-bottom: var(--ct-space-4);
 }
 
 .stat-card {
-  margin-bottom: 14px;
+  margin-bottom: var(--ct-space-4);
   text-align: center;
 }
 
 .stat-label {
-  font-size: 13px;
+  font-size: var(--ct-text-sm);
   color: var(--ct-text-muted);
 }
 
 .stat-value {
-  font-size: 26px;
+  font-size: var(--ct-text-2xl);
   font-weight: 700;
   color: var(--ct-text-primary);
-  margin: 6px 0 2px;
+  margin: var(--ct-space-1) 0 var(--ct-space-1);
 }
 
 .stat-value.price {
   color: var(--ct-price);
-  font-size: 22px;
+  font-size: var(--ct-text-xl);
 }
 
 .stat-value.warn {
@@ -292,11 +296,11 @@ onBeforeUnmount(() => {
 
 .chart {
   width: 100%;
-  height: 300px;
+  height: 340px;         /* 环形图标签与图例需要更多竖直空间，原先 300px 时标签易被省略 */
 }
 
 .chart-lg {
-  height: 330px;
+  height: 340px;
 }
 
 .text-muted {
