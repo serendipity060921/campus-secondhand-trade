@@ -11,6 +11,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyProducts, updateProductStatus } from '@/api/product'
 import { demoImage, formatPrice, PRODUCT_STATUS, resolveImageUrl } from '@/utils/product'
 import StateError from '@/components/states/StateError.vue'
+import SkeletonTable from '@/components/states/SkeletonTable.vue'
 
 const router = useRouter()
 
@@ -116,7 +117,10 @@ onMounted(load)
         retry-text="重新加载"
         @retry="load"
       />
-      <el-table v-else v-loading="loading" :data="products" border stripe>
+      <!-- v0.16：加载态改为表格骨架（与最终列宽对齐，避免表格出现时跳动） -->
+      <SkeletonTable v-if="loading" :rows="8" :columns="5" />
+
+      <el-table v-else :data="products" border stripe>
         <el-table-column label="图片" width="92">
           <template #default="{ row }">
             <img class="table-img" :src="imageOf(row)" alt="商品图片" />

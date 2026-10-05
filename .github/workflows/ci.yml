@@ -32,12 +32,13 @@ jobs:
       - name: 设计令牌纪律检查（组件层裸色值必须为 0）
         run: python tools/check-tokens.py --max-errors 0
 
-      # 棘轮二：状态完备性（空/加载/错误）+ 键盘可达性。
-      # 当前缺失 2 项（均在 comp 待定稿的首页商品列表与推荐面板上，随页面阶段一起做），
-      # 鼠标独占的点击元素 7 处（评审 P0-1：卡片用 <el-card @click> 而无 role/tabindex，
-      # 键盘用户无法打开商品）—— 两个阈值都只许下降，最终目标 0。
-      - name: 状态完备性与键盘可达性检查（阈值只许下降）
-        run: python tools/check-states.py --max-missing 2 --max-mouse-only 7
+      # 棘轮二：状态完备性 + 加载态升级 + 键盘可达性。
+      # 当前：缺失 2（均在 comp 待定稿界面上）、仍用转圈遮罩 10（骨架屏 6/21）、
+      # 鼠标独占点击元素 7（评审 P0-1，键盘用户打不开商品）。
+      # 三个数字都只许下降，最终目标 0。
+      # 验证方式：把任一阈值收紧一档，脚本必须非零退出（已实测 7/10/2 三个都拦得住）。
+      - name: 状态与可达性检查（阈值只许下降）
+        run: python tools/check-states.py --max-missing 2 --max-mouse-only 7 --max-spinner 10
 
       - name: 输出令牌纪律报告
         if: always()

@@ -14,6 +14,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getSearchCategories, searchProducts } from '@/api/search'
 import { demoImage, formatPrice, resolveImageUrl } from '@/utils/product'
 import StateError from '@/components/states/StateError.vue'
+import SkeletonList from '@/components/states/SkeletonList.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -212,8 +213,11 @@ onMounted(() => {
       retry-text="重新加载"
       @retry="loadProducts"
     />
-    <div v-else v-loading="loading" class="result-area">
-      <el-empty v-if="!loading && products.length === 0" description="没有找到符合条件的商品，换个关键词试试～">
+    <div v-else class="result-area">
+      <!-- v0.16：加载态改为版式对齐的骨架屏，避免结果出来时的布局跳动 -->
+      <SkeletonList v-if="loading" :count="8" :columns="4" />
+
+      <el-empty v-else-if="products.length === 0" description="没有找到符合条件的商品，换个关键词试试～">
         <el-button type="primary" @click="router.push('/home')">返回首页</el-button>
       </el-empty>
 

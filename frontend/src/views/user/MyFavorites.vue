@@ -11,6 +11,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyFavorites, operateFavorite } from '@/api/favorite'
 import { demoImage, formatPrice, resolveImageUrl } from '@/utils/product'
 import StateError from '@/components/states/StateError.vue'
+import SkeletonList from '@/components/states/SkeletonList.vue'
 
 const router = useRouter()
 
@@ -85,7 +86,7 @@ onMounted(load)
     retry-text="重新加载"
     @retry="load"
   />
-  <div v-else v-loading="loading">
+  <div v-else>
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
@@ -94,7 +95,10 @@ onMounted(load)
         </div>
       </template>
 
-      <el-empty v-if="!loading && favorites.length === 0" description="还没有收藏任何商品，去首页逛逛吧～">
+      <!-- v0.16：加载态由转圈遮罩改为版式对齐的骨架屏（媒体块 + 三行信息，与卡片同形） -->
+      <SkeletonList v-if="loading" :count="8" :columns="4" />
+
+      <el-empty v-else-if="favorites.length === 0" description="还没有收藏任何商品，去首页逛逛吧～">
         <el-button type="primary" @click="router.push('/home')">去逛商品</el-button>
       </el-empty>
 

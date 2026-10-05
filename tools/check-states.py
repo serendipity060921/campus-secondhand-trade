@@ -126,6 +126,8 @@ def main():
                     help='缺失项超过该值时非零退出（验收/CI 棘轮用）')
     ap.add_argument('--max-mouse-only', type=int, default=-1,
                     help='鼠标独占点击元素超过该值时非零退出（键盘可达性棘轮）')
+    ap.add_argument('--max-spinner', type=int, default=-1,
+                    help='仍用转圈遮罩的页面数超过该值时非零退出（加载态升级棘轮）')
     args = ap.parse_args()
 
     rows = []
@@ -198,6 +200,16 @@ def main():
 
     if args.max_missing >= 0 and missing_total > args.max_missing:
         print(f"\n  ✗ 缺失项 {missing_total} 超过阈值 {args.max_missing}")
+        sys.exit(1)
+
+    if args.max_mouse_only >= 0 and mouse_only > args.max_mouse_only:
+        print(f"\n  ✗ 鼠标独占点击元素 {mouse_only} 超过阈值 {args.max_mouse_only}")
+        print('     （键盘用户无法触发这些元素；应改为可聚焦元素 + Enter/Space 触发）')
+        sys.exit(1)
+
+    if args.max_spinner >= 0 and spinner_pages > args.max_spinner:
+        print(f"\n  ✗ 仍用转圈遮罩的页面 {spinner_pages} 超过阈值 {args.max_spinner}")
+        print('     （应改用 SkeletonList / SkeletonTable / SkeletonDetail 骨架屏）')
         sys.exit(1)
 
 
