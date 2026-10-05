@@ -167,5 +167,6 @@ CI（`.github/workflows/ci.yml`）以**棘轮阈值**强制执行 —— 阈值�
 | 一致性盘点工具 | `tools/ui-inventory.py` | 颜色/间距/字号/圆角去重、令牌用量、组件库依赖、样式债 |
 | 技术质量测量工具 | `tools/ui-audit.py` | 对比度、焦点、触控、溢出、DOM、特效 + 五维度评分 |
 | 令牌纪律检查 | `tools/check-tokens.py` | 组件层裸色值 = 错误；CI 棘轮强制执行 |
+| 对比表生成 | `tools/ui-report.py` | 汇总各档位测量结果，自动生成 [UI优化对比.md](UI优化对比.md)（论文表格，不手抄数字） |
 | 纯函数断言 | `tests/unit/catalogue.test.mjs` | 20 条断言，CI 可执行 |
 | 持续集成 | `.github/workflows/ci.yml` | 设计令牌纪律 + 前端构建 + 后端编译 |
