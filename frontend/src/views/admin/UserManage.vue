@@ -67,9 +67,12 @@ onMounted(load)
 
 <template>
   <div>
+    <!-- 页级标题：可见标题由 AdminLayout 顶栏承担（避免重复），这里供读屏使用 -->
+    <h1 class="sr-only">用户管理</h1>
     <el-card shadow="never" class="filter-card">
       <div class="filter-bar">
-        <el-input v-model="query.keyword" placeholder="用户名 / 昵称 / 学号 / 手机号" clearable
+        <el-input v-model="query.keyword" placeholder="用户名 / 昵称 / 学号 / 手机号"
+                    aria-label="搜索用户" clearable
                   class="keyword" @keyup.enter="handleSearch" />
         <el-select v-model="query.role" placeholder="全部角色" aria-label="按角色筛选" clearable class="role" @change="handleSearch">
           <el-option label="学生" :value="0" />

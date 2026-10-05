@@ -123,7 +123,7 @@ onMounted(load)
       <el-table v-else :data="products" border stripe>
         <el-table-column label="图片" width="92">
           <template #default="{ row }">
-            <img class="table-img" :src="imageOf(row)" alt="商品图片" />
+            <img class="table-img" :src="imageOf(row)" :alt="row.title || '商品图片'" />
           </template>
         </el-table-column>
 

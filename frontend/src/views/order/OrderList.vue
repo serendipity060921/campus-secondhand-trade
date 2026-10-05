@@ -163,7 +163,7 @@ onMounted(() => {
         <el-table-column label="商品" min-width="250">
           <template #default="{ row }">
             <div class="product-cell">
-              <img class="table-img" :src="imageOf(row)" alt="商品图片" />
+              <img class="table-img" :src="imageOf(row)" :alt="row.productTitle || '商品图片'" />
               <div class="product-info">
                 <el-link type="primary" :underline="false" @click="router.push(`/product/${row.productId}`)">
                   {{ row.productTitle }}

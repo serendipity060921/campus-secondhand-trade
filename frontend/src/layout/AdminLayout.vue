@@ -54,10 +54,13 @@ onMounted(loadPending)
 <template>
   <el-container class="admin-layout">
     <el-aside width="210px" class="aside">
-      <div class="logo" @click="router.push('/home')">
+      <!-- logo 用 router-link：此前是带 @click 的 div，键盘和读屏都用不了 -->
+      <router-link class="logo" to="/home" aria-label="回到前台首页">
         <span class="logo-icon">♻</span>
         <span class="logo-text">校园二手 · 管理后台</span>
-      </div>
+      </router-link>
+      <!-- 侧栏导航有 nav 地标：读屏可一键跳到导航区（前台顶栏同样处理） -->
+      <nav aria-label="后台导航">
       <el-menu :default-active="activeMenu" router class="menu" background-color="var(--ct-bg-surface)"
                text-color="var(--ct-text-muted)" active-text-color="var(--ct-text-primary)">
         <el-menu-item index="/admin/dashboard">
@@ -79,6 +82,7 @@ onMounted(loadPending)
           <el-badge v-if="pending.report" :value="pending.report" class="menu-badge" />
         </el-menu-item>
       </el-menu>
+      </nav>
     </el-aside>
 
     <el-container>

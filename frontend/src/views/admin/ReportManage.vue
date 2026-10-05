@@ -74,6 +74,8 @@ onMounted(load)
 
 <template>
   <div>
+    <!-- 页级标题：可见标题由 AdminLayout 顶栏承担（避免重复），这里供读屏使用 -->
+    <h1 class="sr-only">举报处理</h1>
     <el-card shadow="never" class="filter-card">
       <div class="filter-bar">
         <el-radio-group v-model="query.status" @change="handleSearch">

@@ -116,7 +116,8 @@ onMounted(load)
             @keydown.space.prevent="goDetail(item.productId)"
           >
             <div class="cover">
-              <img :src="imageOf(item)" alt="商品图片" @error="failedImages.add(item.productId)" />
+              <img :src="imageOf(item)" :alt="item.title || '商品图片'"
+                   @error="failedImages.add(item.productId)" />
             </div>
             <div class="info">
               <div class="title" :title="item.title">{{ item.title }}</div>

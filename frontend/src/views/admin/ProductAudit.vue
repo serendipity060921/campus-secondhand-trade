@@ -104,9 +104,12 @@ onMounted(load)
 
 <template>
   <div>
+    <!-- 页级标题：可见标题由 AdminLayout 顶栏承担（避免重复），这里供读屏使用 -->
+    <h1 class="sr-only">商品管理</h1>
     <el-card shadow="never" class="filter-card">
       <div class="filter-bar">
-        <el-input v-model="query.keyword" placeholder="搜索商品名称" clearable class="keyword"
+        <el-input v-model="query.keyword" placeholder="搜索商品名称" aria-label="搜索商品名称"
+                    clearable class="keyword"
                   @keyup.enter="handleSearch" />
         <el-select v-model="query.status" aria-label="按状态筛选" class="status" @change="handleSearch">
           <el-option v-for="item in STATUS_OPTIONS" :key="String(item.value)"

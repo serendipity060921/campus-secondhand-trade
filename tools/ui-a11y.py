@@ -25,9 +25,16 @@ PAGES = [
     ('home', '/home', 'student'),
     ('detail', '/product/6', 'student'),
     ('publish', '/product/publish', 'student'),
+    ('favorites', '/favorites', 'student'),
     ('messages', '/messages', 'student'),
     ('chat', '/chat/7', 'student'),
+    ('orders', '/orders/bought', 'student'),
+    # 后台四个页面全部纳入：此前只查了 dashboard，导致
+    # 商品管理/用户管理/举报处理三页缺页级 h1 一直没被发现（用户实测时才暴露）
     ('admin-dashboard', '/admin/dashboard', 'admin'),
+    ('admin-products', '/admin/products', 'admin'),
+    ('admin-users', '/admin/users', 'admin'),
+    ('admin-reports', '/admin/reports', 'admin'),
     ('login', '/login', None),
 ]
 
