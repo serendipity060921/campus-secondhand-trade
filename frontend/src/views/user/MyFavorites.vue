@@ -90,7 +90,7 @@ onMounted(load)
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <b>我的收藏</b>
+          <h1 class="card-title">我的收藏</h1>
           <span class="text-muted">共 {{ total }} 件（仅显示当前在售商品）</span>
         </div>
       </template>
@@ -243,5 +243,12 @@ onMounted(load)
   display: flex;
   justify-content: center;
   margin-top: 8px;
+}
+
+/* 卡片头里的页级主标题（原为 <b>，现为 h1）：保持与原先一致的视觉重量 */
+.card-title {
+  margin: 0;
+  font-size: var(--ct-text-md);
+  font-weight: var(--ct-weight-semibold);
 }
 </style>

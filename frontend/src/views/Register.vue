@@ -80,23 +80,23 @@ async function handleRegister() {
     <el-card class="register-card" shadow="always">
       <template #header>
         <div class="card-header">
-          <span class="title">注册新账号</span>
+          <h1 class="title">注册新账号</h1>
           <el-tag size="small" type="success" effect="plain">{{ APP_VERSION }}</el-tag>
         </div>
       </template>
 
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @keyup.enter="handleRegister">
         <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="4~20 位字母、数字或下划线" clearable />
+          <el-input v-model="form.username" placeholder="4~20 位字母、数字或下划线" aria-label="用户名" clearable />
         </el-form-item>
         <el-form-item label="昵称" prop="nickname">
-          <el-input v-model="form.nickname" placeholder="展示给其他同学的名字" clearable />
+          <el-input v-model="form.nickname" placeholder="展示给其他同学的名字" aria-label="昵称" clearable />
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" placeholder="6~20 位，需包含字母和数字" show-password />
+          <el-input v-model="form.password" type="password" placeholder="6~20 位，需包含字母和数字" aria-label="密码" show-password />
         </el-form-item>
         <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input v-model="form.confirmPassword" type="password" placeholder="请再次输入密码" show-password />
+          <el-input v-model="form.confirmPassword" type="password" placeholder="请再次输入密码" aria-label="确认密码" show-password />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" class="submit-btn" :loading="loading" @click="handleRegister">注 册</el-button>

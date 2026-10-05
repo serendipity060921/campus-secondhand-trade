@@ -108,7 +108,7 @@ onUnmounted(() => {
     <el-card v-else shadow="never">
       <template #header>
         <div class="card-header">
-          <b>我的消息</b>
+          <h1 class="card-title">我的消息</h1>
           <div class="header-right">
             <el-tag v-if="totalUnread > 0" type="danger" size="small" effect="dark">
               {{ totalUnread }} 条未读
@@ -259,5 +259,12 @@ onUnmounted(() => {
 .arrow {
   color: var(--ct-text-muted);
   font-size: 20px;
+}
+
+/* 卡片头里的页级主标题（原为 <b>，现为 h1）：保持与原先一致的视觉重量 */
+.card-title {
+  margin: 0;
+  font-size: var(--ct-text-md);
+  font-weight: var(--ct-weight-semibold);
 }
 </style>

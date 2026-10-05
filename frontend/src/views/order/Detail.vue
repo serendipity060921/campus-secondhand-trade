@@ -125,6 +125,8 @@ onMounted(load)
 </script>
 
 <template>
+  <!-- 页面主标题（订单详情） -->
+  <h1 class="sr-only">订单详情</h1>
   <StateError
     v-if="loadError && !loading"
     title="加载失败，请稍后重试"

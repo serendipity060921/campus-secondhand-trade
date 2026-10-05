@@ -128,7 +128,7 @@ onMounted(() => {
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <b>{{ pageTitle }}</b>
+          <h1 class="card-title">{{ pageTitle }}</h1>
           <el-button-group>
             <el-button
               size="small"
@@ -260,5 +260,12 @@ onMounted(() => {
   margin-top: 16px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* 卡片头里的页级主标题（原为 <b>，现为 h1）：保持与原先一致的视觉重量 */
+.card-title {
+  margin: 0;
+  font-size: var(--ct-text-md);
+  font-weight: var(--ct-weight-semibold);
 }
 </style>

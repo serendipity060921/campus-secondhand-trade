@@ -296,6 +296,8 @@ function onEnter(event) {
 </script>
 
 <template>
+  <!-- 页面主标题（会话对象是动态值，视觉上由会话头承担） -->
+  <h1 class="sr-only">与 {{ peer?.nickname || '对方' }} 的聊天</h1>
   <StateError
     v-if="loadError && !loading"
     title="加载失败，请稍后重试"

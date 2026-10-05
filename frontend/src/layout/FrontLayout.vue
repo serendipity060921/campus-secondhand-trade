@@ -90,18 +90,19 @@ async function handleLogout() {
     <!-- 顶部导航 -->
     <el-header class="layout-header">
       <div class="page-container header-inner">
-        <div class="logo" @click="router.push('/home')">
-          <span class="logo-icon">♻</span>
+        <router-link class="logo" to="/home" aria-label="回到首页">
+          <span class="logo-icon" aria-hidden="true">♻</span>
           <span class="logo-text">校园二手交易平台</span>
           <el-tag size="small" type="success" effect="plain">{{ APP_VERSION }}</el-tag>
-        </div>
+        </router-link>
 
         <!-- v0.16：窄屏导航开关（768px 以下显示；导航收进抽屉，避免整站横向溢出） -->
         <button class="nav-toggle" type="button" aria-label="打开导航菜单" @click="drawerVisible = true">
           ☰
         </button>
 
-        <el-menu :default-active="activeMenu" mode="horizontal" class="nav-menu" router :ellipsis="false">
+        <nav aria-label="主导航" class="nav-wrap">
+          <el-menu :default-active="activeMenu" mode="horizontal" class="nav-menu" router :ellipsis="false">
           <el-menu-item index="/home">首页</el-menu-item>
           <el-menu-item index="/product/publish">发布商品</el-menu-item>
           <el-menu-item index="/product/mine">我的商品</el-menu-item>
@@ -113,7 +114,8 @@ async function handleLogout() {
           </el-menu-item>
           <el-menu-item index="/orders/bought">订单</el-menu-item>
           <el-menu-item index="/profile">个人中心</el-menu-item>
-        </el-menu>
+          </el-menu>
+        </nav>
 
         <div class="header-right">
           <!-- v0.09 顶部搜索框：首页顶部即可直接搜索商品，回车跳到搜索结果页 -->
@@ -225,9 +227,15 @@ async function handleLogout() {
 .logo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer;
+  gap: var(--ct-space-2);
+  color: inherit;
+  text-decoration: none;
   white-space: nowrap;
+}
+
+.logo:focus-visible {
+  outline: 2px solid var(--ct-action);
+  outline-offset: 2px;
 }
 
 .logo-icon {
@@ -238,6 +246,13 @@ async function handleLogout() {
   font-size: 18px;
   font-weight: 600;
   color: var(--ct-text-primary);
+}
+
+/* 主导航地标（v0.16：此前导航只是 el-menu，页面上没有 nav 地标） */
+.nav-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
 }
 
 .nav-menu {
@@ -298,7 +313,7 @@ async function handleLogout() {
     min-width: 0;
   }
 
-  .nav-menu,
+  .nav-wrap,
   .header-search {
     display: none;
   }

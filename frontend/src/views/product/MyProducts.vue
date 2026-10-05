@@ -101,7 +101,7 @@ onMounted(load)
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <b>我的商品</b>
+          <h1 class="card-title">我的商品</h1>
           <el-button type="primary" size="small" @click="router.push('/product/publish')">+ 发布新商品</el-button>
         </div>
       </template>
@@ -211,5 +211,12 @@ onMounted(load)
   margin-top: 16px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* 卡片头里的页级主标题（原为 <b>，现为 h1）：保持与原先一致的视觉重量 */
+.card-title {
+  margin: 0;
+  font-size: var(--ct-text-md);
+  font-weight: var(--ct-weight-semibold);
 }
 </style>
