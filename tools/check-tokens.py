@@ -60,38 +60,53 @@ def judge_scale(value, scale):
     return all(p in scale for p in px)
 
 
+def strip_comments(text):
+    """去掉注释后再做色值/间距扫描。
+
+    注释里出现色值（例如"faint #8a8f86 对白底只有 3.31:1，故不用它"）不可能被渲染出来，
+    不该算成裸色值 —— 否则解释"为什么不用裸色值"的注释反而会触发违规。
+    用等长空白替换，保证报错行号仍然准确。
+    """
+    def blank(m):
+        return re.sub(r'[^\n]', ' ', m.group(0))
+    text = re.sub(r'/\*.*?\*/', blank, text, flags=re.S)   # CSS / JS 块注释
+    text = re.sub(r'(?m)^\s*//.*$', blank, text)           # 整行 JS 注释
+    return text
+
+
 def check_file(path, errors, warnings):
     rel = path.relative_to(ROOT.parent.parent).as_posix()
     allowed = any(rel.startswith(a) for a in ALLOWLIST)
     text = path.read_text(encoding='utf-8', errors='ignore')
     lines = text.split('\n')
+    scanned = strip_comments(text)
 
     def loc(pos):
         return text[:pos].count('\n') + 1
 
     if not allowed:
-        for m in RAW_COLOR.finditer(text):
+        for m in RAW_COLOR.finditer(scanned):
             errors.append({'rule': 'raw-color', 'file': rel, 'line': loc(m.start()),
                            'snippet': lines[loc(m.start()) - 1].strip()[:90]})
 
-        without_reduced = REDUCED_BLOCK.sub('', text)
+        without_reduced = REDUCED_BLOCK.sub('', scanned)
         for m in re.finditer(r'!important', without_reduced):
             errors.append({'rule': 'important', 'file': rel, 'line': loc(m.start()),
                            'snippet': lines[loc(m.start()) - 1].strip()[:90]})
 
-        for m in SPACE_DECL.finditer(text):
+        for m in SPACE_DECL.finditer(scanned):
             if not judge_scale(m.group(1), SPACE_SCALE):
                 warnings.append({'rule': 'off-scale-space', 'file': rel, 'line': loc(m.start()),
                                  'value': m.group(1).strip()[:40]})
-        for m in FONT_DECL.finditer(text):
+        for m in FONT_DECL.finditer(scanned):
             if not judge_scale(m.group(1), FONT_SCALE):
                 warnings.append({'rule': 'off-scale-font', 'file': rel, 'line': loc(m.start()),
                                  'value': m.group(1).strip()[:40]})
-        for m in RADIUS_DECL.finditer(text):
+        for m in RADIUS_DECL.finditer(scanned):
             if not judge_scale(m.group(1), RADIUS_SCALE):
                 warnings.append({'rule': 'off-scale-radius', 'file': rel, 'line': loc(m.start()),
                                  'value': m.group(1).strip()[:40]})
-        for m in INLINE_STYLE.finditer(text):
+        for m in INLINE_STYLE.finditer(scanned):
             if RAW_COLOR.search(m.group(1)):
                 warnings.append({'rule': 'inline-color', 'file': rel, 'line': loc(m.start()),
                                  'value': m.group(1)[:40]})
