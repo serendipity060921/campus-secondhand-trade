@@ -47,6 +47,10 @@ function toggle(top) {
     >
       <span class="band-code">{{ top.code }}</span>
       <span class="band-name">{{ top.name }}</span>
+      <!-- 件数来自分类接口的真实统计（含子分类汇总）；没有该字段时整行不渲染，不显示 0 冒充 -->
+      <span v-if="top.productCount !== null && top.productCount !== undefined" class="band-count">
+        {{ top.productCount }} 件
+      </span>
     </button>
   </nav>
 </template>
@@ -100,6 +104,14 @@ function toggle(top) {
 
 .band-name {
   font-size: var(--ct-text-sm);
+}
+
+/* 件数：等宽小字，弱化 —— 是"有多少"而不是"卖点" */
+.band-count {
+  font-family: var(--ct-font-mono);
+  font-size: 11px;
+  color: var(--ct-text-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 1100px) {

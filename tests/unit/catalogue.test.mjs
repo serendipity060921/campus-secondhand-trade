@@ -98,6 +98,21 @@ eq(buildClassIndex([{ id: 1, name: '教材书籍' }, { id: 2, name: '数码电�
    2, '完全没有 parentId 时整张列表视为一级分类')
 eq(buildClassIndex([]).tops.length, 0, '空列表安全返回 0 个一级分类')
 
+// v0.16：分类接口新增"在售件数"（一级分类含子分类汇总），索引要把该字段透传出去；
+// 字段缺失时必须保持 null，不能显示成 0 —— 0 件和"没有这个字段"是两回事。
+console.log('\n八、在售件数透传（v0.16 新增字段）')
+const withCount = buildClassIndex([
+  { id: 1, parentId: 0, name: '教材书籍', productCount: 2 },
+  { id: 9, parentId: 1, name: '公共课教材', productCount: 1 },
+  { id: 2, parentId: 0, name: '数码电子', productCount: 4 },
+  { id: 3, parentId: 0, name: '生活用品', productCount: 0 }
+])
+eq(withCount.tops.map((t) => t.productCount), [2, 4, 0], '一级分类的件数原样透传（含真实的 0 件）')
+eq(buildClassIndex([{ id: 1, parentId: 0, name: '教材书籍' }]).tops[0].productCount, null,
+   '接口没给件数时保持 null，不冒充 0 件')
+eq(buildClassIndex([{ id: 1, parentId: 0, name: '教材书籍', productCount: '3' }]).tops[0].productCount, 3,
+   '字符串型件数也按数字处理（后端 JSON 类型宽容）')
+
 console.log(`\n结果：通过 ${pass} 条，失败 ${fail} 条`)
 if (fail > 0) {
   console.log('✗ 单元验证未通过')

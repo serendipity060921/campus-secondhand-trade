@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 分类管理业务实现（v0.09）。
@@ -35,6 +37,8 @@ public class CategoryModuleServiceImpl implements CategoryModuleService {
     private static final long ROOT_PARENT_ID = 0L;
 
     private final CategoryService categoryService;
+    /** v0.16：按分类统计在售件数（供色带与"目录统计"展示真实分布） */
+    private final com.campus.trade.mapper.ProductMapper productMapper;
     /** v0.12：分类列表缓存（读多写少） */
     private final com.campus.trade.service.CacheService cacheService;
     private final com.campus.trade.common.cache.CacheKeys cacheKeys;
@@ -65,7 +69,71 @@ public class CategoryModuleServiceImpl implements CategoryModuleService {
                 .orderByAsc(Category::getParentId)
                 .orderByAsc(Category::getSortOrder)
                 .orderByAsc(Category::getId);
-        return categoryService.list(wrapper).stream().map(this::toVO).collect(java.util.stream.Collectors.toList());
+        List<CategoryVO> vos = categoryService.list(wrapper).stream()
+                .map(this::toVO).collect(java.util.stream.Collectors.toList());
+        fillProductCounts(vos);
+        return vos;
+    }
+
+    /**
+     * 填充在售件数（v0.16）。
+     *
+     * <p>一级分类的件数 = 自身 + 其所有后代分类的件数：首页色带按一级分类展示，
+     * 用户要看到的是"这一类一共有多少件"。父子关系从完整分类表读取，
+     * 因此 {@code onlyTop=true} 时也能正确汇总。统计失败不影响分类列表本身（件数置 0）。</p>
+     */
+    private void fillProductCounts(List<CategoryVO> vos) {
+        if (vos.isEmpty()) {
+            return;
+        }
+        try {
+            Map<Long, Long> own = new HashMap<>();
+            for (Map<String, Object> row : productMapper.countOnSaleGroupByCategory()) {
+                Long cid = asLong(row.get("categoryId") != null ? row.get("categoryId") : row.get("category_id"));
+                Long cnt = asLong(row.get("cnt") != null ? row.get("cnt") : row.get("CNT"));
+                if (cid != null) {
+                    own.put(cid, cnt == null ? 0L : cnt);
+                }
+            }
+            Map<Long, Long> parentOf = new HashMap<>();
+            for (Category c : categoryService.list()) {
+                parentOf.put(c.getId(), c.getParentId() == null ? ROOT_PARENT_ID : c.getParentId());
+            }
+            Map<Long, Long> rolled = new HashMap<>(own);
+            for (Map.Entry<Long, Long> e : own.entrySet()) {
+                Long cur = e.getKey();
+                for (int depth = 0; depth < 8; depth++) {          // 层级护栏，防脏数据成环
+                    Long parent = parentOf.get(cur);
+                    if (parent == null || parent == ROOT_PARENT_ID) {
+                        break;
+                    }
+                    rolled.merge(parent, e.getValue(), Long::sum);
+                    cur = parent;
+                }
+            }
+            for (CategoryVO vo : vos) {
+                vo.setProductCount(rolled.getOrDefault(vo.getId(), 0L));
+            }
+        } catch (Exception e) {
+            log.warn("[分类件数] 统计失败，件数按 0 返回：{}", e.getMessage());
+            for (CategoryVO vo : vos) {
+                vo.setProductCount(0L);
+            }
+        }
+    }
+
+    private Long asLong(Object v) {
+        if (v == null) {
+            return null;
+        }
+        if (v instanceof Number n) {
+            return n.longValue();
+        }
+        try {
+            return Long.parseLong(String.valueOf(v));
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @Override

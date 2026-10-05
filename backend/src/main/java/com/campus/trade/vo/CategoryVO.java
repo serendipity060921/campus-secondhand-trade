@@ -28,4 +28,12 @@ public class CategoryVO implements Serializable {
 
     /** 排序值 */
     private Integer sortOrder;
+
+    /**
+     * 该分类下**在售**商品件数（v0.16 新增，供首页分类色带与"目录统计"展示真实分布）。
+     *
+     * <p>一级分类的件数包含其所有子分类：色带按一级分类展示，用户看到的是"这一类一共有多少件"。
+     * 统计口径与首页商品列表一致（deleted=0 且 status=1），因此各级件数之和等于列表总数。</p>
+     */
+    private Long productCount;
 }

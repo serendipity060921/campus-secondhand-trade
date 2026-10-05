@@ -60,6 +60,19 @@ const topCategories = computed(() => classIndex.value.tops)
  */
 const bandCategories = computed(() => topCategories.value.filter((t) => t.code !== UNKNOWN_CODE))
 
+/** 目录构成里各类占比条的最大值（取最大件数，件数为 0 的类不画条） */
+const maxCategoryCount = computed(() =>
+  Math.max(1, ...bandCategories.value.map((t) => Number(t.productCount) || 0)))
+
+/** 比例条宽度：按最大件数归一化，最小可见宽度 4% 以免"有 1 件却看不见" */
+function barWidth(count) {
+  const n = Number(count) || 0
+  if (n <= 0) {
+    return '0%'
+  }
+  return `${Math.max(4, Math.round((n / maxCategoryCount.value) * 100))}%`
+}
+
 function codeOf(item) {
   return shelfCode(item, classIndex.value.byId).code
 }
@@ -199,14 +212,19 @@ onMounted(() => {
         </template>
       </section>
 
-      <aside class="catalogue-rail" aria-label="目录统计与推荐">
+      <aside class="catalogue-rail" aria-label="目录构成与推荐">
+        <!-- 目录构成：真实件数 + 中性比例条。
+             此前这块只是把「目录里 N 张卡 · M 类」与色带的"分类号↔分类名"又抄了一遍，
+             没有任何独有信息；现在它回答的是色带回答不了的问题——**各类占比**。
+             比例条用墨色而非分类色：分类色是色带的专属，这条规则写在 DESIGN.md 里。 -->
         <div class="rail-panel">
-          <h2 class="rail-title">目录统计</h2>
-          <p class="rail-line">目录里 {{ total }} 张卡 · {{ bandCategories.length }} 类</p>
+          <h2 class="rail-title">目录构成</h2>
           <ul class="rail-cats">
             <li v-for="top in bandCategories" :key="top.id">
-              <span>{{ top.name }}</span>
+              <span class="rail-name">{{ top.name }}</span>
               <span class="rail-code">{{ top.code }}</span>
+              <span class="rail-count">{{ top.productCount }} 件</span>
+              <span class="rail-bar" :style="{ width: barWidth(top.productCount) }" aria-hidden="true"></span>
             </li>
           </ul>
         </div>
@@ -300,14 +318,32 @@ onMounted(() => {
 }
 
 .rail-cats li {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
   align-items: center;
-  justify-content: space-between;
   gap: var(--ct-space-2);
-  padding: var(--ct-space-1) 0;
+  padding: var(--ct-space-2) 0 var(--ct-space-1);
   font-size: var(--ct-text-xs);
   color: var(--ct-text-muted);
   border-bottom: var(--ct-hairline) solid var(--ct-border);
+}
+
+/* 占比条独占一行：用墨色表达"多少"，把分类色留给色带 */
+.rail-bar {
+  grid-column: 1 / -1;
+  height: 3px;
+  margin-top: var(--ct-space-1);
+  background: var(--ct-border-strong);
+  border-radius: 0;
+}
+
+.rail-name {
+  color: var(--ct-text-primary);
+}
+
+.rail-count {
+  font-family: var(--ct-font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .rail-code {

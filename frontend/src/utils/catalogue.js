@@ -86,7 +86,17 @@ export function buildClassIndex(tree = []) {
     const id = Number(n.id)
     const name = String(n.name || '').trim()
     const code = CLASS_CODES[name] || UNKNOWN_CODE
-    tops.push({ id, name, code, index: CLASS_TOKEN_INDEX[code] || UNKNOWN_INDEX })
+    // v0.16：分类接口会带上该一级分类（含子分类汇总）的在售件数；缺失时保持 null，不编造 0
+    const rawCount = Number(n.productCount)
+    tops.push({
+      id,
+      name,
+      code,
+      index: CLASS_TOKEN_INDEX[code] || UNKNOWN_INDEX,
+      productCount: Number.isFinite(rawCount) && n.productCount !== null && n.productCount !== undefined
+        ? rawCount
+        : null
+    })
   }
 
   // 一级分类自身
