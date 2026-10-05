@@ -1,7 +1,9 @@
 # UI 优化前后对比（自动生成）
 
-> 由 `python tools/ui-report.py --labels before tokens tokens2 resp` 生成；数字全部来自各档位的机械测量，未手工修改。
+> 由 `python tools/ui-report.py --labels before tokens tokens2 resp states5` 生成；数字全部来自各档位的机械测量，未手工修改。
 > 原始证据：`.impeccable/review/<档位>/`（截图 + manifest + audit.json + inventory.json + detect.json + tokens-lint.json）。
+
+> 尚未测量的档位：states5（表中不出现）。
 
 ## 对比表
 
