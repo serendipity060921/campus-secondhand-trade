@@ -77,8 +77,8 @@ function renderPie(el, title, data, colors) {
   initChart(el, {
     title: { text: title, left: 'center', top: 0, textStyle: { fontSize: 13, color: chartPalette.muted() } },
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    // 图例给出完整名称，标签只补"名称 + 数量"一行 —— 单行比双行更不易重叠；
-    // 图例项调小以在窄卡片里也能完整显示。
+    // 图例给出完整名称；环图**不再画外置标签** —— 两者同时出现时，
+    // 在后台这些窄卡片里（尤其"订单状态分布/商品状态分布"）标签会互相压叠。
     legend: { bottom: 0, type: 'scroll', textStyle: { fontSize: 11 }, itemWidth: 8, itemHeight: 8 },
     color: colors,
     series: [{
@@ -87,8 +87,8 @@ function renderPie(el, title, data, colors) {
       center: ['50%', '44%'],
       avoidLabelOverlap: true,
       minAngle: 3,                                   // 极小占比的扇区也保留可见角度，避免"信息只剩颜色"
-      label: { fontSize: 10, formatter: '{b} {c}' },
-      labelLine: { length: 4, length2: 4 },
+      label: { show: false },
+      labelLine: { show: false },
       data: data.map((i) => ({ name: i.label, value: i.value }))
     }]
   })

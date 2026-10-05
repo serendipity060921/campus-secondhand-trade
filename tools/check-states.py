@@ -47,7 +47,7 @@ PAGE_TYPES = {
     'views/Login.vue': 'form',
     'views/Register.vue': 'form',
     'views/NotFound.vue': 'misc',
-    'views/Placeholder.vue': 'misc',
+    # 'views/Placeholder.vue' 已删除：无任何路由或组件引用（历史遗留的"正在开发中"占位页）
     'components/RecommendPanel.vue': 'panel',      # 可选面板：无推荐时不渲染是合理设计
 }
 
