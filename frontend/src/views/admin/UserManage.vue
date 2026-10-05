@@ -7,8 +7,12 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { changeUserStatus, getAdminUsers } from '@/api/admin'
+import SkeletonTable from '@/components/states/SkeletonTable.vue'
+import StateEmpty from '@/components/states/StateEmpty.vue'
+import StateError from '@/components/states/StateError.vue'
 
 const loading = ref(false)
+const loadError = ref(false)
 const users = ref([])
 const total = ref(0)
 
@@ -16,6 +20,7 @@ const query = reactive({ page: 1, size: 10, keyword: '', role: null, status: nul
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getAdminUsers({
       page: query.page,
@@ -26,6 +31,8 @@ async function load() {
     })
     users.value = res.data.records || []
     total.value = res.data.total || 0
+  } catch (e) {
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -78,7 +85,18 @@ onMounted(load)
     </el-card>
 
     <el-card shadow="never">
-      <el-table v-loading="loading" :data="users" border stripe>
+      <SkeletonTable v-if="loading" :rows="8" :columns="6" />
+      <StateError
+        v-else-if="loadError"
+        title="列表加载失败"
+        detail="请检查网络后重试，或稍后再来"
+        retry-text="重新加载"
+        @retry="load"
+      />
+      <el-table v-else :data="users" border stripe>
+        <template #empty>
+          <StateEmpty title="没有符合条件的用户" hint="换个关键词或状态再试" />
+        </template>
         <el-table-column label="用户" min-width="200">
           <template #default="{ row }">
             <div class="user-cell">

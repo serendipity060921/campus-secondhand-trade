@@ -32,10 +32,11 @@ jobs:
       - name: 设计令牌纪律检查（组件层裸色值必须为 0）
         run: python tools/check-tokens.py --max-errors 0
 
-      # 棘轮二：状态完备性（空/加载/错误）。当前缺失 21 项（骨架屏 0/21、错误反馈 2/21），
+      # 棘轮二：状态完备性（空/加载/错误）。当前缺失 15 项
+      # （骨架屏 3/21、空态 11/21、可见错误反馈 5/21 —— 后台三个列表页已接入状态组件），
       # 每完成一个页面族就把这个数字下调，最终目标 0。
       - name: 状态完备性检查（缺失项不得增加）
-        run: python tools/check-states.py --max-missing 21
+        run: python tools/check-states.py --max-missing 15
 
       - name: 输出令牌纪律报告
         if: always()

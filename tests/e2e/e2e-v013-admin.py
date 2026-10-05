@@ -28,6 +28,49 @@ def shot(page, name):
     print(f'   [截图] {name}')
 
 
+
+# ---------------------------------------------------------------- 前置数据与清理
+# 本脚本需要一个「待审核」商品才能执行审核流程；库里若没有（例如上一次运行已把它审掉），
+# 它会一直等「通过」按钮直到超时。这里改为**自带前置数据**：开始时插入一件待审核商品，
+# 结束时按标题精确删除，保证脚本可重复运行且不留痕。
+import subprocess  # noqa: E402
+import uuid  # noqa: E402
+
+MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
+TAG = uuid.uuid4().hex[:5]
+FIXTURE_TITLE = f'E2E审核演示商品-{TAG}'
+
+
+def sql(q):
+    r = subprocess.run([MYSQL, '-h127.0.0.1', '-P', '3306', '-u', 'root', '-p123456',
+                        '--default-character-set=utf8mb4', '-N', '-B',
+                        '-e', f'USE campus_trade; {q}'],
+                       capture_output=True, text=True, encoding='utf-8', timeout=30)
+    return (r.stdout or '').strip()
+
+
+def seed_pending_product():
+    sql("INSERT INTO product (title, description, category_id, seller_id, price, original_price, "
+        "cover_image, condition_level, campus, trade_place, status) VALUES "
+        f"('{FIXTURE_TITLE}', '端到端脚本插入的前置数据，用于验证审核流程，运行结束会自动删除。', "
+        "10, 5, 19.90, 39.90, '/demo-images/textbook.png', 1, '东校区', '东校区图书馆门口', 0)")
+    return sql(f"SELECT id FROM product WHERE title='{FIXTURE_TITLE}' AND deleted=0 LIMIT 1")
+
+
+def cleanup_fixture():
+    sql(f"DELETE FROM product WHERE title LIKE 'E2E审核演示商品-{TAG}'")
+    left = sql(f"SELECT COUNT(*) FROM product WHERE title LIKE 'E2E审核演示商品-{TAG}'")
+    total = sql('SELECT COUNT(*) FROM product WHERE deleted=0')
+    pending = sql('SELECT COUNT(*) FROM product WHERE deleted=0 AND status=0')
+    print(f'   清理前置数据：残留={left}，商品总数={total}，待审核={pending}')
+
+
+import atexit  # noqa: E402
+atexit.register(cleanup_fixture)
+
+FIXTURE_ID = seed_pending_product()
+print(f'   已插入前置待审核商品 id={FIXTURE_ID}，标题={FIXTURE_TITLE}')
+
 with sync_playwright() as pw:
     browser = pw.chromium.launch(channel='msedge', headless=True)
     ctx = browser.new_context(viewport={'width': 1500, 'height': 950}, locale='zh-CN')
@@ -94,6 +137,8 @@ with sync_playwright() as pw:
     shot(page, 'v013-6-用户管理.png')
 
     print(f'   页面 JS 错误: {errors if errors else "无"}')
+    print('6) 清理前置数据')
+    cleanup_fixture()
     browser.close()
 
 print(f'共 {len(shots)} 张截图已保存到 {EV}')

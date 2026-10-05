@@ -8,8 +8,12 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { auditProduct, getAdminProducts, offlineProduct } from '@/api/admin'
 import { formatPrice, resolveImageUrl } from '@/utils/product'
+import SkeletonTable from '@/components/states/SkeletonTable.vue'
+import StateEmpty from '@/components/states/StateEmpty.vue'
+import StateError from '@/components/states/StateError.vue'
 
 const loading = ref(false)
+const loadError = ref(false)
 const products = ref([])
 const total = ref(0)
 
@@ -36,6 +40,7 @@ const auditDialog = reactive({ visible: false, product: null, approve: true, rem
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getAdminProducts({
       page: query.page,
@@ -45,6 +50,8 @@ async function load() {
     })
     products.value = res.data.records || []
     total.value = res.data.total || 0
+  } catch (e) {
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -112,7 +119,18 @@ onMounted(load)
     </el-card>
 
     <el-card shadow="never">
-      <el-table v-loading="loading" :data="products" border stripe>
+      <SkeletonTable v-if="loading" :rows="8" :columns="6" />
+      <StateError
+        v-else-if="loadError"
+        title="列表加载失败"
+        detail="请检查网络后重试，或稍后再来"
+        retry-text="重新加载"
+        @retry="load"
+      />
+      <el-table v-else :data="products" border stripe>
+        <template #empty>
+          <StateEmpty title="没有符合条件的商品" hint="换个状态或关键词再试，或去前台看看在售商品" action-text="去前台看看" action-to="/home" />
+        </template>
         <el-table-column label="商品" min-width="240">
           <template #default="{ row }">
             <div class="product-cell">
