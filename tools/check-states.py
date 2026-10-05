@@ -83,7 +83,40 @@ def detect(text):
     found['catchCount'] = len(re.findall(r'catch\s*\(', text))
     found['skeleton'] = bool(re.search(r'el-skeleton|<Skeleton[A-Z]|<skeleton-', text))
     found['spinner'] = bool(re.search(r'v-loading', text))
+    found['mouseOnly'] = count_mouse_only(text)
     return found
+
+
+CLICK_EL = re.compile(r'<([a-zA-Z][\w-]*)\b([^>]*?)>', re.I)
+
+# 天生可键盘操作的标签/组件：它们带 @click 不算"鼠标独占"
+KEYBOARD_NATIVE = {
+    'button', 'a', 'input', 'select', 'textarea', 'summary', 'details',
+    'el-button', 'el-radio', 'el-radio-button', 'el-checkbox', 'el-checkbox-button',
+    'el-switch', 'el-menu-item', 'el-dropdown-item', 'el-tab-pane', 'el-pagination',
+    'el-link', 'el-upload', 'el-select', 'el-option', 'el-step', 'el-collapse-item',
+}
+
+
+def count_mouse_only(text):
+    """统计"鼠标独占的点击元素"：带 @click / v-on:click，却既无 role 也无 tabindex。
+
+    覆盖原生标签与组件标签（**商品卡用的是 `<el-card @click>`，只扫原生标签会漏掉**），
+    并排除天生可键盘操作的标签。仍属静态近似（不解析模板树），用途是**棘轮**：只许下降。
+    评审 P0-1（首页商品卡键盘不可达）正是这类问题。
+    """
+    n = 0
+    for m in CLICK_EL.finditer(text):
+        tag = m.group(1).lower()
+        if tag in KEYBOARD_NATIVE:
+            continue
+        attrs = m.group(2) or ''
+        if not re.search(r'(@click|v-on:click)', attrs):
+            continue
+        if re.search(r'(role\s*=|tabindex|:tabindex)', attrs):
+            continue
+        n += 1
+    return n
 
 def main():
     ap = argparse.ArgumentParser()
@@ -91,6 +124,8 @@ def main():
     ap.add_argument('--out', default=str(PROJECT / '.impeccable' / 'review'))
     ap.add_argument('--max-missing', type=int, default=-1,
                     help='缺失项超过该值时非零退出（验收/CI 棘轮用）')
+    ap.add_argument('--max-mouse-only', type=int, default=-1,
+                    help='鼠标独占点击元素超过该值时非零退出（键盘可达性棘轮）')
     args = ap.parse_args()
 
     rows = []
@@ -110,6 +145,7 @@ def main():
             'toast': found['toast'],
             'skeleton': found['skeleton'], 'spinner': found['spinner'],
             'catchCount': found['catchCount'],
+            'mouseOnly': found.get('mouseOnly', 0),
             'missing': missing,
             'ok': not missing,
         })
@@ -119,6 +155,8 @@ def main():
     empty_pages = sum(1 for r in rows if r['empty'])
     error_pages = sum(1 for r in rows if r['error'])
     toast_pages = sum(1 for r in rows if r['toast'])
+    mouse_only = sum(r.get('mouseOnly', 0) for r in rows)
+    mouse_pages = [(r['page'], r['mouseOnly']) for r in rows if r.get('mouseOnly')]
     only_toast = [r['page'] for r in rows if r['toast'] and not r['error'] and 'error' in REQUIRED[r['type']]]
     ok_pages = sum(1 for r in rows if r['ok'])
 
@@ -129,6 +167,8 @@ def main():
     print(f'  仅有全局 toast 兜底的页面：{toast_pages - error_pages if toast_pages > error_pages else 0}'
           f'（拦截器弹 3 秒提示，页面不留痕、无重试入口）')
     print(f'  达到应有状态的页面：{ok_pages}/{len(rows)}      缺失项合计：{missing_total}')
+    print(f'  鼠标独占的点击元素（键盘不可达，静态近似）：{mouse_only} 处'
+          + ('  ' + '、'.join(f'{p.split("/")[-1]}={n}' for p, n in mouse_pages[:6]) if mouse_pages else ''))
     # 全局兜底：拦截器统一弹 toast（登录/注册等表单页依赖它），但那是 3 秒提示、页面不留痕
     req = SRC / 'api' / 'request.js'
     interceptor = False

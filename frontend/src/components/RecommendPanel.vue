@@ -82,7 +82,7 @@ watch(() => props.productId, (v) => {
     retry-text="重新加载"
     @retry="load"
   />
-  <div v-else v-if="loading || items.length" class="recommend-panel" v-loading="loading">
+  <div v-else-if="loading || items.length" class="recommend-panel" v-loading="loading">
     <div class="panel-header">
       <span class="panel-title">
         <el-icon><Star /></el-icon>
