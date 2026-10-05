@@ -19,6 +19,13 @@ const userStore = useUserStore()
 
 const formRef = ref()
 const loading = ref(false)
+/** 各字段当前是否校验失败：用于 aria-invalid，让读屏知道哪个字段不合格 */
+const invalid = reactive({})
+
+/** el-form 的 validate 事件：记录每个字段的校验结果 */
+function onValidate(prop, isValid) {
+  invalid[prop] = !isValid
+}
 const showCheck = ref(false)
 const backendInfo = ref('')
 const backendOk = ref(null)
@@ -88,12 +95,24 @@ async function checkBackend() {
         </div>
       </template>
 
-      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @keyup.enter="handleLogin">
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @keyup.enter="handleLogin"
+               @validate="onValidate">
         <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="请输入用户名" aria-label="用户名" clearable />
+          <el-input v-model="form.username" placeholder="请输入用户名" aria-label="用户名"
+                    aria-describedby="login-username-error" :aria-invalid="invalid.username === true" clearable />
+          <!-- 自定义错误渲染：Element Plus 的报错元素没有 id，输入框无法与之关联，
+               读屏只会念"编辑框"而说不出为什么不合格。这里给它一个 id 并保持 role="alert"。 -->
+          <template #error="{ error }">
+            <div id="login-username-error" class="field-error" role="alert">{{ error }}</div>
+          </template>
         </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" placeholder="请输入密码" aria-label="密码" show-password clearable />
+          <el-input v-model="form.password" type="password" placeholder="请输入密码" aria-label="密码"
+                    aria-describedby="login-password-error" :aria-invalid="invalid.password === true"
+                    show-password clearable />
+          <template #error="{ error }">
+            <div id="login-password-error" class="field-error" role="alert">{{ error }}</div>
+          </template>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" class="submit-btn" :loading="loading" @click="handleLogin">登 录</el-button>
@@ -182,8 +201,16 @@ async function checkBackend() {
 }
 
 .tip {
-  margin: 16px 0 0;
-  font-size: 12px;
+  margin: var(--ct-space-4) 0 0;
+  font-size: var(--ct-text-xs);
   line-height: 1.8;
+}
+
+/* 字段级错误（自定义渲染，带 id 供输入框 aria-describedby 关联） */
+.field-error {
+  margin-top: var(--ct-space-1);
+  font-size: var(--ct-text-xs);
+  line-height: 1.5;
+  color: var(--ct-cat-6-bar);
 }
 </style>

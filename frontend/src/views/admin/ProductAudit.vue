@@ -108,7 +108,7 @@ onMounted(load)
       <div class="filter-bar">
         <el-input v-model="query.keyword" placeholder="搜索商品名称" clearable class="keyword"
                   @keyup.enter="handleSearch" />
-        <el-select v-model="query.status" class="status" @change="handleSearch">
+        <el-select v-model="query.status" aria-label="按状态筛选" class="status" @change="handleSearch">
           <el-option v-for="item in STATUS_OPTIONS" :key="String(item.value)"
                      :label="item.label" :value="item.value" />
         </el-select>

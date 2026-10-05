@@ -71,11 +71,11 @@ onMounted(load)
       <div class="filter-bar">
         <el-input v-model="query.keyword" placeholder="用户名 / 昵称 / 学号 / 手机号" clearable
                   class="keyword" @keyup.enter="handleSearch" />
-        <el-select v-model="query.role" placeholder="全部角色" clearable class="role" @change="handleSearch">
+        <el-select v-model="query.role" placeholder="全部角色" aria-label="按角色筛选" clearable class="role" @change="handleSearch">
           <el-option label="学生" :value="0" />
           <el-option label="管理员" :value="1" />
         </el-select>
-        <el-select v-model="query.status" placeholder="全部状态" clearable class="status" @change="handleSearch">
+        <el-select v-model="query.status" placeholder="全部状态" aria-label="按状态筛选" clearable class="status" @change="handleSearch">
           <el-option label="正常" :value="1" />
           <el-option label="已禁用" :value="0" />
         </el-select>

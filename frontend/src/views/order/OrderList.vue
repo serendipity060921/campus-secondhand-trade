@@ -226,16 +226,39 @@ onMounted(() => {
   justify-content: space-between;
 }
 
+/* 订单表：纸面语言 —— 表头不填灰底、行间用 0.5px 墨线，去掉"后台表格"的厚重感。
+   端到端只依赖商品标题与状态文案，因此这里可以自由调整视觉。 */
+:deep(.el-table) {
+  --el-table-border-color: var(--ct-border);
+  --el-table-header-bg-color: var(--ct-bg-surface);
+  --el-table-header-text-color: var(--ct-text-muted);
+  --el-table-row-hover-bg-color: var(--ct-bg-subtle);
+  font-size: var(--ct-text-base);
+}
+
+:deep(.el-table th.el-table__cell) {
+  font-weight: var(--ct-weight-medium);
+  border-bottom: var(--ct-hairline) solid var(--ct-border);
+}
+
+:deep(.el-table td.el-table__cell) {
+  border-bottom: var(--ct-hairline) solid var(--ct-border);
+}
+
+:deep(.el-table__inner-wrapper::before) {
+  display: none;                     /* 去掉表格底部的整条横线 */
+}
+
 .product-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--ct-space-3);
 }
 
 .table-img {
   width: 56px;
   height: 56px;
-  border-radius: 6px;
+  border-radius: var(--ct-radius-sm);
   object-fit: cover;
   background: var(--ct-bg-subtle);
   flex-shrink: 0;
@@ -245,19 +268,24 @@ onMounted(() => {
   min-width: 0;
 }
 
+/* 订单号用等宽字体：与目录里的索书号同一套"可检索编号"语言 */
 .order-no {
-  font-size: 12px;
+  font-family: var(--ct-font-mono);
+  font-size: var(--ct-text-xs);
   color: var(--ct-text-muted);
-  margin-top: 4px;
+  margin-top: var(--ct-space-1);
+  letter-spacing: 0.02em;
 }
 
+/* 金额用等宽数字：列表滚动时宽度不跳动 */
 .price {
   color: var(--ct-price);
-  font-weight: 600;
+  font-weight: var(--ct-weight-semibold);
+  font-variant-numeric: tabular-nums;
 }
 
 .pagination {
-  margin-top: 16px;
+  margin-top: var(--ct-space-4);
   display: flex;
   justify-content: flex-end;
 }

@@ -13,6 +13,13 @@ import { APP_VERSION } from '@/utils/version'
 
 const router = useRouter()
 const formRef = ref()
+/** 各字段当前是否校验失败：用于 aria-invalid，让读屏知道哪个字段不合格 */
+const invalid = reactive({})
+
+/** el-form 的 validate 事件：记录每个字段的校验结果 */
+function onValidate(prop, isValid) {
+  invalid[prop] = !isValid
+}
 const loading = ref(false)
 
 const form = reactive({
@@ -85,19 +92,41 @@ async function handleRegister() {
         </div>
       </template>
 
-      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @keyup.enter="handleRegister">
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @keyup.enter="handleRegister" @validate="onValidate">
         <el-form-item label="用户名" prop="username">
-          <el-input v-model="form.username" placeholder="4~20 位字母、数字或下划线" aria-label="用户名" clearable />
-        </el-form-item>
+          <el-input v-model="form.username" placeholder="4~20 位字母、数字或下划线" aria-label="用户名"
+                      aria-describedby="register-username-error"
+                      :aria-invalid="invalid.username === true" clearable />
+        
+            <template #error="{ error }">
+              <div id="register-username-error" class="field-error" role="alert">{{ error }}</div>
+            </template>
+          </el-form-item>
         <el-form-item label="昵称" prop="nickname">
-          <el-input v-model="form.nickname" placeholder="展示给其他同学的名字" aria-label="昵称" clearable />
-        </el-form-item>
+          <el-input v-model="form.nickname" placeholder="展示给其他同学的名字" aria-label="昵称"
+                      aria-describedby="register-nickname-error"
+                      :aria-invalid="invalid.nickname === true" clearable />
+        
+            <template #error="{ error }">
+              <div id="register-nickname-error" class="field-error" role="alert">{{ error }}</div>
+            </template>
+          </el-form-item>
         <el-form-item label="密码" prop="password">
-          <el-input v-model="form.password" type="password" placeholder="6~20 位，需包含字母和数字" aria-label="密码" show-password />
-        </el-form-item>
+          <el-input v-model="form.password" type="password" placeholder="6~20 位，需包含字母和数字" aria-label="密码"
+                    aria-describedby="register-password-error" :aria-invalid="invalid.password === true" show-password />
+        
+            <template #error="{ error }">
+              <div id="register-password-error" class="field-error" role="alert">{{ error }}</div>
+            </template>
+          </el-form-item>
         <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input v-model="form.confirmPassword" type="password" placeholder="请再次输入密码" aria-label="确认密码" show-password />
-        </el-form-item>
+          <el-input v-model="form.confirmPassword" type="password" placeholder="请再次输入密码" aria-label="确认密码"
+                    aria-describedby="register-confirmPassword-error" :aria-invalid="invalid.confirmPassword === true" show-password />
+        
+            <template #error="{ error }">
+              <div id="register-confirmPassword-error" class="field-error" role="alert">{{ error }}</div>
+            </template>
+          </el-form-item>
         <el-form-item>
           <el-button type="primary" class="submit-btn" :loading="loading" @click="handleRegister">注 册</el-button>
         </el-form-item>
@@ -158,5 +187,13 @@ async function handleRegister() {
 
 .tip {
   margin-top: 16px;
+}
+
+/* 字段级错误（自定义渲染，带 id 供输入框 aria-describedby 关联） */
+.field-error {
+  margin-top: var(--ct-space-1);
+  font-size: var(--ct-text-xs);
+  line-height: 1.5;
+  color: var(--ct-cat-6-bar);
 }
 </style>
