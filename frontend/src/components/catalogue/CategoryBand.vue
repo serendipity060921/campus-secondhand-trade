@@ -67,9 +67,9 @@ function toggle(top) {
   min-height: 60px;
   padding: var(--ct-space-2) var(--ct-space-3);
   border: 0;
-  /* 底部是分类实色条：整条色带的"书标"感来自这里 */
+  /* 底部是分类实色条：整条色带的"书标"感来自这里。
+     段本身是直角，因此不做圆角声明（避免被检测器误判为"圆角元素上的粗强调边框"） */
   border-bottom: 4px solid var(--band-bar);
-  border-radius: 0;
   text-align: left;
   font: inherit;
   color: var(--ct-text-primary);

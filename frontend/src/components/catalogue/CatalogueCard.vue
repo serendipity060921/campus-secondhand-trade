@@ -128,7 +128,9 @@ const priceText = computed(() => formatPrice(props.item.price))
 
 .category {
   font-size: 11px;
-  color: var(--ct-text-faint);
+  /* 用 muted 而非 faint：11px 属小字，faint（#8a8f86）对白底只有 3.31:1 不达 AA；
+     DESIGN.md 也明确规定 faint 仅用于装饰、不得用于正文 */
+  color: var(--ct-text-muted);
 }
 
 .title {

@@ -215,16 +215,27 @@
   }
 
   .el-dropdown .el-tooltip__trigger {
-    min-height: 42px;              /* 顶栏用户名触发器：原 28px，点上很难命中 */
+    min-height: 44px;              /* 顶栏用户名触发器：原 28px，点上很难命中 */
     display: inline-flex;
     align-items: center;
   }
 
-  /* 图标按钮与分页项常常自带固定尺寸，单独兜一下 */
+  /* 分页项与图标按钮：40 → 44，达到触控目标下限。
+     左右翻页按钮自带 width:32px，需要更具体的选择器才能把宽度也顶到 44 */
   .el-pagination button,
   .el-pager li {
-    min-width: 40px;
-    min-height: 40px;
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .el-pagination button.btn-prev,
+  .el-pagination button.btn-next {
+    width: 44px;
+    min-width: 44px;
+  }
+
+  .el-pagination .el-input__wrapper {
+    min-height: 44px;
   }
 }
 

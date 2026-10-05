@@ -230,6 +230,8 @@ async function handleLogout() {
   display: flex;
   align-items: center;
   gap: var(--ct-space-2);
+  /* 触控目标下限：作为链接（v0.16 起）它的可点高度不应低于 44px */
+  min-height: 44px;
   color: inherit;
   text-decoration: none;
   white-space: nowrap;
