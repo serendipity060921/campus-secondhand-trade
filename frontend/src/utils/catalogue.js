@@ -50,39 +50,56 @@ const UNKNOWN_INDEX = 8
 export function buildClassIndex(tree = []) {
   const byId = new Map()
   const tops = []
+  const nodes = (Array.isArray(tree) ? tree : []).filter(Boolean)
 
-  // 兼容两种形态：树（children）与扁平（parentId）
-  const roots = []
-  const flats = []
-  const walk = (nodes, parent) => {
-    for (const n of nodes || []) {
-      if (!n) continue
-      flats.push({ ...n, _parent: parent })
-      if (parent === null) roots.push(n)
-      if (n.children && n.children.length) walk(n.children, n)
+  // 统一成 {node, parent} 对，兼容三种形态：
+  //   ① 树：节点带 children
+  //   ② 扁平：节点带 parentId —— **0 / null / undefined 都表示一级分类**
+  //      （后端 CategoryVO 的一级分类给的是 parentId=0，早期实现只认 null，
+  //        结果把 33 个节点全当成一级、子分类的索书号全落到 ZZ）
+  //   ③ 既无 children 也无 parentId：整张列表就是一级分类
+  const byNodeId = new Map(nodes.map((n) => [Number(n.id), n]))
+  const pairs = []
+  const hasParentId = nodes.some((n) => n.parentId !== undefined && n.parentId !== null)
+  if (hasParentId) {
+    for (const n of nodes) {
+      const pid = Number(n.parentId)
+      pairs.push({ node: n, parent: pid > 0 ? byNodeId.get(pid) || null : null })
     }
+  } else {
+    const walk = (list, parent) => {
+      for (const n of list || []) {
+        if (!n) continue
+        pairs.push({ node: n, parent })
+        if (n.children && n.children.length) walk(n.children, n)
+      }
+    }
+    walk(nodes, null)
   }
-  walk(tree, null)
 
-  for (const n of (roots.length ? roots : tree)) {
+  const roots = pairs
+    .filter((p) => p.parent === null)
+    .map((p) => p.node)
+    .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
+
+  for (const n of roots) {
     const id = Number(n.id)
     const name = String(n.name || '').trim()
     const code = CLASS_CODES[name] || UNKNOWN_CODE
     tops.push({ id, name, code, index: CLASS_TOKEN_INDEX[code] || UNKNOWN_INDEX })
   }
 
-  // 顶层自身
+  // 一级分类自身
   for (const t of tops) {
     byId.set(t.id, { topId: t.id, topName: t.name, code: t.code, index: t.index })
   }
-  // 子分类：继承其父级的书标
-  for (const f of flats) {
-    if (f._parent === null) continue
-    const pid = Number(f._parent.id)
-    const parent = byId.get(pid)
-    byId.set(Number(f.id), parent
-      ? { topId: parent.topId, topName: parent.topName, code: parent.code, index: parent.index }
-      : { topId: pid, topName: String(f._parent.name || ''), code: UNKNOWN_CODE, index: UNKNOWN_INDEX })
+  // 其余节点：继承其父级的书标
+  for (const { node, parent } of pairs) {
+    if (parent === null) continue
+    const parentInfo = byId.get(Number(parent.id))
+    byId.set(Number(node.id), parentInfo
+      ? { topId: parentInfo.topId, topName: parentInfo.topName, code: parentInfo.code, index: parentInfo.index }
+      : { topId: Number(parent.id), topName: String(parent.name || ''), code: UNKNOWN_CODE, index: UNKNOWN_INDEX })
   }
 
   return { byId, tops }

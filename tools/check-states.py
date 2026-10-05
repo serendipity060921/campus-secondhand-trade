@@ -48,7 +48,7 @@ PAGE_TYPES = {
     'views/Register.vue': 'form',
     'views/NotFound.vue': 'misc',
     'views/Placeholder.vue': 'misc',
-    'components/RecommendPanel.vue': 'list',
+    'components/RecommendPanel.vue': 'panel',      # 可选面板：无推荐时不渲染是合理设计
 }
 
 REQUIRED = {
@@ -56,6 +56,8 @@ REQUIRED = {
     'detail': ['loading', 'error'],
     # 表单页只要求提交态：表单的错误通道是**字段校验 + 全局 toast**（拦截器统一弹出），
     # 再塞一个整块错误面板反而与字段级提示重复、也更占地方。这是有意的判断，不是遗漏。
+    # 可选面板（如首页推荐位）：没有内容时不渲染是合理的，但加载/错误态必须有
+    'panel': ['loading', 'error'],
     'form': ['loading'],
     'misc': [],
 }

@@ -72,6 +72,32 @@ console.log('\n五、映射表自检')
 eq(Object.keys(CLASS_CODES).length, 8, '分类号映射表恰好 8 条（与数据库顶层分类数一致）')
 eq(new Set(Object.values(CLASS_CODES)).size, 8, '八个分类号互不重复')
 
+// 接口实际返回的是**扁平**列表（一级分类 parentId=0），与上面的树形不同。
+// 早期实现只认 parent === null，把 33 个节点全当成一级分类，子分类索书号全落到 ZZ；
+// 首页色带也因此渲染出 33 段。这里补上该形态的回归覆盖。
+console.log('\n六、扁平 parentId 形态（接口真实返回）')
+const flat = [
+  { id: 1, parentId: 0, name: '教材书籍', sortOrder: 1 },
+  { id: 9, parentId: 1, name: '公共课教材', sortOrder: 9 },
+  { id: 2, parentId: 0, name: '数码电子', sortOrder: 2 },
+  { id: 15, parentId: 2, name: '平板电脑', sortOrder: 15 },
+  { id: 8, parentId: 0, name: '其他闲置', sortOrder: 8 },
+  { id: 32, parentId: 8, name: '其他', sortOrder: 32 }
+]
+const flatIndex = buildClassIndex(flat)
+eq(flatIndex.tops.length, 3, 'parentId=0 的才是一级分类（3 个），不是全部 6 个')
+eq(flatIndex.tops.map((t) => t.name), ['教材书籍', '数码电子', '其他闲置'], '一级分类按 sortOrder 排序')
+eq(flatIndex.byId.get(15).code, 'TN', '子分类按 parentId 继承书标（平板电脑→TN）')
+eq(shelfCode({ id: 7, categoryId: 15 }, flatIndex.byId).code, 'TN·007', '扁平形态下索书号正确（不再落到 ZZ）')
+eq(shelfCode({ id: 7, categoryId: 9 }, flatIndex.byId).code, 'G4·007', '扁平形态下另一分支同样正确')
+
+console.log('\n七、parentId 为 null / 缺省时的兼容')
+eq(buildClassIndex([{ id: 1, parentId: null, name: '教材书籍' }, { id: 9, parentId: 1, name: '公共课教材' }]).tops.length,
+   1, 'parentId=null 也视为一级分类')
+eq(buildClassIndex([{ id: 1, name: '教材书籍' }, { id: 2, name: '数码电子' }]).tops.length,
+   2, '完全没有 parentId 时整张列表视为一级分类')
+eq(buildClassIndex([]).tops.length, 0, '空列表安全返回 0 个一级分类')
+
 console.log(`\n结果：通过 ${pass} 条，失败 ${fail} 条`)
 if (fail > 0) {
   console.log('✗ 单元验证未通过')
