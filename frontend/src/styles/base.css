@@ -1,0 +1,189 @@
+/* =============================================================================
+   基础层（v0.16 全站改版）
+
+   由 tokens.css 提供取值，本文件只负责"怎么用"：
+   重置、排版基线、焦点环、选区、滚动条、纸面与墨线工具类、
+   以及 reduced-motion 的有意处理（保留状态反馈，而不是一刀切关掉动效）。
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* 中文界面在桌面端的可读基线；用户系统字号设置仍然生效 */
+  font-size: 100%;
+}
+
+body {
+  font-family: var(--ct-font-sans);
+  font-size: var(--ct-text-base);
+  line-height: var(--ct-leading-base);
+  color: var(--ct-text-primary);
+  background-color: var(--ct-bg-canvas);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* 数字在表格与价格列里等宽对齐 —— 这是"登记簿"可扫读的前提 */
+  font-variant-numeric: tabular-nums;
+}
+
+/* 等宽场景（索书号、价格、统计数字）显式使用等宽字体 */
+.ct-mono,
+.ct-code,
+.ct-price {
+  font-family: var(--ct-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-weight: var(--ct-weight-semibold);
+  line-height: var(--ct-leading-tight);
+  color: var(--ct-text-primary);
+}
+
+h1 { font-size: var(--ct-text-2xl); }
+h2 { font-size: var(--ct-text-xl); }
+h3 { font-size: var(--ct-text-lg); }
+h4 { font-size: var(--ct-text-md); }
+
+p {
+  margin: 0 0 var(--ct-space-3);
+}
+
+a {
+  color: var(--ct-link);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ---------- 焦点可见：键盘可达的底线 ---------- */
+:focus-visible {
+  outline: var(--ct-line-strong) solid var(--ct-focus);
+  outline-offset: 2px;
+  border-radius: var(--ct-radius-sm);
+}
+
+/* 鼠标点击不显示焦点环，键盘操作必须显示（避免"看不见焦点"） */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+::selection {
+  background: var(--ct-ink-900);
+  color: var(--ct-paper-0);
+}
+
+/* ---------- 滚动条：细、无圆角胶囊 ---------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ct-ink-400) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--ct-ink-400);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- 纸面与墨线工具类（页面族复用的骨架） ---------- */
+.ct-surface {
+  background: var(--ct-bg-surface);
+  border: var(--ct-hairline) solid var(--ct-border);
+  border-radius: var(--ct-radius-md);
+}
+
+.ct-rule {
+  border: 0;
+  border-top: var(--ct-hairline) solid var(--ct-border);
+  margin: var(--ct-space-4) 0;
+}
+
+.ct-label {
+  font-size: var(--ct-text-xs);
+  letter-spacing: 0.06em;
+  color: var(--ct-text-muted);
+}
+
+.ct-muted {
+  color: var(--ct-text-muted);
+  font-size: var(--ct-text-sm);
+}
+
+/* 通用容器：桌面为主，最大宽度按阅读舒适度定，窄屏自适应 */
+.page-container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--ct-space-5);
+}
+
+/* 页面淡入：只做透明度，不做位移（位移在 reduced-motion 下会被关掉） */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity var(--ct-duration-base) var(--ct-ease);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* 排版工具类（时间与间距都走令牌） */
+.mt-16 { margin-top: var(--ct-space-4); }
+.mt-24 { margin-top: var(--ct-space-5); }
+
+.text-muted { color: var(--ct-text-muted); }
+.text-success { color: var(--el-color-success); }
+.text-danger { color: var(--el-color-danger); }
+
+/* ---------- 降低动效偏好：保留状态反馈，只去掉位移与长动画 ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--ct-duration-fast) !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* 位移类动效在降低动效时直接落位，颜色/透明度变化保留（状态仍可读） */
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0.001;
+  }
+}

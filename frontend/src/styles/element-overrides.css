@@ -1,0 +1,190 @@
+/* =============================================================================
+   Element Plus 对接层（混合组件策略的关键）
+
+   为什么要这一层：全站 48 种 Element Plus 组件、525 次使用里，默认色是 65%
+   对比度不达标的根源（#409eff 作正文仅 2.78:1、#909399 仅 3.08:1、#a8abb2 仅 2.24:1）。
+   把 EP 的 CSS 变量接到我们的令牌上，后台页面**一行结构都不用改**即可统一到同一套
+   设计系统，同时把对比度问题从源头修掉。
+
+   加载顺序（见 main.js）：element-plus/dist/index.css → tokens.css → 本文件 → base.css
+   本文件必须在 EP 样式之后，同权重下后者覆盖前者。
+   ========================================================================== */
+
+:root {
+  /* ---------- 主色：墨黑（承担主行动与链接），不再用 EP 默认蓝 ---------- */
+  --el-color-primary: var(--ct-action);
+  --el-color-primary-light-3: #3d4239;
+  --el-color-primary-light-5: #5c6159;
+  --el-color-primary-light-7: #8a8f86;
+  --el-color-primary-light-8: #a6aaa2;
+  --el-color-primary-light-9: var(--ct-bg-subtle);
+  --el-color-primary-dark-2: #000000;
+
+  /* ---------- 文字：全部提到 AA 以上（根因修复） ---------- */
+  --el-text-color-primary: var(--ct-text-primary);
+  --el-text-color-regular: var(--ct-text-primary);
+  --el-text-color-secondary: var(--ct-text-muted);
+  --el-text-color-placeholder: var(--ct-text-muted);
+  --el-text-color-disabled: var(--ct-text-faint);
+  --el-text-color-inverse: var(--ct-text-inverse);
+
+  /* ---------- 边框：0.5px 墨线的对应灰阶 ---------- */
+  --el-border-color: var(--ct-border);
+  --el-border-color-light: var(--ct-border);
+  --el-border-color-lighter: var(--ct-paper-200);
+  --el-border-color-extra-light: var(--ct-paper-100);
+  --el-border-color-dark: var(--ct-ink-400);
+  --el-border-color-darker: var(--ct-ink-600);
+  --el-border-width: var(--ct-line);
+
+  /* ---------- 填充与背景 ---------- */
+  --el-fill-color: var(--ct-bg-subtle);
+  --el-fill-color-light: var(--ct-bg-subtle);
+  --el-fill-color-lighter: var(--ct-paper-50);
+  --el-fill-color-extra-light: var(--ct-paper-50);
+  --el-fill-color-dark: var(--ct-paper-200);
+  --el-fill-color-darker: var(--ct-paper-200);
+  --el-fill-color-blank: var(--ct-bg-surface);
+  --el-bg-color: var(--ct-bg-surface);
+  --el-bg-color-page: var(--ct-bg-canvas);
+  --el-bg-color-overlay: var(--ct-bg-surface);
+
+  /* ---------- 圆角：切角纸卡，不是圆角胶囊 ---------- */
+  --el-border-radius-base: var(--ct-radius-md);
+  --el-border-radius-small: var(--ct-radius-sm);
+  --el-border-radius-round: 999px;
+  --el-border-radius-circle: 50%;
+
+  /* ---------- 字体与字号 ---------- */
+  --el-font-family: var(--ct-font-sans);
+  --el-font-size-base: var(--ct-text-base);
+  --el-font-size-small: var(--ct-text-sm);
+  --el-font-size-extra-small: var(--ct-text-xs);
+  --el-font-size-large: var(--ct-text-md);
+  --el-font-size-extra-large: var(--ct-text-lg);
+  --el-font-weight-primary: var(--ct-weight-medium);
+
+  /* ---------- 状态色：降饱和并保证作正文时达 AA ---------- */
+  --el-color-success: #2f5d3a;
+  --el-color-success-light-3: #4a7a55;
+  --el-color-success-light-5: #6f9a78;
+  --el-color-success-light-7: #a8c4ad;
+  --el-color-success-light-8: #d3e2d6;
+  --el-color-success-light-9: #edf3ee;
+  --el-color-success-dark-2: #24472d;
+
+  --el-color-warning: #7a5a2e;
+  --el-color-warning-light-3: #9a7a4e;
+  --el-color-warning-light-5: #b89a72;
+  --el-color-warning-light-7: #d6c1a2;
+  --el-color-warning-light-8: #e8dbc5;
+  --el-color-warning-light-9: #f4eee3;
+  --el-color-warning-dark-2: #5e4523;
+
+  --el-color-danger: #8c3b32;
+  --el-color-danger-light-3: #a85a51;
+  --el-color-danger-light-5: #c07f78;
+  --el-color-danger-light-7: #d9aaa5;
+  --el-color-danger-light-8: #e8cbc8;
+  --el-color-danger-light-9: #f4e6e4;
+  --el-color-danger-dark-2: #6e2e27;
+  --el-color-error: var(--el-color-danger);
+  --el-color-error-light-3: var(--el-color-danger-light-3);
+  --el-color-error-light-5: var(--el-color-danger-light-5);
+  --el-color-error-light-7: var(--el-color-danger-light-7);
+  --el-color-error-light-8: var(--el-color-danger-light-8);
+  --el-color-error-light-9: var(--el-color-danger-light-9);
+  --el-color-error-dark-2: var(--el-color-danger-dark-2);
+
+  --el-color-info: #4a5560;
+  --el-color-info-light-3: #6b757f;
+  --el-color-info-light-5: #8d959d;
+  --el-color-info-light-7: #b4b9be;
+  --el-color-info-light-8: #d3d7da;
+  --el-color-info-light-9: #eceeef;
+  --el-color-info-dark-2: #383f47;
+
+  /* ---------- 阴影：印刷纸不发光，阴影只用于浮层 ---------- */
+  --el-box-shadow: 0 1px 2px rgba(26, 29, 25, 0.08), 0 4px 12px rgba(26, 29, 25, 0.06);
+  --el-box-shadow-light: 0 1px 2px rgba(26, 29, 25, 0.08);
+  --el-box-shadow-lighter: 0 1px 2px rgba(26, 29, 25, 0.06);
+  --el-box-shadow-dark: 0 2px 6px rgba(26, 29, 25, 0.12), 0 8px 24px rgba(26, 29, 25, 0.08);
+
+  /* ---------- 遮罩 ---------- */
+  --el-overlay-color: rgba(26, 29, 25, 0.62);
+  --el-overlay-color-light: rgba(26, 29, 25, 0.5);
+  --el-overlay-color-lighter: rgba(26, 29, 25, 0.4);
+  --el-mask-color: rgba(245, 246, 243, 0.92);
+  --el-mask-color-extra-light: rgba(245, 246, 243, 0.6);
+
+  /* ---------- 禁用态 ---------- */
+  --el-disabled-bg-color: var(--ct-bg-subtle);
+  --el-disabled-text-color: var(--ct-text-faint);
+  --el-disabled-border-color: var(--ct-border);
+
+  /* EP 组件级：把常用组件的内建圆角/边框对齐本世界 */
+  --el-card-border-radius: var(--ct-radius-md);
+  --el-card-padding: var(--ct-space-4);
+  --el-table-border-color: var(--ct-border);
+  --el-table-header-bg-color: var(--ct-bg-subtle);
+  --el-table-header-text-color: var(--ct-text-primary);
+  --el-table-row-hover-bg-color: var(--ct-paper-50);
+}
+
+/* ---------- 少数必须靠选择器补的默认样式 ---------- */
+
+/* 标签与提示：EP 默认用类型色的浅底 + 类型色文字，浅底上仍是低对比 */
+.el-tag {
+  --el-tag-border-radius: var(--ct-radius-sm);
+  font-weight: var(--ct-weight-regular);
+}
+
+/* 顶栏/侧栏等大面积容器改为纸面而非 EP 的默认白+阴影 */
+.el-card {
+  box-shadow: none;
+  border: var(--ct-hairline) solid var(--ct-border);
+}
+
+/* 主按钮：墨黑实心，方形切角 */
+.el-button--primary {
+  --el-button-bg-color: var(--ct-action);
+  --el-button-border-color: var(--ct-action);
+  --el-button-hover-bg-color: var(--ct-action-hover);
+  --el-button-hover-border-color: var(--ct-action-hover);
+  --el-button-text-color: var(--ct-action-text);
+  border-radius: var(--ct-radius-sm);
+}
+
+.el-button {
+  border-radius: var(--ct-radius-sm);
+  font-weight: var(--ct-weight-regular);
+}
+
+/* 输入框：细墨线，聚焦时用 2px 墨线而非发光 */
+.el-input__wrapper,
+.el-textarea__inner {
+  border-radius: var(--ct-radius-sm);
+  box-shadow: 0 0 0 var(--ct-hairline) var(--ct-border) inset;
+}
+
+.el-input__wrapper.is-focus,
+.el-textarea__inner:focus {
+  box-shadow: 0 0 0 var(--ct-line-strong) var(--ct-focus) inset;
+}
+
+/* 对话框/抽屉：纸面 + 墨线，不用大圆角 */
+.el-dialog,
+.el-drawer {
+  border-radius: var(--ct-radius-md);
+  border: var(--ct-hairline) solid var(--ct-border);
+}
+
+/* 表格：去竖线、细横线，符合"登记簿"的阅读方式 */
+.el-table {
+  --el-table-border: var(--ct-hairline) solid var(--ct-border);
+  font-size: var(--ct-text-base);
+}
+
+.el-table th.el-table__cell {
+  font-weight: var(--ct-weight-semibold);
+}

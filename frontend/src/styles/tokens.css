@@ -1,0 +1,127 @@
+/* =============================================================================
+   设计令牌（v0.16 全站改版 · 唯一允许出现原始色值的地方）
+
+   方向：图书馆索书号与卡片目录
+   世界只提供四样东西：字体、配色、密度、一个签名动作 —— 本文件承载前三样。
+
+   三层结构：
+     ① 原始层 primitive  只描述"是什么颜色/多大"，不带用途
+     ② 语义层 semantic   描述"干什么用"，页面与组件只准用这一层
+     ③ 尺度层 scale      间距 / 字号 / 行高 / 圆角 / 线宽，全部收敛为固定档位
+
+   纪律：组件与页面不得出现裸色值；检查脚本 tools/check-tokens.py 会拦。
+   ========================================================================== */
+
+:root {
+  /* ---------- ① 原始层 ---------- */
+
+  /* 冷纸白：阅读室桌面在日光下的纸色。刻意不是暖奶油（那是 AI 界面的高频套路） */
+  --ct-paper-0: #ffffff;
+  --ct-paper-50: #f5f6f3;
+  --ct-paper-100: #e9ebe5;
+  --ct-paper-200: #dcdfd8;
+
+  /* 墨：印刷黑与它的灰阶 */
+  --ct-ink-900: #1a1d19;
+  --ct-ink-700: #3d4239;
+  --ct-ink-600: #5c6159; /* 对 --ct-paper-50 对比度 5.6:1，正文可用 */
+  --ct-ink-400: #8a8f86; /* 仅用于装饰性文字/已售出填充，不用于正文 */
+  --ct-rule: #c9ccc4;    /* 0.5px 墨线 */
+
+  /* 分类书标色（五种）：只用于分类识别与选中，绝不做装饰 */
+  --ct-cat-textbook: #7a5a2e; /* 教材教辅 */
+  --ct-cat-digital: #1f5a6b;  /* 数码电子 */
+  --ct-cat-dorm: #35603f;     /* 宿舍生活 */
+  --ct-cat-apparel: #7a4260;  /* 服饰美妆 */
+  --ct-cat-other: #6b6a2e;    /* 其他闲置 */
+
+  /* 状态色（形态编码为主、颜色为辅） */
+  --ct-status-trading: #7a5a2e;
+  --ct-status-sold: #8a8f86;
+
+  /* ---------- ② 语义层 ---------- */
+
+  --ct-bg-canvas: var(--ct-paper-50);
+  --ct-bg-surface: var(--ct-paper-0);
+  --ct-bg-subtle: var(--ct-paper-100);
+
+  --ct-text-primary: var(--ct-ink-900);
+  --ct-text-muted: var(--ct-ink-600);
+  --ct-text-faint: var(--ct-ink-400);
+  --ct-text-inverse: var(--ct-paper-0);
+
+  --ct-border: var(--ct-rule);
+  --ct-border-strong: var(--ct-ink-900);
+
+  /* 主行动：墨黑实心。全站不设第二个强调色 —— 颜色只用来做分类与状态 */
+  --ct-action: var(--ct-ink-900);
+  --ct-action-hover: var(--ct-ink-700);
+  --ct-action-text: var(--ct-paper-0);
+
+  --ct-focus: var(--ct-ink-900);
+  --ct-price: var(--ct-ink-900);
+  --ct-link: var(--ct-ink-900);
+
+  /* 分类色的语义别名：让代码读起来是"教材/数码/宿舍/服饰/其他"，不是色号 */
+  --ct-cat-1: var(--ct-cat-textbook);
+  --ct-cat-2: var(--ct-cat-digital);
+  --ct-cat-3: var(--ct-cat-dorm);
+  --ct-cat-4: var(--ct-cat-apparel);
+  --ct-cat-5: var(--ct-cat-other);
+
+  /* 层叠 */
+  --ct-z-sticky: 100;
+  --ct-z-overlay: 1000;
+
+  /* ---------- ③ 尺度层 ---------- */
+
+  /* 间距：4 的倍数，八档封顶 */
+  --ct-space-1: 4px;
+  --ct-space-2: 8px;
+  --ct-space-3: 12px;
+  --ct-space-4: 16px;
+  --ct-space-5: 24px;
+  --ct-space-6: 32px;
+  --ct-space-7: 48px;
+  --ct-space-8: 64px;
+
+  /* 字号：八档，替代原来散落的 12 种取值 */
+  --ct-text-xs: 12px;
+  --ct-text-sm: 13px;
+  --ct-text-base: 14px;
+  --ct-text-md: 15px;
+  --ct-text-lg: 18px;
+  --ct-text-xl: 22px;
+  --ct-text-2xl: 26px;
+  --ct-text-3xl: 40px;
+
+  /* 行高 */
+  --ct-leading-tight: 1.25;
+  --ct-leading-base: 1.55;
+  --ct-leading-loose: 1.75;
+
+  /* 字重 */
+  --ct-weight-regular: 400;
+  --ct-weight-medium: 500;
+  --ct-weight-semibold: 600;
+
+  /* 圆角：小、近乎方角 —— 图书馆卡片是切角的纸，不是圆角胶囊 */
+  --ct-radius-sm: 2px;
+  --ct-radius-md: 4px;
+  --ct-radius-lg: 6px;
+
+  /* 线宽：0.5px 是这套世界的"墨线" */
+  --ct-hairline: 0.5px;
+  --ct-line: 1px;
+  --ct-line-strong: 2px;
+
+  /* 字体：工作马（Operate 模式）+ 等宽（索书号与数字） */
+  --ct-font-sans: 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', system-ui,
+    -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --ct-font-mono: Consolas, 'Cascadia Mono', 'SF Mono', 'Courier New', monospace;
+
+  /* 动效：短、只在状态变化处 */
+  --ct-duration-fast: 80ms;
+  --ct-duration-base: 140ms;
+  --ct-ease: cubic-bezier(0.2, 0, 0.2, 1);
+}
