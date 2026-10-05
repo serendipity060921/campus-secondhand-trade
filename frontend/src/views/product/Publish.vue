@@ -279,7 +279,7 @@ onMounted(loadCategories)
 
 .tip-text {
   margin: 0 12px 0 20px;
-  color: #909399;
+  color: var(--ct-text-muted);
   font-size: 13px;
 }
 
@@ -292,13 +292,13 @@ onMounted(loadCategories)
 
 .upload-plus {
   font-size: 26px;
-  color: #8c939d;
+  color: var(--ct-text-muted);
   line-height: 1;
 }
 
 .upload-tip {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
   line-height: 1.8;
   max-width: 320px;
 }
@@ -307,7 +307,7 @@ onMounted(loadCategories)
   width: 96px;
   height: 96px;
   border-radius: 8px;
-  border: 1px dashed #dcdfe6;
+  border: 1px dashed var(--ct-border);
   margin-top: 4px;
 }
 </style>

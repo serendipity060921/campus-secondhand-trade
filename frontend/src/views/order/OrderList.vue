@@ -226,7 +226,7 @@ onMounted(() => {
   height: 56px;
   border-radius: 6px;
   object-fit: cover;
-  background: #f7f9fc;
+  background: var(--ct-bg-subtle);
   flex-shrink: 0;
 }
 
@@ -236,12 +236,12 @@ onMounted(() => {
 
 .order-no {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
   margin-top: 4px;
 }
 
 .price {
-  color: #f56c6c;
+  color: var(--ct-price);
   font-weight: 600;
 }
 

@@ -26,7 +26,10 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent / 'frontend' / 'src'
 PROJECT = ROOT.parent.parent
 
 # 设计系统层：允许出现原始色值
-ALLOWLIST = ('frontend/src/styles/',)
+#   · src/styles/                 —— 令牌定义与 EP 对接（唯一允许原始色值的样式层）
+#   · src/utils/design-tokens.js  —— 令牌的运行时读取器，其十六进制是"令牌缺失时的兜底色"，
+#                                    属于同一层的 JS 对应物（ECharts 画在 canvas 上，无法解析 CSS 变量）
+ALLOWLIST = ('frontend/src/styles/', 'frontend/src/utils/design-tokens.js')
 
 SPACE_SCALE = {'0', '4px', '8px', '12px', '16px', '24px', '32px', '48px', '64px'}
 FONT_SCALE = {'12px', '13px', '14px', '15px', '18px', '22px', '26px', '40px', '100%'}

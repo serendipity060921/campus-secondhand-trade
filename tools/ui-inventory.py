@@ -104,8 +104,12 @@ def main():
         'radius': {'distinct': len(radius), 'top': radius.most_common(15)},
         'fontSize': {'distinct': len(fs), 'top': fs.most_common(15)},
         'spacing': {'distinct': len(gap), 'top': gap.most_common(15)},
-        'tokens': {'definitions': len(var_def), 'usages': len(var_use),
-                   'componentUsages': len(var_use_comp),
+        'tokens': {'definitions': len(var_def), 'definitionsOccurrences': sum(var_def.values()),
+                   # usages 是**出现次数**（"多少处在用令牌"），distinctUsages 是不同变量名个数。
+                   # 之前误把 len(Counter) 当次数报，导致"组件层采用 15 处"这种失真读数。
+                   'usages': sum(var_use.values()), 'distinctUsages': len(var_use),
+                   'componentUsages': sum(var_use_comp.values()),
+                   'componentDistinct': len(var_use_comp),
                    'defined': var_def.most_common(30)},
         'elementPlus': {'distinctComponents': len(el), 'totalUsages': len(stats['el']),
                         'top': el.most_common(15)},

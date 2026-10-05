@@ -257,7 +257,7 @@ onMounted(() => {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  background: #f7f9fc;
+  background: var(--ct-bg-subtle);
   overflow: hidden;
 }
 
@@ -297,13 +297,13 @@ onMounted(() => {
 }
 
 .price {
-  color: #f56c6c;
+  color: var(--ct-price);
   font-size: 18px;
   font-weight: 700;
 }
 
 .origin {
-  color: #a8abb2;
+  color: var(--ct-text-muted);
   font-size: 12px;
   text-decoration: line-through;
 }
@@ -314,7 +314,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
 }
 
 .meta.second {

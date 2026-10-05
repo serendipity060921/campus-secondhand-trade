@@ -167,8 +167,8 @@ async function handleLogout() {
 
 .layout-header {
   height: 64px;
-  background: #fff;
-  border-bottom: 1px solid #ebeef5;
+  background: var(--ct-bg-surface);
+  border-bottom: 1px solid var(--ct-paper-200);
   padding: 0;
   position: sticky;
   top: 0;
@@ -197,7 +197,7 @@ async function handleLogout() {
 .logo-text {
   font-size: 18px;
   font-weight: 600;
-  color: #409eff;
+  color: var(--ct-text-primary);
 }
 
 .nav-menu {
@@ -240,10 +240,10 @@ async function handleLogout() {
 .layout-footer {
   height: auto;
   padding: 16px 0;
-  background: #fff;
-  border-top: 1px solid #ebeef5;
+  background: var(--ct-bg-surface);
+  border-top: 1px solid var(--ct-paper-200);
   text-align: center;
-  color: #606266;
+  color: var(--ct-text-primary);
   font-size: 13px;
   line-height: 1.8;
 }

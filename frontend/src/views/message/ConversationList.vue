@@ -161,13 +161,13 @@ onUnmounted(() => {
   align-items: center;
   gap: 14px;
   padding: 14px 6px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--ct-paper-100);
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .conversation-item:hover {
-  background: #f7f9fc;
+  background: var(--ct-bg-subtle);
 }
 
 .avatar-badge {
@@ -193,17 +193,17 @@ onUnmounted(() => {
 /* v0.14：在线状态标签 */
 .online {
   font-size: 11px;
-  color: #a8abb2;
+  color: var(--ct-text-muted);
   flex: 1;
 }
 
 .online.on {
-  color: #67c23a;
+  color: var(--el-color-success);
 }
 
 .time {
   font-size: 12px;
-  color: #a8abb2;
+  color: var(--ct-text-muted);
 }
 
 .row-2 {
@@ -212,7 +212,7 @@ onUnmounted(() => {
 
 .last-message {
   font-size: 13px;
-  color: #909399;
+  color: var(--ct-text-muted);
   display: inline-block;
   max-width: 100%;
   overflow: hidden;
@@ -222,7 +222,7 @@ onUnmounted(() => {
 }
 
 .last-message.unread {
-  color: #303133;
+  color: var(--ct-text-primary);
   font-weight: 600;
 }
 
@@ -231,7 +231,7 @@ onUnmounted(() => {
 }
 
 .arrow {
-  color: #c0c4cc;
+  color: var(--ct-text-muted);
   font-size: 20px;
 }
 </style>

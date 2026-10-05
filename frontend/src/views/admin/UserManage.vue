@@ -178,7 +178,7 @@ onMounted(load)
 
 .sub {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
 }
 
 .pagination {

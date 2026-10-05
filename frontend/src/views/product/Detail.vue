@@ -398,7 +398,7 @@ onMounted(loadDetail)
   width: 100%;
   aspect-ratio: 1 / 1;
   border-radius: 8px;
-  background: #f7f9fc;
+  background: var(--ct-bg-subtle);
 }
 
 .thumbs {
@@ -412,7 +412,7 @@ onMounted(loadDetail)
   width: 62px;
   height: 62px;
   border-radius: 6px;
-  border: 1px solid #ebeef5;
+  border: 1px solid var(--ct-paper-200);
   cursor: pointer;
 }
 
@@ -426,19 +426,19 @@ onMounted(loadDetail)
   display: flex;
   align-items: baseline;
   gap: 12px;
-  background: #fff6f6;
+  background: var(--ct-bg-subtle);
   padding: 12px 16px;
   border-radius: 8px;
 }
 
 .price {
-  color: #f56c6c;
+  color: var(--ct-price);
   font-size: 30px;
   font-weight: 700;
 }
 
 .origin {
-  color: #a8abb2;
+  color: var(--ct-text-muted);
   font-size: 13px;
   text-decoration: line-through;
 }
@@ -456,7 +456,7 @@ onMounted(loadDetail)
 
 .seller-card {
   margin-top: 16px;
-  background: #f7f9fc;
+  background: var(--ct-bg-subtle);
 }
 
 .seller {
@@ -471,7 +471,7 @@ onMounted(loadDetail)
 
 .seller-meta {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
   margin-top: 4px;
 }
 
@@ -487,11 +487,11 @@ onMounted(loadDetail)
   margin: 0;
   line-height: 1.9;
   white-space: pre-wrap;
-  color: #303133;
+  color: var(--ct-text-primary);
 }
 
 .dialog-price {
-  color: #f56c6c;
+  color: var(--ct-price);
   font-weight: 700;
   font-size: 16px;
 }

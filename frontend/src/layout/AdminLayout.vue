@@ -58,8 +58,8 @@ onMounted(loadPending)
         <span class="logo-icon">♻</span>
         <span class="logo-text">校园二手 · 管理后台</span>
       </div>
-      <el-menu :default-active="activeMenu" router class="menu" background-color="#1f2d3d"
-               text-color="#c0c4cc" active-text-color="#ffd04b">
+      <el-menu :default-active="activeMenu" router class="menu" background-color="var(--ct-bg-surface)"
+               text-color="var(--ct-text-muted)" active-text-color="var(--ct-text-primary)">
         <el-menu-item index="/admin/dashboard">
           <el-icon><DataLine /></el-icon>
           <span>数据看板</span>
@@ -107,7 +107,7 @@ onMounted(loadPending)
 }
 
 .aside {
-  background: #1f2d3d;
+  background: var(--ct-bg-surface);
   overflow-x: hidden;
 }
 
@@ -117,9 +117,9 @@ onMounted(loadPending)
   align-items: center;
   gap: 8px;
   padding: 0 14px;
-  color: #fff;
+  color: var(--ct-text-inverse);
   cursor: pointer;
-  border-bottom: 1px solid #2c3e50;
+  border-bottom: 1px solid var(--ct-border);
 }
 
 .logo-icon {
@@ -144,14 +144,14 @@ onMounted(loadPending)
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fff;
-  border-bottom: 1px solid #e4e7ed;
+  background: var(--ct-bg-surface);
+  border-bottom: 1px solid var(--ct-paper-200);
 }
 
 .page-title {
   font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--ct-text-primary);
 }
 
 .header-right {
@@ -162,11 +162,11 @@ onMounted(loadPending)
 
 .nickname {
   font-size: 13px;
-  color: #606266;
+  color: var(--ct-text-primary);
 }
 
 .main {
-  background: #f5f7fa;
+  background: var(--ct-bg-canvas);
   padding: 16px;
 }
 </style>

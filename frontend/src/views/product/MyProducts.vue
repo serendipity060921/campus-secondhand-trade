@@ -184,11 +184,11 @@ onMounted(load)
   border-radius: 6px;
   object-fit: cover;
   display: block;
-  background: #f7f9fc;
+  background: var(--ct-bg-subtle);
 }
 
 .price {
-  color: #f56c6c;
+  color: var(--ct-price);
   font-weight: 600;
 }
 

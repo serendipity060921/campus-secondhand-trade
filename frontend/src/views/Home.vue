@@ -123,7 +123,7 @@ onMounted(loadAll)
 
 <style scoped>
 .welcome-card {
-  border-left: 4px solid #409eff;
+  border-left: var(--ct-hairline) solid var(--ct-border);
 }
 
 .welcome {

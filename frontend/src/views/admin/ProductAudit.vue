@@ -227,7 +227,7 @@ onMounted(load)
 .tip {
   margin-left: auto;
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
 }
 
 .product-cell {
@@ -241,7 +241,7 @@ onMounted(load)
   height: 46px;
   object-fit: cover;
   border-radius: 4px;
-  background: #f5f7fa;
+  background: var(--ct-bg-canvas);
 }
 
 .title {
@@ -251,18 +251,18 @@ onMounted(load)
 
 .sub {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
 }
 
 .remark {
-  color: #e6a23c;
+  color: var(--el-color-warning);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .price {
-  color: #f56c6c;
+  color: var(--ct-price);
   font-weight: 700;
 }
 

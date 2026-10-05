@@ -259,7 +259,7 @@ onMounted(load)
   height: 96px;
   border-radius: 8px;
   object-fit: cover;
-  background: #f7f9fc;
+  background: var(--ct-bg-subtle);
   flex-shrink: 0;
 }
 
@@ -274,7 +274,7 @@ onMounted(load)
 }
 
 .price {
-  color: #f56c6c;
+  color: var(--ct-price);
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 6px;
@@ -297,7 +297,7 @@ onMounted(load)
 
 .user-meta {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
   margin-top: 4px;
 }
 

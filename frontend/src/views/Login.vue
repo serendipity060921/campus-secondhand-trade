@@ -131,7 +131,7 @@ async function checkBackend() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #e0f2ff 0%, #f5f7fa 100%);
+  background: var(--ct-bg-canvas);
 }
 
 .login-card {
@@ -147,7 +147,7 @@ async function checkBackend() {
 .title {
   font-size: 18px;
   font-weight: 600;
-  color: #409eff;
+  color: var(--ct-text-primary);
 }
 
 .submit-btn {

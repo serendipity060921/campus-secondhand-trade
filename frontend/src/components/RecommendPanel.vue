@@ -127,13 +127,13 @@ watch(() => props.productId, (v) => {
   gap: 12px;
   margin-bottom: 12px;
   padding-left: 10px;
-  border-left: 4px solid #409eff;
+  border-left: var(--ct-hairline) solid var(--ct-border);
 }
 
 .panel-title {
   font-size: 17px;
   font-weight: 700;
-  color: #303133;
+  color: var(--ct-text-primary);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -141,7 +141,7 @@ watch(() => props.productId, (v) => {
 
 .panel-sub {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
 }
 
 .rec-card {
@@ -157,7 +157,7 @@ watch(() => props.productId, (v) => {
 .cover {
   width: 100%;
   aspect-ratio: 1 / 1;
-  background: #f7f9fc;
+  background: var(--ct-bg-subtle);
   overflow: hidden;
 }
 
@@ -191,13 +191,13 @@ watch(() => props.productId, (v) => {
 }
 
 .price {
-  color: #f56c6c;
+  color: var(--ct-price);
   font-size: 17px;
   font-weight: 700;
 }
 
 .origin {
-  color: #a8abb2;
+  color: var(--ct-text-muted);
   font-size: 12px;
   text-decoration: line-through;
 }
@@ -212,7 +212,7 @@ watch(() => props.productId, (v) => {
 
 .reason {
   font-size: 12px;
-  color: #e6a23c;
+  color: var(--el-color-warning);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -223,6 +223,6 @@ watch(() => props.productId, (v) => {
   display: flex;
   justify-content: space-between;
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
 }
 </style>

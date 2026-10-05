@@ -383,8 +383,8 @@ function onEnter(event) {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid #ebeef5;
-  background: #fff;
+  border-bottom: 1px solid var(--ct-paper-200);
+  background: var(--ct-bg-surface);
   border-radius: 4px 4px 0 0;
 }
 
@@ -413,12 +413,12 @@ function onEnter(event) {
 
 .reconnecting {
   font-size: 11px;
-  color: #e6a23c;
+  color: var(--el-color-warning);
 }
 
 .peer-meta-text {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
   margin-top: 2px;
 }
 
@@ -430,7 +430,7 @@ function onEnter(event) {
   height: 460px;
   overflow-y: auto;
   padding: 16px;
-  background: #f5f7fa;
+  background: var(--ct-bg-canvas);
 }
 
 .load-more {
@@ -441,7 +441,7 @@ function onEnter(event) {
 .time-divider {
   text-align: center;
   font-size: 12px;
-  color: #a8abb2;
+  color: var(--ct-text-muted);
   margin: 12px 0 8px;
 }
 
@@ -470,14 +470,14 @@ function onEnter(event) {
 }
 
 .bubble-theirs {
-  background: #fff;
-  border: 1px solid #ebeef5;
+  background: var(--ct-bg-surface);
+  border: 1px solid var(--ct-paper-200);
   border-top-left-radius: 2px;
 }
 
 .bubble-mine {
-  background: #409eff;
-  color: #fff;
+  background: var(--ct-action);
+  color: var(--ct-text-inverse);
   border-top-right-radius: 2px;
 }
 
@@ -496,8 +496,8 @@ function onEnter(event) {
 
 .input-area {
   padding: 12px 16px 16px;
-  border-top: 1px solid #ebeef5;
-  background: #fff;
+  border-top: 1px solid var(--ct-paper-200);
+  background: var(--ct-bg-surface);
 }
 
 .input-actions {

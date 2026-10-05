@@ -231,7 +231,7 @@ onMounted(loadProfile)
 .avatar-tip {
   margin-top: 8px;
   font-size: 13px;
-  color: #409eff;
+  color: var(--ct-text-primary);
 }
 
 .small {

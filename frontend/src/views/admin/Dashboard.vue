@@ -21,6 +21,7 @@ import {
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { getDashboard } from '@/api/admin'
+import { chartPalette } from '@/utils/design-tokens'
 
 echarts.use([LineChart, PieChart, BarChart, GridComponent, TooltipComponent,
   LegendComponent, TitleComponent, CanvasRenderer])
@@ -62,17 +63,17 @@ function renderTrend(data) {
       { type: 'value', name: '金额(元)' }
     ],
     series: [
-      { name: '新增用户', type: 'line', smooth: true, data: data.userTrend.map((i) => i.value), itemStyle: { color: '#409eff' } },
-      { name: '新增商品', type: 'line', smooth: true, data: data.productTrend.map((i) => i.value), itemStyle: { color: '#67c23a' } },
-      { name: '新增订单', type: 'line', smooth: true, data: data.orderTrend.map((i) => i.value), itemStyle: { color: '#e6a23c' } },
-      { name: '成交额', type: 'bar', yAxisIndex: 1, data: gmv, barWidth: 14, itemStyle: { color: '#f56c6c', opacity: 0.75 } }
+      { name: '新增用户', type: 'line', smooth: true, data: data.userTrend.map((i) => i.value), itemStyle: { color: chartPalette.category()[1] } },
+      { name: '新增商品', type: 'line', smooth: true, data: data.productTrend.map((i) => i.value), itemStyle: { color: chartPalette.category()[2] } },
+      { name: '新增订单', type: 'line', smooth: true, data: data.orderTrend.map((i) => i.value), itemStyle: { color: chartPalette.warning() } },
+      { name: '成交额', type: 'bar', yAxisIndex: 1, data: gmv, barWidth: 14, itemStyle: { color: chartPalette.ink(), opacity: 0.75 } }
     ]
   })
 }
 
 function renderPie(el, title, data, colors) {
   initChart(el, {
-    title: { text: title, left: 'center', top: 0, textStyle: { fontSize: 13, color: '#606266' } },
+    title: { text: title, left: 'center', top: 0, textStyle: { fontSize: 13, color: chartPalette.muted() } },
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     legend: { bottom: 0, type: 'scroll', textStyle: { fontSize: 11 } },
     color: colors,
@@ -98,11 +99,12 @@ async function load() {
     setTimeout(() => {
       disposeCharts()
       renderTrend(data)
-      renderPie(categoryRef.value, '商品分类分布', data.categoryDist,
-        ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#9c27b0', '#00bcd4', '#ff9800', '#795548', '#607d8b', '#3f51b5', '#8bc34a'])
-      renderPie(orderStatusRef.value, '订单状态分布', data.orderStatusDist, ['#e6a23c', '#67c23a', '#909399'])
+      renderPie(categoryRef.value, '商品分类分布', data.categoryDist, chartPalette.category())
+      renderPie(orderStatusRef.value, '订单状态分布', data.orderStatusDist,
+        [chartPalette.trading(), chartPalette.success(), chartPalette.sold()])
       renderPie(productStatusRef.value, '商品状态分布', data.productStatusDist,
-        ['#f56c6c', '#67c23a', '#e6a23c', '#909399', '#409eff', '#9c27b0'])
+        [chartPalette.danger(), chartPalette.success(), chartPalette.warning(),
+          chartPalette.sold(), chartPalette.ink()])
     }, 50)
   } finally {
     loading.value = false
@@ -253,28 +255,28 @@ onBeforeUnmount(() => {
 
 .stat-label {
   font-size: 13px;
-  color: #909399;
+  color: var(--ct-text-muted);
 }
 
 .stat-value {
   font-size: 26px;
   font-weight: 700;
-  color: #303133;
+  color: var(--ct-text-primary);
   margin: 6px 0 2px;
 }
 
 .stat-value.price {
-  color: #f56c6c;
+  color: var(--ct-price);
   font-size: 22px;
 }
 
 .stat-value.warn {
-  color: #e6a23c;
+  color: var(--el-color-warning);
 }
 
 .stat-sub {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
   min-height: 20px;
 }
 
@@ -298,7 +300,7 @@ onBeforeUnmount(() => {
 }
 
 .text-muted {
-  color: #909399;
+  color: var(--ct-text-muted);
   font-size: 12px;
 }
 </style>

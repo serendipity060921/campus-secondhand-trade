@@ -273,12 +273,26 @@ online = subprocess.run([_REDIS, '-h', '127.0.0.1', '-p', '6379',
 online_active = subprocess.run([_REDIS, '-h', '127.0.0.1', '-p', '6379',
                                 'zcount', 'campus:online:zset', str(_now - 90), '+inf'],
                                capture_output=True, text=True).stdout.strip()
-rec('D19', '在线状态 Key 由心跳维护（连接断开后应归零）',
-    'ZREMRANGEBYSCORE 清扫窗口外成员后检查基数与窗口内活跃成员',
-    '基数为 0（且无窗口内活跃成员）',
-    online == '0' and online_active == '0',
-    f'清扫后基数={online}，窗口内活跃={online_active}'
-    + ('' if online_active == '0' else '（有客户端真实在线，非回归）'))
+# 断言限定到**用例自己的账号**（stu_test01 / stu_demo）：
+# 全局"基数为 0"这个不变量在不成立时并不代表缺陷 —— 只要开发者自己开着浏览器、
+# 或并行跑着 UI 审计脚本（它们会访问 /chat/*，从而建立真实 WebSocket 心跳），
+# 全局基数就必然大于 0。因此这里验证的是本用例真正关心的意图：
+# "用例自己建立的连接断开后，对应的心跳成员被清理"。
+_test_ids = [x for x in (sql("SELECT GROUP_CONCAT(id) FROM user WHERE username IN ('stu_test01','stu_demo')") or '').split(',') if x.strip()]
+_leftover = []
+for _uid in _test_ids:
+    _score = subprocess.run([_REDIS, '-h', '127.0.0.1', '-p', '6379', 'zscore',
+                             'campus:online:zset', _uid.strip()],
+                            capture_output=True, text=True).stdout.strip()
+    if _score and _score != 'nil':
+        _leftover.append(f'{_uid.strip()}(心跳 {_score})')
+rec('D19', '在线状态 Key 由心跳维护（用例连接断开后成员被清理）',
+    '先按应用语义清扫窗口外成员，再检查用例账号是否仍留在线上集合',
+    '用例账号均已从 campus:online:zset 移除',
+    not _leftover,
+    f'用例账号残留={_leftover or "无"}；'
+    f'全局清扫后基数={online}、窗口内活跃={online_active}'
+    + ('' if online_active == '0' else '（有其它客户端真实在线，不影响本断言）'))
 
 # ---------------------------------------------------------------- 五、数据持久化
 print('\n【5】数据与文件持久化')
