@@ -188,3 +188,19 @@
 .el-table th.el-table__cell {
   font-weight: var(--ct-weight-semibold);
 }
+
+/* ---------- 焦点可见性兜底 ----------
+   Element Plus 的 tooltip / dropdown 触发器（如顶栏用户名）会拿到键盘焦点，
+   但组件自己的 scoped 样式写了 outline: none（FrontLayout.vue 的 .user-name），
+   于是键盘用户看不到焦点在哪。这里用更高权重的选择器补上焦点环：
+   .el-dropdown .el-tooltip__trigger:focus-visible = (0,3,0)，
+   高于 scoped 样式的 .user-name[data-v-x] = (0,2,0)，因此能覆盖且无需 !important。
+   只影响"确实获得焦点"的元素，不改变静态外观。 */
+.el-dropdown .el-tooltip__trigger:focus-visible,
+.el-dropdown .el-dropdown-link:focus-visible,
+.el-tooltip__trigger:focus-visible,
+[class*='trigger']:focus-visible {
+  outline: var(--ct-line-strong) solid var(--ct-focus);
+  outline-offset: 2px;
+  border-radius: var(--ct-radius-sm);
+}
