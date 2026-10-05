@@ -87,22 +87,28 @@ PRODUCT_TITLE2 = f'E2E取消流程商品-{TAG}'
 # 需要保留现场时设 E2E_KEEP_DATA=1。
 _KEEP_FIXTURES = os.environ.get('E2E_KEEP_DATA', '') == '1'
 
+# 注意：atexit 回调在解释器拆卸阶段执行，此时模块全局变量可能已被清理
+# （实际踩过：回调里读 __file__ 报 NameError，导致清理静默失败、数据被留在演示库里）。
+# 因此把需要的路径与依赖在**注册时**绑定成默认参数，存进函数对象，不依赖全局查找。
+_CLEANUP_TOOL = pathlib.Path(__file__).resolve().parent.parent.parent / 'tools' / 'clean-test-data.py'
+_EXE = sys.executable
+_RUN = subprocess.run
 
-def _auto_cleanup():
-    if _KEEP_FIXTURES:
-        print('（E2E_KEEP_DATA=1，跳过夹具清理，数据将保留以便排查）')
+
+def _auto_cleanup(tool=_CLEANUP_TOOL, tag=TAG, keep=_KEEP_FIXTURES, exe=_EXE, run=_RUN, out=print):
+    if keep:
+        out('（E2E_KEEP_DATA=1，跳过夹具清理，数据将保留以便排查）')
         return
-    tool = pathlib.Path(__file__).resolve().parent.parent.parent / 'tools' / 'clean-test-data.py'
     if not tool.exists():
-        print(f'（未找到清理工具 {tool}，请手动清理 e2e* 夹具）')
+        out(f'（未找到清理工具 {tool}，请手动清理 e2e* 夹具）')
         return
     try:
-        r = subprocess.run([sys.executable, str(tool), '--tag', TAG],
-                           capture_output=True, text=True, encoding='utf-8', timeout=300)
+        r = run([exe, str(tool), '--tag', tag], capture_output=True, text=True,
+                encoding='utf-8', timeout=300)
         tail = [x.strip() for x in (r.stdout or '').strip().splitlines() if x.strip()][-3:]
-        print('夹具清理（TAG=%s）：%s' % (TAG, ' / '.join(tail)))
+        out('夹具清理（TAG=%s）：%s' % (tag, ' / '.join(tail)))
     except Exception as e:                                   # noqa: BLE001
-        print(f'夹具清理失败，请手动运行：python tools/clean-test-data.py --tag {TAG}（{e}）')
+        out(f'夹具清理失败，请手动运行：python tools/clean-test-data.py --tag {tag}（{e}）')
 
 
 atexit.register(_auto_cleanup)
