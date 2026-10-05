@@ -27,12 +27,19 @@ jobs:
 
       # 棘轮阈值：初次接入令牌层时组件层有 126 处裸色值（2026-10-04 实测）。
       # 每清理完一个页面族就把这个数字下调，规范只会越来越紧，不会反弹。
-      - name: 组件层不得出现裸色值（超阈值即失败）
+      - name: 设计令牌纪律检查（组件层不得出现裸色值）
         run: python tools/check-tokens.py --max-errors 126
 
       - name: 输出令牌纪律报告
         if: always()
         run: python tools/check-tokens.py --label ci
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 纯函数单元验证（索书号编号规则）
+        run: node tests/unit/catalogue.test.mjs
 
       - uses: actions/upload-artifact@v4
         if: always()
