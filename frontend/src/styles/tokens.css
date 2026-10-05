@@ -28,12 +28,18 @@
   --ct-ink-400: #8a8f86; /* 仅用于装饰性文字/已售出填充，不用于正文 */
   --ct-rule: #c9ccc4;    /* 0.5px 墨线 */
 
-  /* 分类书标色（五种）：只用于分类识别与选中，绝不做装饰 */
-  --ct-cat-textbook: #7a5a2e; /* 教材教辅 */
-  --ct-cat-digital: #1f5a6b;  /* 数码电子 */
-  --ct-cat-dorm: #35603f;     /* 宿舍生活 */
-  --ct-cat-apparel: #7a4260;  /* 服饰美妆 */
-  --ct-cat-other: #6b6a2e;    /* 其他闲置 */
+  /* 分类书标色（八条，对应数据库里真实的 8 个顶层分类）
+     每条 = 实色条（bar，做识别）+ 浅色调场（tint，做色带底）。
+     为什么不是深色块压墨字：深色块上墨字对比度不达标；图书馆书标本来就是
+     "彩色标签贴在白纸上"，浅色调场 + 实色条才是这个世界的真实形态。 */
+  --ct-cat-1-bar: #7a5a2e;  --ct-cat-1-tint: #f1eae0;  /* 教材书籍 */
+  --ct-cat-2-bar: #1f5a6b;  --ct-cat-2-tint: #e4eef0;  /* 数码电子 */
+  --ct-cat-3-bar: #35603f;  --ct-cat-3-tint: #e6efe8;  /* 生活用品 */
+  --ct-cat-4-bar: #6b6a2e;  --ct-cat-4-tint: #eff0df;  /* 运动户外 */
+  --ct-cat-5-bar: #7a4260;  --ct-cat-5-tint: #f2e7ec;  /* 服饰鞋包 */
+  --ct-cat-6-bar: #8c3b5a;  --ct-cat-6-tint: #f5e6eb;  /* 美妆护肤 */
+  --ct-cat-7-bar: #3a4a7a;  --ct-cat-7-tint: #e7eaf3;  /* 乐器文具 */
+  --ct-cat-8-bar: #5a5f58;  --ct-cat-8-tint: #ecEEea;  /* 其他闲置 */
 
   /* 状态色（形态编码为主、颜色为辅） */
   --ct-status-trading: #7a5a2e;
@@ -62,12 +68,19 @@
   --ct-price: var(--ct-ink-900);
   --ct-link: var(--ct-ink-900);
 
-  /* 分类色的语义别名：让代码读起来是"教材/数码/宿舍/服饰/其他"，不是色号 */
-  --ct-cat-1: var(--ct-cat-textbook);
-  --ct-cat-2: var(--ct-cat-digital);
-  --ct-cat-3: var(--ct-cat-dorm);
-  --ct-cat-4: var(--ct-cat-apparel);
-  --ct-cat-5: var(--ct-cat-other);
+  /* 分类色的语义别名：让代码读起来是分类名，不是色号。
+     数字与数据库 category 表中的顶层分类一一对应：
+       1 教材书籍 / 2 数码电子 / 3 生活用品 / 4 运动户外
+       5 服饰鞋包 / 6 美妆护肤 / 7 乐器文具 / 8 其他闲置
+     用法：色带底用 -tint，实色条与选中态用 -bar（见 utils/catalogue.js 的映射）。 */
+  --ct-cat-1: var(--ct-cat-1-bar);
+  --ct-cat-2: var(--ct-cat-2-bar);
+  --ct-cat-3: var(--ct-cat-3-bar);
+  --ct-cat-4: var(--ct-cat-4-bar);
+  --ct-cat-5: var(--ct-cat-5-bar);
+  --ct-cat-6: var(--ct-cat-6-bar);
+  --ct-cat-7: var(--ct-cat-7-bar);
+  --ct-cat-8: var(--ct-cat-8-bar);
 
   /* 层叠 */
   --ct-z-sticky: 100;

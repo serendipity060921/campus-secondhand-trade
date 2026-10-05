@@ -1,0 +1,85 @@
+name: CI
+
+# 说明：
+#   本工作流只做「不需要数据库、Redis 与浏览器」的检查，因此在 GitHub 托管机上稳定可跑：
+#     1) 设计令牌纪律  —— 组件层不得出现裸色值，发现数只许下降不许上升（棘轮）
+#     2) 前端构建      —— pnpm 冻结锁文件安装 + Vite 构建
+#     3) 后端编译      —— Maven 打包（跳过测试，因为单测尚未建立）
+#   需要真实环境的端到端用例（tests/e2e、tests/api）不在此运行，它们在本地对
+#   已部署的实例执行（见 README 的测试章节）。
+
+on:
+  push:
+    branches: [master, 'ui/**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  design-guard:
+    name: 设计令牌纪律
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # 棘轮阈值：初次接入令牌层时组件层有 126 处裸色值（2026-10-04 实测）。
+      # 每清理完一个页面族就把这个数字下调，规范只会越来越紧，不会反弹。
+      - name: 组件层不得出现裸色值（超阈值即失败）
+        run: python tools/check-tokens.py --max-errors 126
+
+      - name: 输出令牌纪律报告
+        if: always()
+        run: python tools/check-tokens.py --label ci
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tokens-lint
+          path: .impeccable/review/ci/tokens-lint.json
+          if-no-files-found: ignore
+
+  frontend:
+    name: 前端构建
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: 安装依赖（冻结锁文件，杜绝"本机能跑"）
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建
+        run: pnpm build
+
+  backend:
+    name: 后端编译
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      - name: 打包（跳过测试）
+        run: mvn -B -DskipTests package
