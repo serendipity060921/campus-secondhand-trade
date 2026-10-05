@@ -16,6 +16,7 @@ import { useRouter } from 'vue-router'
 import { getRecommend, getSimilar } from '@/api/recommend'
 import { demoImage, formatPrice, resolveImageUrl } from '@/utils/product'
 import StateError from '@/components/states/StateError.vue'
+import SkeletonList from '@/components/states/SkeletonList.vue'
 
 const props = defineProps({
   mode: { type: String, default: 'personal' },      // personal | similar
@@ -84,7 +85,10 @@ watch(() => props.productId, (v) => {
     retry-text="重新加载"
     @retry="load"
   />
-  <div v-else-if="loading || items.length" class="recommend-panel" :class="`variant-${variant}`" v-loading="loading">
+  <div v-else-if="loading || items.length" class="recommend-panel" :class="`variant-${variant}`">
+    <!-- 加载态：与条目同形的骨架（此前是转圈遮罩） -->
+    <SkeletonList v-if="loading" variant="row" :count="variant === 'rail' ? 3 : 4" :columns="1" />
+    <template v-else>
     <div class="panel-header">
       <span class="panel-title">
         <el-icon><Star /></el-icon>
@@ -151,6 +155,7 @@ watch(() => props.productId, (v) => {
         </el-card>
       </el-col>
     </el-row>
+    </template>
   </div>
 </template>
 

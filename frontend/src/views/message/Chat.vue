@@ -22,6 +22,7 @@ import { useUserStore } from '@/store/user'
 import { useChatStore } from '@/store/chat'
 import chatSocket from '@/utils/websocket'
 import StateError from '@/components/states/StateError.vue'
+import SkeletonList from '@/components/states/SkeletonList.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -324,7 +325,7 @@ function onEnter(event) {
     retry-text="重新加载"
     @retry="loadFirst"
   />
-  <div v-else class="chat-page" v-loading="loading">
+  <div v-else class="chat-page">
     <el-card shadow="never" :body-style="{ padding: '0' }">
       <!-- 顶部：对方信息 -->
       <div class="chat-header">
@@ -357,7 +358,10 @@ function onEnter(event) {
           <span v-else-if="messages.length > 0" class="text-muted">—— 已经是最早的消息 ——</span>
         </div>
 
-        <el-empty v-if="!loading && messages.length === 0" description="还没有聊天记录，发一条消息打个招呼吧～" :image-size="70" />
+        <!-- 加载态：与消息行同形的骨架（此前是整块转圈遮罩） -->
+        <SkeletonList v-if="loading" variant="row" :count="4" :columns="1" />
+
+        <el-empty v-else-if="messages.length === 0" description="还没有聊天记录，发一条消息打个招呼吧～" :image-size="70" />
 
         <div v-for="(msg, index) in messages" :key="msg.id" class="message-row">
           <div v-if="showTimeDivider(index)" class="time-divider">{{ msg.createTime }}</div>

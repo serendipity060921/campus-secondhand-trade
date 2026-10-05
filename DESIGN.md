@@ -231,6 +231,29 @@ components:
 
 **The No-Raw-Color Rule.** 组件里不得写裸色值，一律用 `var(--ct-*)`；CI 已锁死 0 容忍。
 
+
+### 代码落点（本项目的实现位置）
+
+| 设计要素 | 落地文件 |
+| --- | --- |
+| 令牌三层（原始值 / 语义 / 组件） | `frontend/src/styles/tokens.css` |
+| Element Plus 变量映射与焦点环兜底 | `frontend/src/styles/element-overrides.css` |
+| 全局基础样式与 `.sr-only` 工具类 | `frontend/src/styles/base.css` |
+| 分类书标色带（8 段，主色场） | `frontend/src/components/catalogue/CategoryBand.vue` |
+| 目录卡（4:3 图 → 分类号 chip → 标题两行 → 价格 → 校区 · 成色） | `frontend/src/components/catalogue/CatalogueCard.vue` |
+| 状态组件（空 / 错误 / 无权限 / 三种骨架） | `frontend/src/components/states/` |
+| 推荐位（整宽网格 / 右栏竖排两版式） | `frontend/src/components/RecommendPanel.vue` |
+| 索书号派生规则（分类号 + 种次号） | `frontend/src/utils/catalogue.js`（含 28 条单元测试） |
+| ECharts 取色（canvas 读不到 CSS 变量） | `frontend/src/utils/design-tokens.js` |
+
+**实测断点**：顶栏在 ≤1100px 收起导航（固有宽度 1094px），色带 ≤1100px 折为 4 列、≤600px 折为 2 列；
+目录卡 3 列 → 2 列 → 1 列。390/768/1024/1280/1440 五个宽度下前台页面横向溢出均为 0
+（改版前 390/768/1024 分别溢出 704/326/70px；后台两页仍溢出，属已知待办）。
+
+**可访问性基线（实测）**：焦点不可见 0；图片无 alt 0；无 h1 页面 0；无可访问名称的可交互元素 0；
+7 个页面逐一 Tab 走查无死角。对比度不达标 0%（3 处装饰性文字）。
+表单错误通过 `aria-invalid` + `aria-describedby` + 带 id 的错误元素与字段关联。
+
 ## Do's and Don'ts
 
 **Do**

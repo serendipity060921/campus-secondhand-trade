@@ -16,6 +16,7 @@ import { getConversationList } from '@/api/message'
 import { useChatStore } from '@/store/chat'
 import chatSocket from '@/utils/websocket'
 import StateError from '@/components/states/StateError.vue'
+import SkeletonList from '@/components/states/SkeletonList.vue'
 
 const router = useRouter()
 const chatStore = useChatStore()
@@ -97,7 +98,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-loading="loading">
+  <div>
     <StateError
       v-if="loadError && !loading"
       title="会话列表加载失败"
@@ -105,6 +106,10 @@ onUnmounted(() => {
       retry-text="重新加载"
       @retry="load(false)"
     />
+    <!-- 加载态：与最终列表同形的行骨架（此前是转圈遮罩） -->
+    <div v-else-if="loading" class="loading-wrap">
+      <SkeletonList variant="row" :count="6" :columns="1" />
+    </div>
     <el-card v-else shadow="never">
       <template #header>
         <div class="card-header">
@@ -169,6 +174,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+/* 行骨架的承载：与列表卡片同宽同边距，避免加载完时跳动 */
+.loading-wrap {
+  background: var(--ct-bg-surface);
+  border: var(--ct-hairline) solid var(--ct-border);
+  border-radius: var(--ct-radius-sm);
+  padding: var(--ct-space-4);
 }
 
 .header-right {
