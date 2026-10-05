@@ -15,11 +15,13 @@ import { useRouter } from 'vue-router'
 import { getConversationList } from '@/api/message'
 import { useChatStore } from '@/store/chat'
 import chatSocket from '@/utils/websocket'
+import StateError from '@/components/states/StateError.vue'
 
 const router = useRouter()
 const chatStore = useChatStore()
 
 const loading = ref(false)
+const loadError = ref(false)
 const conversations = ref([])
 let timer = null
 let unsubscribers = []
@@ -50,14 +52,21 @@ function formatTime(time) {
 }
 
 async function load(silent = false) {
-  if (!silent) loading.value = true
+  if (!silent) {
+    loading.value = true
+    loadError.value = false
+  }
   try {
     const res = await getConversationList()
     conversations.value = res.data || []
     // v0.14：一次性查询所有会话对象的在线状态（WebSocket 批量查询优先）
     chatStore.queryOnline(conversations.value.map((item) => item.peerId).filter(Boolean))
   } catch (e) {
-    if (!silent) conversations.value = []
+    // 静默刷新（定时器/推送触发）失败不打断页面；只有用户主动进入时才呈现错误态
+    if (!silent) {
+      conversations.value = []
+      loadError.value = true
+    }
   } finally {
     loading.value = false
   }
@@ -89,7 +98,14 @@ onUnmounted(() => {
 
 <template>
   <div v-loading="loading">
-    <el-card shadow="never">
+    <StateError
+      v-if="loadError && !loading"
+      title="会话列表加载失败"
+      detail="网络可能不稳定，或服务正在重启"
+      retry-text="重新加载"
+      @retry="load(false)"
+    />
+    <el-card v-else shadow="never">
       <template #header>
         <div class="card-header">
           <b>我的消息</b>

@@ -10,10 +10,12 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyProducts, updateProductStatus } from '@/api/product'
 import { demoImage, formatPrice, PRODUCT_STATUS, resolveImageUrl } from '@/utils/product'
+import StateError from '@/components/states/StateError.vue'
 
 const router = useRouter()
 
 const loading = ref(false)
+const loadError = ref(false)
 const products = ref([])
 const total = ref(0)
 const activeStatus = ref('all')
@@ -43,6 +45,7 @@ function canToggle(status) {
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getMyProducts({
       page: query.page,
@@ -54,7 +57,8 @@ async function load() {
   } catch (e) {
     products.value = []
     total.value = 0
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -105,7 +109,14 @@ onMounted(load)
         <el-tab-pane v-for="tab in statusTabs" :key="tab.name" :label="tab.label" :name="tab.name" />
       </el-tabs>
 
-      <el-table v-loading="loading" :data="products" border stripe>
+      <StateError
+        v-if="loadError && !loading"
+        title="加载失败，请稍后重试"
+        detail="网络可能不稳定，或服务正在重启"
+        retry-text="重新加载"
+        @retry="load"
+      />
+      <el-table v-else v-loading="loading" :data="products" border stripe>
         <el-table-column label="图片" width="92">
           <template #default="{ row }">
             <img class="table-img" :src="imageOf(row)" alt="商品图片" />

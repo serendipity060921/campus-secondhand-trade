@@ -13,6 +13,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getBuyOrders, getSellOrders, updateOrderStatus } from '@/api/order'
 import { demoImage, resolveImageUrl } from '@/utils/product'
+import StateError from '@/components/states/StateError.vue'
 
 const props = defineProps({
   role: { type: String, default: 'buy' } // buy | sell
@@ -22,6 +23,7 @@ const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
+const loadError = ref(false)
 const orders = ref([])
 const total = ref(0)
 const activeStatus = ref('all')
@@ -51,6 +53,7 @@ function statusTagType(status) {
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const params = {
       page: query.page,
@@ -63,7 +66,8 @@ async function load() {
   } catch (e) {
     orders.value = []
     total.value = 0
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -148,7 +152,14 @@ onMounted(() => {
         <el-tab-pane v-for="tab in statusTabs" :key="tab.name" :label="tab.label" :name="tab.name" />
       </el-tabs>
 
-      <el-table v-loading="loading" :data="orders" border stripe>
+      <StateError
+        v-if="loadError && !loading"
+        title="加载失败，请稍后重试"
+        detail="网络可能不稳定，或服务正在重启"
+        retry-text="重新加载"
+        @retry="load"
+      />
+      <el-table v-else v-loading="loading" :data="orders" border stripe>
         <el-table-column label="商品" min-width="250">
           <template #default="{ row }">
             <div class="product-cell">

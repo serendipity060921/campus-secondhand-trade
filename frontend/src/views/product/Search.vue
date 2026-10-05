@@ -13,11 +13,13 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getSearchCategories, searchProducts } from '@/api/search'
 import { demoImage, formatPrice, resolveImageUrl } from '@/utils/product'
+import StateError from '@/components/states/StateError.vue'
 
 const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
+const loadError = ref(false)
 const products = ref([])
 const categories = ref([])
 const total = ref(0)
@@ -73,6 +75,7 @@ async function loadCategories() {
 
 async function loadProducts() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await searchProducts({
       keyword: query.keyword || undefined,
@@ -86,7 +89,8 @@ async function loadProducts() {
   } catch (e) {
     products.value = []
     total.value = 0
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -201,7 +205,14 @@ onMounted(() => {
     </el-card>
 
     <!-- 结果列表 -->
-    <div v-loading="loading" class="result-area">
+    <StateError
+      v-if="loadError && !loading"
+      title="加载失败，请稍后重试"
+      detail="网络可能不稳定，或服务正在重启"
+      retry-text="重新加载"
+      @retry="loadProducts"
+    />
+    <div v-else v-loading="loading" class="result-area">
       <el-empty v-if="!loading && products.length === 0" description="没有找到符合条件的商品，换个关键词试试～">
         <el-button type="primary" @click="router.push('/home')">返回首页</el-button>
       </el-empty>

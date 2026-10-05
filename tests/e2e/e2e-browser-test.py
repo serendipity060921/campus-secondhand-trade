@@ -64,6 +64,25 @@ def preflight(base, api):
 if not preflight(BASE, API):
     raise SystemExit(2)
 
+# ---------------------------------------------------------------- 限流计数复位
+# 生产配置下 rate-limit-skip-local=false，本机同样受限（register 10 次/5 分钟、
+# login 20 次/60 秒，均为按 IP 计数）。本套件每次运行要注册 3 个账号并多次登录，
+# 短窗口内重复运行会耗尽注册预算，表现为账号建不出来、后续步骤连锁超时
+# （实际踩过：连跑 5 次后失败数从 2 个涨到 4 个，看起来像"代码改坏了"）。
+# 限流本身由部署验证的 D17/D18 专项用例负责验证，因此这里跑前复位计数是可接受的。
+_REDIS_CLI = os.environ.get('REDIS_CLI', r'D:\major\tool\redis\redis-cli.exe')
+if pathlib.Path(_REDIS_CLI).exists():
+    try:
+        _keys = subprocess.run([_REDIS_CLI, 'KEYS', 'campus:ratelimit:*'],
+                               capture_output=True, text=True, encoding='utf-8', timeout=15)
+        _list = [k.strip() for k in (_keys.stdout or '').splitlines() if k.strip()]
+        if _list:
+            subprocess.run([_REDIS_CLI, 'DEL'] + _list, capture_output=True, timeout=15)
+        print(f'限流计数已复位（清除 {len(_list)} 个 key）—— 生产配置下本机同样受限，'
+              f'本套件需在短窗口内可重复运行')
+    except Exception as _e:                                   # noqa: BLE001
+        print(f'（限流计数复位失败，若后续出现账号创建失败请检查限流：{_e}）')
+
 MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
 EV = pathlib.Path(r'D:\campus-secondhand-trade\docs\test-evidence')
 EV.mkdir(parents=True, exist_ok=True)

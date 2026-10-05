@@ -17,6 +17,7 @@ import { conditionLabel, formatPrice, PRODUCT_STATUS, resolveDetailImages } from
 import { submitReport as submitReportApi } from '@/api/report'
 // v0.11 推荐模块：相关推荐面板
 import RecommendPanel from '@/components/RecommendPanel.vue'
+import StateError from '@/components/states/StateError.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,6 +27,7 @@ const userStore = useUserStore()
 const productId = Number(route.params.id)
 
 const loading = ref(false)
+const loadError = ref(false)
 const notFound = ref(false)
 const product = ref(null)
 
@@ -140,6 +142,7 @@ async function submitReport() {
 
 async function loadDetail() {
   loading.value = true
+  loadError.value = false
   notFound.value = false
   try {
     const res = await getProductDetail(route.params.id)
@@ -153,7 +156,8 @@ async function loadDetail() {
     // 后端返回 3001「商品不存在或已被删除」，这里展示空状态
     notFound.value = true
     product.value = null
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -199,7 +203,14 @@ onMounted(loadDetail)
 </script>
 
 <template>
-  <div v-loading="loading">
+  <StateError
+    v-if="loadError && !loading"
+    title="加载失败，请稍后重试"
+    detail="网络可能不稳定，或服务正在重启"
+    retry-text="重新加载"
+    @retry="loadDetail"
+  />
+  <div v-else v-loading="loading">
     <el-result
       v-if="notFound"
       icon="warning"

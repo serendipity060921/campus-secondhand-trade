@@ -54,7 +54,9 @@ PAGE_TYPES = {
 REQUIRED = {
     'list': ['loading', 'empty', 'error'],
     'detail': ['loading', 'error'],
-    'form': ['loading', 'error'],
+    # 表单页只要求提交态：表单的错误通道是**字段校验 + 全局 toast**（拦截器统一弹出），
+    # 再塞一个整块错误面板反而与字段级提示重复、也更占地方。这是有意的判断，不是遗漏。
+    'form': ['loading'],
     'misc': [],
 }
 
@@ -63,7 +65,10 @@ PATTERNS = {
     # 加载态：骨架屏、转圈遮罩、或组件上的 :loading 属性（表单页提交态常用）
     'loading': [r'v-loading', r'el-skeleton', r'<Skeleton[A-Z]', r'<skeleton-', r':loading='],
     'empty': [r'el-empty', r'<StateEmpty', r'<state-empty'],
-    'error': [r'ElMessage\.error', r'<StateError', r'<state-error', r'error-text', r'loadError'],
+    # 页面级错误态：**持久、可重试**的呈现（这是目标形态）
+    'error': [r'<StateError', r'<state-error', r'error-text', r'loadError', r'load-error'],
+    # 全局兜底：axios 拦截器统一弹出的 3 秒 toast（有反馈但会消失、无重试入口）
+    'toast': [r'ElMessage\.error', r"type:\s*['\"]error['\"]", r'\.error\('],
     'forbidden': [r'<StateForbidden', r'<state-forbidden', r'403'],
 }
 
@@ -79,7 +84,6 @@ def detect(text):
     found['skeleton'] = bool(re.search(r'el-skeleton|<Skeleton[A-Z]|<skeleton-', text))
     found['spinner'] = bool(re.search(r'v-loading', text))
     return found
-
 
 def main():
     ap = argparse.ArgumentParser()
@@ -103,6 +107,7 @@ def main():
         rows.append({
             'page': rel, 'type': ptype,
             'loading': found['loading'], 'empty': found['empty'], 'error': found['error'],
+            'toast': found['toast'],
             'skeleton': found['skeleton'], 'spinner': found['spinner'],
             'catchCount': found['catchCount'],
             'missing': missing,
@@ -113,18 +118,32 @@ def main():
     spinner_pages = sum(1 for r in rows if r['spinner'])
     empty_pages = sum(1 for r in rows if r['empty'])
     error_pages = sum(1 for r in rows if r['error'])
+    toast_pages = sum(1 for r in rows if r['toast'])
+    only_toast = [r['page'] for r in rows if r['toast'] and not r['error'] and 'error' in REQUIRED[r['type']]]
     ok_pages = sum(1 for r in rows if r['ok'])
 
     print(f'===== 状态完备性检查（{len(rows)} 个页面/组件）=====')
     print(f'  用骨架屏的页面：{skeleton_pages}/{len(rows)}      用转圈遮罩的页面：{spinner_pages}/{len(rows)}')
-    print(f'  有空态的页面：  {empty_pages}/{len(rows)}      有可见错误反馈的页面：{error_pages}/{len(rows)}')
+    print(f'  有空态的页面：  {empty_pages}/{len(rows)}')
+    print(f'  有页面级错误态的页面（持久 + 可重试）：{error_pages}/{len(rows)}')
+    print(f'  仅有全局 toast 兜底的页面：{toast_pages - error_pages if toast_pages > error_pages else 0}'
+          f'（拦截器弹 3 秒提示，页面不留痕、无重试入口）')
     print(f'  达到应有状态的页面：{ok_pages}/{len(rows)}      缺失项合计：{missing_total}')
+    # 全局兜底：拦截器统一弹 toast（登录/注册等表单页依赖它），但那是 3 秒提示、页面不留痕
+    req = SRC / 'api' / 'request.js'
+    interceptor = False
+    if req.exists():
+        rt = req.read_text(encoding='utf-8', errors='ignore')
+        interceptor = bool(re.search(r'ElMessage|type:\s*[\'"]error', rt))
+    print(f'  全局兜底：axios 拦截器{"会" if interceptor else "不会"}弹出错误提示'
+          f'（表单页依赖它；但它是瞬时提示，页面不会留下可重试的错误态）')
     print()
-    print(f"  {'页面':44s} {'类型':6s} {'骨架':4s} {'空态':4s} {'错误':4s} 缺失")
+    print(f"  {'页面':44s} {'类型':6s} {'骨架':4s} {'空态':4s} {'错误态':6s} {'toast':6s} 缺失")
     for r in rows:
         print(f"  {r['page']:44s} {r['type']:6s} "
               f"{'有' if r['skeleton'] else '无':4s} {'有' if r['empty'] else '无':4s} "
-              f"{'有' if r['error'] else '无':4s} {'、'.join(r['missing']) or '—'}")
+              f"{'有' if r['error'] else '无':6s} {'有' if r['toast'] else '无':6s} "
+              f"{'、'.join(r['missing']) or '—'}")
 
     if args.label:
         out = pathlib.Path(args.out) / args.label

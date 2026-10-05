@@ -15,6 +15,7 @@ import { onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { getRecommend, getSimilar } from '@/api/recommend'
 import { demoImage, formatPrice, resolveImageUrl } from '@/utils/product'
+import StateError from '@/components/states/StateError.vue'
 
 const props = defineProps({
   mode: { type: String, default: 'personal' },      // personal | similar
@@ -25,6 +26,7 @@ const props = defineProps({
 
 const router = useRouter()
 const loading = ref(false)
+const loadError = ref(false)
 const items = ref([])
 const result = ref(null)
 const failed = ref(new Set())
@@ -48,6 +50,7 @@ function imageOf(item) {
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const res = props.mode === 'similar'
       ? await getSimilar(props.productId, { size: props.size })
@@ -56,7 +59,8 @@ async function load() {
     items.value = res.data?.items || []
   } catch (e) {
     items.value = []
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -71,7 +75,14 @@ watch(() => props.productId, (v) => {
 </script>
 
 <template>
-  <div v-if="loading || items.length" class="recommend-panel" v-loading="loading">
+  <StateError
+    v-if="loadError && !loading"
+    title="加载失败，请稍后重试"
+    detail="网络可能不稳定，或服务正在重启"
+    retry-text="重新加载"
+    @retry="load"
+  />
+  <div v-else v-if="loading || items.length" class="recommend-panel" v-loading="loading">
     <div class="panel-header">
       <span class="panel-title">
         <el-icon><Star /></el-icon>

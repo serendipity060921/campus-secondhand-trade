@@ -10,11 +10,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getOrderDetail, updateOrderStatus } from '@/api/order'
 import { demoImage, resolveImageUrl } from '@/utils/product'
+import StateError from '@/components/states/StateError.vue'
 
 const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
+const loadError = ref(false)
 const notAllowed = ref(false)
 const order = ref(null)
 
@@ -54,6 +56,7 @@ const statusTagType = computed(() => {
 
 async function load() {
   loading.value = true
+  loadError.value = false
   notAllowed.value = false
   try {
     const res = await getOrderDetail(route.params.id)
@@ -61,7 +64,8 @@ async function load() {
   } catch (e) {
     notAllowed.value = true
     order.value = null
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -121,7 +125,14 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-loading="loading">
+  <StateError
+    v-if="loadError && !loading"
+    title="加载失败，请稍后重试"
+    detail="网络可能不稳定，或服务正在重启"
+    retry-text="重新加载"
+    @retry="load"
+  />
+  <div v-else v-loading="loading">
     <el-result
       v-if="notAllowed"
       icon="warning"

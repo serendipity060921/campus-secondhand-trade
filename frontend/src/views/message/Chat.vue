@@ -21,6 +21,7 @@ import { getChatPeer, getMessageHistory, markMessageRead, sendMessage } from '@/
 import { useUserStore } from '@/store/user'
 import { useChatStore } from '@/store/chat'
 import chatSocket from '@/utils/websocket'
+import StateError from '@/components/states/StateError.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,6 +33,7 @@ const PRODUCT_ID = route.query.productId ? Number(route.query.productId) : null
 const PAGE_SIZE = 20
 
 const loading = ref(false)
+const loadError = ref(false)
 const sending = ref(false)
 const loadingMore = ref(false)
 const peer = ref(null)
@@ -89,6 +91,7 @@ async function loadPeer() {
 /** 首次加载：最近一页 + 标记已读 */
 async function loadFirst() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getMessageHistory({ peerId: PEER_ID, page: 1, size: PAGE_SIZE })
     total.value = res.data.total || 0
@@ -102,7 +105,8 @@ async function loadFirst() {
     }
   } catch (e) {
     messages.value = []
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -292,7 +296,14 @@ function onEnter(event) {
 </script>
 
 <template>
-  <div class="chat-page" v-loading="loading">
+  <StateError
+    v-if="loadError && !loading"
+    title="加载失败，请稍后重试"
+    detail="网络可能不稳定，或服务正在重启"
+    retry-text="重新加载"
+    @retry="loadFirst"
+  />
+  <div v-else class="chat-page" v-loading="loading">
     <el-card shadow="never" :body-style="{ padding: '0' }">
       <!-- 顶部：对方信息 -->
       <div class="chat-header">

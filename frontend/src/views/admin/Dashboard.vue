@@ -22,12 +22,14 @@ import {
 import { CanvasRenderer } from 'echarts/renderers'
 import { getDashboard } from '@/api/admin'
 import { chartPalette } from '@/utils/design-tokens'
+import StateError from '@/components/states/StateError.vue'
 
 echarts.use([LineChart, PieChart, BarChart, GridComponent, TooltipComponent,
   LegendComponent, TitleComponent, CanvasRenderer])
 
 const router = useRouter()
 const loading = ref(false)
+const loadError = ref(false)
 const overview = ref({})
 const generatedAt = ref('')
 
@@ -94,6 +96,7 @@ function renderPie(el, title, data, colors) {
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getDashboard()
     const data = res.data
@@ -110,7 +113,9 @@ async function load() {
         [chartPalette.danger(), chartPalette.success(), chartPalette.warning(),
           chartPalette.sold(), chartPalette.ink()])
     }, 50)
-  } finally {
+  } catch (e) {
+    loadError.value = true
+   } finally {
     loading.value = false
   }
 }
@@ -136,7 +141,14 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-loading="loading">
+  <StateError
+    v-if="loadError && !loading"
+    title="加载失败，请稍后重试"
+    detail="网络可能不稳定，或服务正在重启"
+    retry-text="重新加载"
+    @retry="load"
+  />
+  <div v-else v-loading="loading">
     <!-- 待办提醒 -->
     <el-alert v-if="overview.pendingAuditCount || overview.pendingReportCount" type="warning"
               :closable="false" show-icon class="todo-alert">

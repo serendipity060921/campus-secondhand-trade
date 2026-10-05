@@ -10,10 +10,12 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyFavorites, operateFavorite } from '@/api/favorite'
 import { demoImage, formatPrice, resolveImageUrl } from '@/utils/product'
+import StateError from '@/components/states/StateError.vue'
 
 const router = useRouter()
 
 const loading = ref(false)
+const loadError = ref(false)
 const favorites = ref([])
 const total = ref(0)
 const failedImages = reactive(new Set())
@@ -29,6 +31,7 @@ function imageOf(item) {
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getMyFavorites({ page: query.page, size: query.size })
     favorites.value = res.data.records || []
@@ -36,7 +39,8 @@ async function load() {
   } catch (e) {
     favorites.value = []
     total.value = 0
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -74,7 +78,14 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-loading="loading">
+  <StateError
+    v-if="loadError && !loading"
+    title="加载失败，请稍后重试"
+    detail="网络可能不稳定，或服务正在重启"
+    retry-text="重新加载"
+    @retry="load"
+  />
+  <div v-else v-loading="loading">
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
