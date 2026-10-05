@@ -161,8 +161,16 @@ onMounted(load)
         <el-col :xs="24" :md="10">
           <el-card shadow="never">
             <template #header><b>商品信息</b></template>
-            <div class="product-block" @click="router.push(`/product/${order.productId}`)">
-              <img class="product-img" :src="productImage" alt="商品图片" />
+            <div
+              class="product-block"
+              role="link"
+              tabindex="0"
+              :aria-label="order.productTitle"
+              @click="router.push(`/product/${order.productId}`)"
+              @keydown.enter.prevent="router.push(`/product/${order.productId}`)"
+              @keydown.space.prevent="router.push(`/product/${order.productId}`)"
+            >
+              <img class="product-img" :src="productImage" :alt="order.productTitle" />
               <div class="product-detail">
                 <div class="product-title">{{ order.productTitle }}</div>
                 <div class="price">￥{{ Number(order.amount).toFixed(2) }}</div>

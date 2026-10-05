@@ -348,7 +348,16 @@ function onEnter(event) {
               <div class="bubble" :class="isMine(msg) ? 'bubble-mine' : 'bubble-theirs'">
                 {{ msg.content }}
               </div>
-              <div v-if="msg.productId && msg.productTitle" class="product-ref" @click="router.push(`/product/${msg.productId}`)">
+              <div
+              v-if="msg.productId && msg.productTitle"
+              class="product-ref"
+              role="link"
+              tabindex="0"
+              :aria-label="msg.productTitle"
+              @click="router.push(`/product/${msg.productId}`)"
+              @keydown.enter.prevent="router.push(`/product/${msg.productId}`)"
+              @keydown.space.prevent="router.push(`/product/${msg.productId}`)"
+            >
                 <el-tag size="small" effect="plain" type="info">关于：{{ msg.productTitle }}</el-tag>
               </div>
             </div>

@@ -104,7 +104,17 @@ onMounted(load)
 
       <el-row v-else :gutter="16">
         <el-col v-for="item in favorites" :key="item.favoriteId" :xs="12" :sm="8" :md="6">
-          <el-card class="fav-card" shadow="hover" :body-style="{ padding: '0' }" @click="goDetail(item.productId)">
+          <el-card
+            class="fav-card"
+            shadow="hover"
+            :body-style="{ padding: '0' }"
+            role="link"
+            tabindex="0"
+            :aria-label="`${item.title}，${formatPrice(item.price)}`"
+            @click="goDetail(item.productId)"
+            @keydown.enter.prevent="goDetail(item.productId)"
+            @keydown.space.prevent="goDetail(item.productId)"
+          >
             <div class="cover">
               <img :src="imageOf(item)" alt="商品图片" @error="failedImages.add(item.productId)" />
             </div>

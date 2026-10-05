@@ -123,7 +123,17 @@ onUnmounted(() => {
       </el-empty>
 
       <div v-else class="conversation-list">
-        <div v-for="item in conversations" :key="item.peerId" class="conversation-item" @click="openChat(item)">
+        <div
+          v-for="item in conversations"
+          :key="item.peerId"
+          class="conversation-item"
+          role="link"
+          tabindex="0"
+          :aria-label="`与 ${item.peerNickname || '对方'} 的会话`"
+          @click="openChat(item)"
+          @keydown.enter.prevent="openChat(item)"
+          @keydown.space.prevent="openChat(item)"
+        >
           <el-badge :value="item.unreadCount" :hidden="!item.unreadCount" :max="99" class="avatar-badge">
             <el-avatar :size="48">{{ avatarText(item) }}</el-avatar>
           </el-badge>

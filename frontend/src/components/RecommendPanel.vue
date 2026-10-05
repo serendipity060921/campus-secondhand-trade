@@ -118,7 +118,15 @@ watch(() => props.productId, (v) => {
 
     <el-row v-else :gutter="16">
       <el-col v-for="item in items" :key="item.productId" :xs="12" :sm="8" :md="6" :lg="6">
-        <el-card class="rec-card" shadow="hover" :body-style="{ padding: '0' }"
+        <el-card
+          class="rec-card"
+          shadow="hover"
+          :body-style="{ padding: '0' }"
+          role="link"
+          tabindex="0"
+          :aria-label="item.title"
+          @keydown.enter.prevent="router.push(`/product/${item.productId}`)"
+          @keydown.space.prevent="router.push(`/product/${item.productId}`)"
                  @click="router.push(`/product/${item.productId}`)">
           <div class="cover">
             <img :src="imageOf(item)" :alt="item.title" @error="failed.add(item.productId)" />

@@ -172,7 +172,7 @@ def main():
           f'（拦截器弹 3 秒提示，页面不留痕、无重试入口）')
     print(f'  达到应有状态的页面：{ok_pages}/{len(rows)}      缺失项合计：{missing_total}')
     print(f'  鼠标独占的点击元素（键盘不可达，静态近似）：{mouse_only} 处'
-          + ('  ' + '、'.join(f'{p.split("/")[-1]}={n}' for p, n in mouse_pages[:6]) if mouse_pages else ''))
+          + ('  ' + '、'.join(f'{p}={n}' for p, n in mouse_pages[:6]) if mouse_pages else ''))
     # 全局兜底：拦截器统一弹 toast（登录/注册等表单页依赖它），但那是 3 秒提示、页面不留痕
     req = SRC / 'api' / 'request.js'
     interceptor = False
