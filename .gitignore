@@ -42,3 +42,9 @@ deploy/docker/.env
 deploy/windows/env.ps1
 deploy/windows/logs/
 deploy/windows/uploads/
+
+# ---------- AI 编码助手技能包（第三方，不纳入论文仓库）----------
+.dsh/
+
+# ---------- Impeccable 构建产物（决策页/截图/构建状态，不纳入论文仓库）----------
+.impeccable/
