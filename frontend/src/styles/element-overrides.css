@@ -189,6 +189,45 @@
   font-weight: var(--ct-weight-semibold);
 }
 
+/* ---------- 窄屏触控目标 ----------
+   Element Plus 默认控件高度 32px（桌面鼠标场景合适），但在窄屏上低于 44px 的可达性下限。
+   只在窄屏提高控件尺寸，桌面密度保持不变（密度是视觉世界的一部分，由方向契约与 comp 决定）。 */
+@media (max-width: 1100px) {
+  :root {
+    --el-component-size: 42px;
+    --el-component-size-large: 46px;
+    --el-component-size-small: 36px;
+  }
+
+  /* 实测：EP 的按钮/输入框高度并不读 --el-component-size（仍为 32px），因此显式给下限 */
+  .el-button {
+    min-height: 42px;
+  }
+
+  .el-button--small {
+    min-height: 36px;
+  }
+
+  .el-input__wrapper,
+  .el-select__wrapper,
+  .el-textarea__inner {
+    min-height: 42px;
+  }
+
+  .el-dropdown .el-tooltip__trigger {
+    min-height: 42px;              /* 顶栏用户名触发器：原 28px，点上很难命中 */
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* 图标按钮与分页项常常自带固定尺寸，单独兜一下 */
+  .el-pagination button,
+  .el-pager li {
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
 /* ---------- 焦点可见性兜底 ----------
    Element Plus 的 tooltip / dropdown 触发器（如顶栏用户名）会拿到键盘焦点，
    但组件自己的 scoped 样式写了 outline: none（FrontLayout.vue 的 .user-name），

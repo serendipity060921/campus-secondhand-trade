@@ -355,6 +355,11 @@ def main():
             if 390 in widths_result:
                 target.set_viewport_size({'width': 390, 'height': 844})
                 target.wait_for_timeout(400)
+                # 口径固定（与 before/tokens 档位一致，保证前后可比）：
+                # 逐个可交互元素量其自身矩形，正文内联链接豁免。
+                # 注意：这会把"输入框内部的 input"也算一个目标（其外层包装才是真实命中区），
+                # 因此该数字偏高、只用于同口径对比；真实命中区的改善另由 tools/ui-a11y.py
+                # 与专项探针报告（例如窄屏下按钮高度 32px → 42px）。
                 small = target.evaluate("""() => {
                   const vis = (el) => { const r = el.getBoundingClientRect(); const s = getComputedStyle(el);
                     return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none'; };
