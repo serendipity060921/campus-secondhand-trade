@@ -122,6 +122,7 @@ async function handleLogout() {
           <el-input
             v-model="searchKeyword"
             class="header-search"
+            aria-label="搜索商品名称"
             placeholder="搜索商品名称"
             clearable
             maxlength="50"
@@ -170,7 +171,8 @@ async function handleLogout() {
                     :value="chatStore.unreadTotal" :max="99" />
         </router-link>
       </nav>
-      <el-input v-model="searchKeyword" class="drawer-search" placeholder="搜索商品名称" clearable
+      <el-input v-model="searchKeyword" class="drawer-search" aria-label="搜索商品名称"
+                placeholder="搜索商品名称" clearable
                 maxlength="50" @keyup.enter="handleDrawerSearch">
         <template #append>
           <el-button @click="handleDrawerSearch">搜索</el-button>

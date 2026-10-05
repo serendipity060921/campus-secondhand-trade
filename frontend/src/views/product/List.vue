@@ -150,7 +150,7 @@ onMounted(() => {
           <h1 id="catalogue-heading" class="catalogue-title">在售目录</h1>
           <div class="catalogue-tools">
             <span class="catalogue-stats">目录里 {{ total }} 张卡 · {{ bandCategories.length }} 类</span>
-            <el-select v-model="query.sort" size="small" class="sort" @change="handleSearch">
+            <el-select v-model="query.sort" size="small" class="sort" aria-label="排序方式" @change="handleSearch">
               <el-option v-for="item in sortOptions" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </div>

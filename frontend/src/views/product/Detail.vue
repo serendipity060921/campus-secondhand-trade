@@ -360,7 +360,7 @@ onMounted(loadDetail)
             <span class="dialog-price">￥{{ Number(product.price).toFixed(2) }}</span>
           </el-form-item>
           <el-form-item label="交易地点">
-            <el-input v-model="orderForm.tradePlace" maxlength="100" placeholder="例如：东校区图书馆门口" />
+            <el-input v-model="orderForm.tradePlace" maxlength="100" aria-label="交易地点" placeholder="例如：东校区图书馆门口" />
           </el-form-item>
           <el-form-item label="买家备注">
             <el-input
@@ -369,6 +369,7 @@ onMounted(loadDetail)
               :rows="3"
               maxlength="255"
               show-word-limit
+              aria-label="买家备注"
               placeholder="例如：明天下午三点方便面交吗"
             />
           </el-form-item>

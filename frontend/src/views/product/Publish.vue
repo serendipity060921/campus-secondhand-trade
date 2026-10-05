@@ -185,11 +185,11 @@ onMounted(loadCategories)
         <p class="section-title">基本信息</p>
 
         <el-form-item label="商品名称" prop="title">
-          <el-input v-model="form.title" maxlength="100" show-word-limit placeholder="例如：《数据结构》教材 九成新" />
+          <el-input v-model="form.title" maxlength="100" show-word-limit aria-label="商品名称" placeholder="例如：《数据结构》教材 九成新" />
         </el-form-item>
 
         <el-form-item label="商品分类" prop="categoryId">
-          <el-select v-model="form.categoryId" placeholder="请选择分类" class="w-320">
+          <el-select v-model="form.categoryId" placeholder="请选择分类" aria-label="商品分类" class="w-320">
             <el-option-group v-for="group in categoryGroups" :key="group.label" :label="group.label">
               <el-option v-for="item in group.options" :key="item.id" :label="item.name" :value="item.id" />
             </el-option-group>
@@ -199,9 +199,9 @@ onMounted(loadCategories)
         <p class="section-title">价格与成色</p>
 
         <el-form-item label="售价(元)" prop="price">
-          <el-input-number v-model="form.price" :min="0.01" :max="99999999" :precision="2" :step="1" />
+          <el-input-number v-model="form.price" :min="0.01" :max="99999999" :precision="2" :step="1" aria-label="售价（元）" />
           <span class="tip-text">原价（选填）：</span>
-          <el-input-number v-model="form.originalPrice" :min="0" :max="99999999" :precision="2" :step="1" />
+          <el-input-number v-model="form.originalPrice" :min="0" :max="99999999" :precision="2" :step="1" aria-label="原价（选填）" />
         </el-form-item>
 
         <el-form-item label="成色" prop="conditionLevel">
@@ -261,6 +261,7 @@ onMounted(loadCategories)
             :rows="5"
             maxlength="2000"
             show-word-limit
+            aria-label="商品描述"
             placeholder="说明成色、入手渠道、瑕疵、交易方式等"
           />
         </el-form-item>

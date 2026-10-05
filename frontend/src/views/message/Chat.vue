@@ -52,6 +52,25 @@ function isMine(msg) {
   return msg.fromUserId === myId.value
 }
 
+/** 我发出的最后一条消息的下标：只在这一条上显示已读状态，避免每条都挂标签 */
+const lastMineIndex = computed(() => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    if (isMine(messages.value[i])) return i
+  }
+  return -1
+})
+
+/**
+ * 商品引用条只在"换了商品"的那条消息上显示。
+ * 原先每条带 productId 的消息都挂一条「关于：xxx」，同一商品连发三条就重复三遍。
+ */
+function showProductRef(index) {
+  const msg = messages.value[index]
+  if (!msg || !msg.productId || !msg.productTitle) return false
+  const prev = messages.value[index - 1]
+  return !prev || prev.productId !== msg.productId
+}
+
 /** 时间显示：HH:mm */
 function timeOf(time) {
   return time ? String(time).slice(11, 16) : ''
@@ -351,7 +370,7 @@ function onEnter(event) {
                 {{ msg.content }}
               </div>
               <div
-              v-if="msg.productId && msg.productTitle"
+              v-if="showProductRef(index)"
               class="product-ref"
               role="link"
               tabindex="0"
@@ -362,6 +381,17 @@ function onEnter(event) {
             >
                 <el-tag size="small" effect="plain" type="info">关于：{{ msg.productTitle }}</el-tag>
               </div>
+
+              <!-- 已读回执：整段会话只挂在我发出的最后一条上。
+                   此前模板从未渲染它（尽管 isRead 字段与已读回执订阅都已具备），
+                   评审 P1-4「已读回执从未渲染」已核实属实。 -->
+              <span
+                v-if="isMine(msg) && index === lastMineIndex"
+                class="read-state"
+                :aria-label="msg.isRead === 1 ? '对方已读' : '对方未读'"
+              >
+                {{ msg.isRead === 1 ? '已读' : '未读' }}
+              </span>
             </div>
             <el-avatar v-if="isMine(msg)" :size="32" class="bubble-avatar">
               {{ (userStore.nickname || '我').slice(0, 1) }}
@@ -380,7 +410,8 @@ function onEnter(event) {
           show-word-limit
           resize="none"
           :disabled="peer?.self"
-          placeholder="输入消息，Enter 发送，Shift + Enter 换行"
+          aria-label="输入消息"
+              placeholder="输入消息，Enter 发送，Shift + Enter 换行"
           @keydown.enter="onEnter"
         />
         <div class="input-actions">
@@ -480,6 +511,8 @@ function onEnter(event) {
 
 .bubble-wrap {
   max-width: 68%;
+  display: flex;
+  flex-direction: column;
 }
 
 .bubble {
@@ -489,6 +522,24 @@ function onEnter(event) {
   font-size: 14px;
   word-break: break-word;
   white-space: pre-wrap;
+  /* 气泡最大宽度：1440 宽下不加限制会横贯整屏，读起来很累 */
+  max-width: min(560px, 62vw);
+}
+
+/* 已读回执：小字弱化，只在最后一条出站消息下出现 */
+.read-state {
+  align-self: flex-end;
+  margin-top: var(--ct-space-1);
+  font-size: var(--ct-text-xs);
+  color: var(--ct-text-muted);
+}
+
+/* 已读回执：小字弱化，只在最后一条出站消息下出现 */
+.read-state {
+  align-self: flex-end;
+  margin-top: var(--ct-space-1);
+  font-size: var(--ct-text-xs);
+  color: var(--ct-text-muted);
 }
 
 .bubble-theirs {
