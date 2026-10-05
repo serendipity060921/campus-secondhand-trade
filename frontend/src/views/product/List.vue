@@ -60,19 +60,6 @@ const topCategories = computed(() => classIndex.value.tops)
  */
 const bandCategories = computed(() => topCategories.value.filter((t) => t.code !== UNKNOWN_CODE))
 
-/** 目录构成里各类占比条的最大值（取最大件数，件数为 0 的类不画条） */
-const maxCategoryCount = computed(() =>
-  Math.max(1, ...bandCategories.value.map((t) => Number(t.productCount) || 0)))
-
-/** 比例条宽度：按最大件数归一化，最小可见宽度 4% 以免"有 1 件却看不见" */
-function barWidth(count) {
-  const n = Number(count) || 0
-  if (n <= 0) {
-    return '0%'
-  }
-  return `${Math.max(4, Math.round((n / maxCategoryCount.value) * 100))}%`
-}
-
 function codeOf(item) {
   return shelfCode(item, classIndex.value.byId).code
 }
@@ -212,25 +199,13 @@ onMounted(() => {
         </template>
       </section>
 
-      <aside class="catalogue-rail" aria-label="目录构成与推荐">
-        <!-- 目录构成：真实件数 + 中性比例条。
-             此前这块只是把「目录里 N 张卡 · M 类」与色带的"分类号↔分类名"又抄了一遍，
-             没有任何独有信息；现在它回答的是色带回答不了的问题——**各类占比**。
-             比例条用墨色而非分类色：分类色是色带的专属，这条规则写在 DESIGN.md 里。 -->
-        <div class="rail-panel">
-          <h2 class="rail-title">目录构成</h2>
-          <ul class="rail-cats">
-            <li v-for="top in bandCategories" :key="top.id">
-              <span class="rail-name">{{ top.name }}</span>
-              <span class="rail-code">{{ top.code }}</span>
-              <span class="rail-count">{{ top.productCount }} 件</span>
-              <span class="rail-bar" :style="{ width: barWidth(top.productCount) }" aria-hidden="true"></span>
-            </li>
-          </ul>
-        </div>
-
+      <!-- 右栏只放推荐位。
+           这里曾有一块「目录统计 / 目录构成」，但它与分类色带重复（分类名、分类号、件数色带上都有），
+           唯一的独有信息"占比"在 13 件、最大 4 件的数据量上读不出意义。
+           分类信息统一由色带承担，右栏留给"看中就私聊"这条转化路径。 -->
+      <aside class="catalogue-rail" aria-label="猜你喜欢">
         <!-- v0.11 推荐模块：登录后个性化，未登录热门冷启动；右栏用竖排小条目版式（选定稿 A） -->
-        <RecommendPanel mode="personal" title="猜你喜欢" variant="rail" :size="3" />
+        <RecommendPanel mode="personal" title="猜你喜欢" variant="rail" :size="5" />
       </aside>
     </div>
   </div>
@@ -287,68 +262,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: var(--ct-space-4);
-}
-
-.rail-panel {
-  background: var(--ct-bg-surface);
-  border: var(--ct-hairline) solid var(--ct-border);
-  border-radius: var(--ct-radius-sm);
-  padding: var(--ct-space-4);
-}
-
-.rail-title {
-  font-size: var(--ct-text-sm);
-  font-weight: var(--ct-weight-semibold);
-  margin: 0 0 var(--ct-space-2);
-}
-
-.rail-line {
-  margin: 0;
-  font-family: var(--ct-font-mono);
-  font-size: var(--ct-text-xs);
-  color: var(--ct-text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.rail-cats {
-  list-style: none;
-  margin: var(--ct-space-3) 0 0;
-  padding: 0;
-  border-top: var(--ct-hairline) solid var(--ct-border);
-}
-
-.rail-cats li {
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  align-items: center;
-  gap: var(--ct-space-2);
-  padding: var(--ct-space-2) 0 var(--ct-space-1);
-  font-size: var(--ct-text-xs);
-  color: var(--ct-text-muted);
-  border-bottom: var(--ct-hairline) solid var(--ct-border);
-}
-
-/* 占比条独占一行：用墨色表达"多少"，把分类色留给色带 */
-.rail-bar {
-  grid-column: 1 / -1;
-  height: 3px;
-  margin-top: var(--ct-space-1);
-  background: var(--ct-border-strong);
-  border-radius: 0;
-}
-
-.rail-name {
-  color: var(--ct-text-primary);
-}
-
-.rail-count {
-  font-family: var(--ct-font-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.rail-code {
-  font-family: var(--ct-font-mono);
-  letter-spacing: 0.06em;
 }
 
 .pagination {
