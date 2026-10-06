@@ -1,0 +1,140 @@
+/* =============================================================================
+   设计令牌（v0.16 全站改版 · 唯一允许出现原始色值的地方）
+
+   方向：图书馆索书号与卡片目录
+   世界只提供四样东西：字体、配色、密度、一个签名动作 —— 本文件承载前三样。
+
+   三层结构：
+     ① 原始层 primitive  只描述"是什么颜色/多大"，不带用途
+     ② 语义层 semantic   描述"干什么用"，页面与组件只准用这一层
+     ③ 尺度层 scale      间距 / 字号 / 行高 / 圆角 / 线宽，全部收敛为固定档位
+
+   纪律：组件与页面不得出现裸色值；检查脚本 tools/check-tokens.py 会拦。
+   ========================================================================== */
+
+:root {
+  /* ---------- ① 原始层 ---------- */
+
+  /* 冷纸白：阅读室桌面在日光下的纸色。刻意不是暖奶油（那是 AI 界面的高频套路） */
+  --ct-paper-0: #ffffff;
+  --ct-paper-50: #f5f6f3;
+  --ct-paper-100: #e9ebe5;
+  --ct-paper-200: #dcdfd8;
+
+  /* 墨：印刷黑与它的灰阶 */
+  --ct-ink-900: #1a1d19;
+  --ct-ink-700: #3d4239;
+  --ct-ink-600: #5c6159; /* 对 --ct-paper-50 对比度 5.6:1，正文可用 */
+  --ct-ink-400: #8a8f86; /* 仅用于装饰性文字/已售出填充，不用于正文 */
+  --ct-rule: #c9ccc4;    /* 0.5px 墨线 */
+
+  /* 分类书标色（八条，对应数据库里真实的 8 个顶层分类）
+     每条 = 实色条（bar，做识别）+ 浅色调场（tint，做色带底）。
+     为什么不是深色块压墨字：深色块上墨字对比度不达标；图书馆书标本来就是
+     "彩色标签贴在白纸上"，浅色调场 + 实色条才是这个世界的真实形态。 */
+  --ct-cat-1-bar: #7a5a2e;  --ct-cat-1-tint: #f1eae0;  /* 教材书籍 */
+  --ct-cat-2-bar: #1f5a6b;  --ct-cat-2-tint: #e4eef0;  /* 数码电子 */
+  --ct-cat-3-bar: #35603f;  --ct-cat-3-tint: #e6efe8;  /* 生活用品 */
+  --ct-cat-4-bar: #6b6a2e;  --ct-cat-4-tint: #eff0df;  /* 运动户外 */
+  --ct-cat-5-bar: #7a4260;  --ct-cat-5-tint: #f2e7ec;  /* 服饰鞋包 */
+  --ct-cat-6-bar: #8c3b5a;  --ct-cat-6-tint: #f5e6eb;  /* 美妆护肤 */
+  --ct-cat-7-bar: #3a4a7a;  --ct-cat-7-tint: #e7eaf3;  /* 乐器文具 */
+  --ct-cat-8-bar: #5a5f58;  --ct-cat-8-tint: #ecEEea;  /* 其他闲置 */
+
+  /* 状态色（形态编码为主、颜色为辅） */
+  --ct-status-trading: #7a5a2e;
+  --ct-status-sold: #8a8f86;
+
+  /* ---------- ② 语义层 ---------- */
+
+  --ct-bg-canvas: var(--ct-paper-50);
+  --ct-bg-surface: var(--ct-paper-0);
+  --ct-bg-subtle: var(--ct-paper-100);
+
+  --ct-text-primary: var(--ct-ink-900);
+  --ct-text-muted: var(--ct-ink-600);
+  --ct-text-faint: var(--ct-ink-400);
+  --ct-text-inverse: var(--ct-paper-0);
+
+  --ct-border: var(--ct-rule);
+  --ct-border-strong: var(--ct-ink-900);
+
+  /* 主行动：墨黑实心。全站不设第二个强调色 —— 颜色只用来做分类与状态 */
+  --ct-action: var(--ct-ink-900);
+  --ct-action-hover: var(--ct-ink-700);
+  --ct-action-text: var(--ct-paper-0);
+
+  --ct-focus: var(--ct-ink-900);
+  --ct-price: var(--ct-ink-900);
+  --ct-link: var(--ct-ink-900);
+
+  /* 分类色的语义别名：让代码读起来是分类名，不是色号。
+     数字与数据库 category 表中的顶层分类一一对应：
+       1 教材书籍 / 2 数码电子 / 3 生活用品 / 4 运动户外
+       5 服饰鞋包 / 6 美妆护肤 / 7 乐器文具 / 8 其他闲置
+     用法：色带底用 -tint，实色条与选中态用 -bar（见 utils/catalogue.js 的映射）。 */
+  --ct-cat-1: var(--ct-cat-1-bar);
+  --ct-cat-2: var(--ct-cat-2-bar);
+  --ct-cat-3: var(--ct-cat-3-bar);
+  --ct-cat-4: var(--ct-cat-4-bar);
+  --ct-cat-5: var(--ct-cat-5-bar);
+  --ct-cat-6: var(--ct-cat-6-bar);
+  --ct-cat-7: var(--ct-cat-7-bar);
+  --ct-cat-8: var(--ct-cat-8-bar);
+
+  /* 层叠 */
+  --ct-z-sticky: 100;
+  --ct-z-overlay: 1000;
+
+  /* ---------- ③ 尺度层 ---------- */
+
+  /* 间距：4 的倍数，八档封顶 */
+  --ct-space-1: 4px;
+  --ct-space-2: 8px;
+  --ct-space-3: 12px;
+  --ct-space-4: 16px;
+  --ct-space-5: 24px;
+  --ct-space-6: 32px;
+  --ct-space-7: 48px;
+  --ct-space-8: 64px;
+
+  /* 字号：八档，替代原来散落的 12 种取值 */
+  --ct-text-xs: 12px;
+  --ct-text-sm: 13px;
+  --ct-text-base: 14px;
+  --ct-text-md: 15px;
+  --ct-text-lg: 18px;
+  --ct-text-xl: 22px;
+  --ct-text-2xl: 26px;
+  --ct-text-3xl: 40px;
+
+  /* 行高 */
+  --ct-leading-tight: 1.25;
+  --ct-leading-base: 1.55;
+  --ct-leading-loose: 1.75;
+
+  /* 字重 */
+  --ct-weight-regular: 400;
+  --ct-weight-medium: 500;
+  --ct-weight-semibold: 600;
+
+  /* 圆角：小、近乎方角 —— 图书馆卡片是切角的纸，不是圆角胶囊 */
+  --ct-radius-sm: 2px;
+  --ct-radius-md: 4px;
+  --ct-radius-lg: 6px;
+
+  /* 线宽：0.5px 是这套世界的"墨线" */
+  --ct-hairline: 0.5px;
+  --ct-line: 1px;
+  --ct-line-strong: 2px;
+
+  /* 字体：工作马（Operate 模式）+ 等宽（索书号与数字） */
+  --ct-font-sans: 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', system-ui,
+    -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --ct-font-mono: Consolas, 'Cascadia Mono', 'SF Mono', 'Courier New', monospace;
+
+  /* 动效：短、只在状态变化处 */
+  --ct-duration-fast: 80ms;
+  --ct-duration-base: 140ms;
+  --ct-ease: cubic-bezier(0.2, 0, 0.2, 1);
+}

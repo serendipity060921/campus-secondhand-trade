@@ -1,26 +1,37 @@
 <script setup>
 /**
- * 商品列表页（v0.05，作为首页）
+ * 商品列表页（首页）· v0.16 按选定稿 A 重构
  *
- * 功能：关键词搜索 + 分类筛选 + 排序 + 分页；卡片展示图片、名称、价格、发布时间。
- * 图片：优先用商品真实封面；没有封面（或加载失败）时按分类显示统一的占位图。
+ * 构图（与 docs/ui-comps/comp-a-home-list.png 一致，区域见 .impeccable/build/spec.json）：
+ *   顶栏（FrontLayout） → 分类书标色带（8 段） → 主区：三列目录卡 + 右栏（统计与推荐）
+ *
+ * 相较 v0.15 的变化：
+ *   · 卡片改为独立的 CatalogueCard：整张卡是 router-link（键盘可达）、图 alt 取标题、
+ *     **校区上卡**（接口早已返回 campus 但此前未渲染）、4:3 图、分类号 chip
+ *   · 筛选栏并入色带：分类点色带、关键词走顶栏搜索（跳 /search）、排序留在目录头
+ *   · 加载/错误/空三态接入共享状态组件（此前只有转圈遮罩与默认插图）
+ *   · 页面加 h1 与 nav 地标（此前 7/7 页面无 h1）
+ *
+ * 保留：分页、排序、`/home?keyword=&categoryId=` 深链、推荐模块。
  */
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { getCategoryList, getProductList } from '@/api/product'
-import { demoImage, formatPrice, resolveImageUrl } from '@/utils/product'
-// v0.11 推荐模块：首页"猜你喜欢"面板（自拉数据，不影响本页既有逻辑）
+import { buildClassIndex, classTintVar, shelfCode, UNKNOWN_CODE } from '@/utils/catalogue'
+import CategoryBand from '@/components/catalogue/CategoryBand.vue'
+import CatalogueCard from '@/components/catalogue/CatalogueCard.vue'
 import RecommendPanel from '@/components/RecommendPanel.vue'
+import SkeletonList from '@/components/states/SkeletonList.vue'
+import StateEmpty from '@/components/states/StateEmpty.vue'
+import StateError from '@/components/states/StateError.vue'
 
 const route = useRoute()
-const router = useRouter()
 
 const loading = ref(false)
+const loadError = ref(false)
 const products = ref([])
 const categories = ref([])
 const total = ref(0)
-/** 记录加载失败的图片，失败时回退到占位图 */
-const failedImages = reactive(new Set())
 
 const query = reactive({
   page: 1,
@@ -37,27 +48,25 @@ const sortOptions = [
   { value: 'hot', label: '最多浏览' }
 ]
 
-/** 分类下拉：按一级分类分组 */
-const categoryGroups = computed(() => {
-  const tops = categories.value.filter((c) => !c.parentId || c.parentId === 0)
-  return tops.map((top) => ({
-    label: top.name,
-    options: [
-      { id: top.id, name: `${top.name}（全部）` },
-      ...categories.value.filter((c) => c.parentId === top.id)
-    ]
-  }))
-})
+/** 分类索引：子分类 id → 顶层分类（含索书号代号与令牌序号） */
+const classIndex = computed(() => buildClassIndex(categories.value))
+const topCategories = computed(() => classIndex.value.tops)
 
-function imageOf(product) {
-  if (failedImages.has(product.id)) {
-    return demoImage(product.categoryName)
-  }
-  return product.coverImage ? resolveImageUrl(product.coverImage) : demoImage(product.categoryName)
+/**
+ * 色带与统计只展示**八个已知分类**。
+ * 演示库存在一个 parentId=0 的测试分类「孤儿分类」，它不在分类号映射表里；
+ * 把它放进色带会得到一段 ZZ 书标，既不是设计的一部分，也会让色带变成 9 段。
+ * 落在未知分类下的商品仍会在卡片上得到 ZZ 书标 —— 数据异常要看得见，但不冒充已知分类。
+ */
+const bandCategories = computed(() => topCategories.value.filter((t) => t.code !== UNKNOWN_CODE))
+
+function codeOf(item) {
+  return shelfCode(item, classIndex.value.byId).code
 }
 
-function onImageError(product) {
-  failedImages.add(product.id)
+function tintOf(item) {
+  const { index } = shelfCode(item, classIndex.value.byId)
+  return classTintVar(index)
 }
 
 async function loadCategories() {
@@ -65,12 +74,13 @@ async function loadCategories() {
     const res = await getCategoryList()
     categories.value = res.data || []
   } catch (e) {
-    /* 拦截器已提示 */
+    /* 分类失败不阻断商品列表；拦截器已提示 */
   }
 }
 
 async function loadProducts() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getProductList({
       page: query.page,
@@ -84,9 +94,17 @@ async function loadProducts() {
   } catch (e) {
     products.value = []
     total.value = 0
+    loadError.value = true
   } finally {
     loading.value = false
   }
+}
+
+/** 色带筛选：再点已选中的分类即取消筛选（等价于旧的"重置"） */
+function handleCategory(id) {
+  query.categoryId = id
+  query.page = 1
+  loadProducts()
 }
 
 function handleSearch() {
@@ -108,17 +126,8 @@ function handlePageChange(page) {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
-function goDetail(id) {
-  router.push(`/product/${id}`)
-}
-
-/** 发布时间只显示到分钟 */
-function shortTime(time) {
-  return time ? String(time).slice(0, 16) : ''
-}
-
 onMounted(() => {
-  // v0.09：支持 /home?keyword=xxx&categoryId=1 深度链接，首页可直接按关键词/分类筛选
+  // v0.09：支持 /home?keyword=xxx&categoryId=1 深链
   if (route.query.keyword) {
     query.keyword = String(route.query.keyword)
   }
@@ -131,199 +140,155 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
-    <!-- 筛选栏 -->
-    <el-card shadow="never" class="filter-card">
-      <div class="filter-bar">
-        <el-input
-          v-model="query.keyword"
-          placeholder="搜索教材、数码、生活用品…"
-          clearable
-          class="keyword"
-          @keyup.enter="handleSearch"
+  <div class="catalogue-page">
+    <!-- 分类书标色带：页面主色场，同时是分类筛选控件 -->
+    <CategoryBand :tops="bandCategories" :active-id="query.categoryId" @select="handleCategory" />
+
+    <div class="catalogue-body">
+      <section class="catalogue-list" aria-labelledby="catalogue-heading">
+        <div class="catalogue-head">
+          <h1 id="catalogue-heading" class="catalogue-title">在售目录</h1>
+          <div class="catalogue-tools">
+            <span class="catalogue-stats">目录里 {{ total }} 张卡 · {{ bandCategories.length }} 类</span>
+            <el-select v-model="query.sort" size="small" class="sort" aria-label="排序方式" @change="handleSearch">
+              <el-option v-for="item in sortOptions" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </div>
+        </div>
+
+        <!-- 加载态：骨架与最终版式对齐，避免数据到达时跳动 -->
+        <SkeletonList v-if="loading" :count="9" :columns="3" />
+
+        <StateError
+          v-else-if="loadError"
+          title="目录加载失败"
+          detail="网络可能不稳定，或服务正在重启"
+          retry-text="重新加载"
+          @retry="loadProducts"
         />
 
-        <el-select v-model="query.categoryId" placeholder="全部分类" clearable class="category" @change="handleSearch">
-          <el-option-group v-for="group in categoryGroups" :key="group.label" :label="group.label">
-            <el-option v-for="item in group.options" :key="item.id" :label="item.name" :value="item.id" />
-          </el-option-group>
-        </el-select>
+        <template v-else>
+          <StateEmpty
+            v-if="products.length === 0"
+            title="目录里暂时没有符合条件的商品"
+            hint="换个分类看看，或者清空筛选条件重新浏览"
+            action-text="看看全部商品"
+            @action="handleReset"
+          />
 
-        <el-select v-model="query.sort" class="sort" @change="handleSearch">
-          <el-option v-for="item in sortOptions" :key="item.value" :label="item.label" :value="item.value" />
-        </el-select>
+          <div v-else class="catalogue-grid">
+            <CatalogueCard
+              v-for="item in products"
+              :key="item.id"
+              :item="item"
+              :code="codeOf(item)"
+              :tint-var="tintOf(item)"
+            />
+          </div>
 
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
-        <el-button @click="handleReset">重置</el-button>
+          <div v-if="total > query.size" class="pagination">
+            <el-pagination
+              background
+              layout="total, prev, pager, next, jumper"
+              :total="total"
+              :current-page="query.page"
+              :page-size="query.size"
+              @current-change="handlePageChange"
+            />
+          </div>
+        </template>
+      </section>
 
-        <el-button type="success" plain class="publish-btn" @click="router.push('/product/publish')">
-          + 发布闲置
-        </el-button>
-      </div>
-    </el-card>
-
-    <!-- 商品卡片列表 -->
-    <div v-loading="loading" class="product-area">
-      <el-empty v-if="!loading && products.length === 0" description="暂时没有符合条件的商品，换个关键词试试～" />
-
-      <el-row v-else :gutter="16">
-        <el-col v-for="item in products" :key="item.id" :xs="12" :sm="8" :md="6" :lg="6">
-          <el-card class="product-card" shadow="hover" :body-style="{ padding: '0' }" @click="goDetail(item.id)">
-            <div class="cover">
-              <img :src="imageOf(item)" alt="商品图片" @error="onImageError(item)" />
-              <el-tag v-if="item.conditionLevel" class="condition" size="small" effect="dark" type="info">
-                {{ ['', '全新', '几乎全新', '轻微使用', '明显使用'][item.conditionLevel] }}
-              </el-tag>
-            </div>
-            <div class="info">
-              <div class="title" :title="item.title">{{ item.title }}</div>
-              <div class="price-row">
-                <span class="price">{{ formatPrice(item.price) }}</span>
-                <span v-if="item.originalPrice" class="origin">{{ formatPrice(item.originalPrice) }}</span>
-              </div>
-              <div class="meta">
-                <el-tag size="small" effect="plain">{{ item.categoryName || '未分类' }}</el-tag>
-                <span class="time">{{ shortTime(item.createTime) }}</span>
-              </div>
-              <div class="meta second">
-                <span class="seller">卖家：{{ item.sellerNickname || '匿名' }}</span>
-                <span class="views">{{ item.viewCount || 0 }} 次浏览</span>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
-
-      <div v-if="total > 0" class="pagination">
-        <el-pagination
-          background
-          layout="total, prev, pager, next, jumper"
-          :total="total"
-          :current-page="query.page"
-          :page-size="query.size"
-          @current-change="handlePageChange"
-        />
-      </div>
+      <!-- 右栏只放推荐位。
+           这里曾有一块「目录统计 / 目录构成」，但它与分类色带重复（分类名、分类号、件数色带上都有），
+           唯一的独有信息"占比"在 13 件、最大 4 件的数据量上读不出意义。
+           分类信息统一由色带承担，右栏留给"看中就私聊"这条转化路径。 -->
+      <aside class="catalogue-rail" aria-label="猜你喜欢">
+        <!-- v0.11 推荐模块：登录后个性化，未登录热门冷启动；右栏用竖排小条目版式（选定稿 A） -->
+        <RecommendPanel mode="personal" title="猜你喜欢" variant="rail" :size="5" />
+      </aside>
     </div>
-
-    <!-- v0.11 推荐模块：猜你喜欢（登录后个性化，未登录热门冷启动） -->
-    <RecommendPanel mode="personal" title="猜你喜欢" :size="8" />
   </div>
 </template>
 
 <style scoped>
-.filter-card {
-  margin-bottom: 16px;
+.catalogue-page {
+  padding-top: var(--ct-space-4);
 }
 
-.filter-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+/* 主区：目录 9/12 + 右栏 3/12（对齐选定稿 A） */
+.catalogue-body {
+  display: grid;
+  grid-template-columns: 9fr 3fr;
+  gap: var(--ct-space-5);
+  padding: var(--ct-space-5) 0 var(--ct-space-6);
 }
 
-.keyword {
-  width: 260px;
-}
-
-.category {
-  width: 220px;
-}
-
-.sort {
-  width: 160px;
-}
-
-.publish-btn {
-  margin-left: auto;
-}
-
-.product-area {
-  min-height: 300px;
-}
-
-.product-card {
-  margin-bottom: 16px;
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
-
-.product-card:hover {
-  transform: translateY(-3px);
-}
-
-.cover {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  background: #f7f9fc;
-  overflow: hidden;
-}
-
-.cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.condition {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-}
-
-.info {
-  padding: 10px 12px 14px;
-}
-
-.title {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.4;
-  height: 40px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.price-row {
-  margin-top: 6px;
+.catalogue-head {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  justify-content: space-between;
+  gap: var(--ct-space-4);
+  margin-bottom: var(--ct-space-4);
 }
 
-.price {
-  color: #f56c6c;
-  font-size: 18px;
-  font-weight: 700;
+.catalogue-title {
+  font-size: var(--ct-text-lg);
+  font-weight: var(--ct-weight-semibold);
+  margin: 0;
 }
 
-.origin {
-  color: #a8abb2;
-  font-size: 12px;
-  text-decoration: line-through;
-}
-
-.meta {
-  margin-top: 8px;
+.catalogue-tools {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #909399;
+  gap: var(--ct-space-3);
 }
 
-.meta.second {
-  margin-top: 4px;
+.catalogue-stats {
+  font-family: var(--ct-font-mono);
+  font-size: var(--ct-text-xs);
+  color: var(--ct-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 三列目录卡，24px 间距（选定稿 A 的 3 列网格） */
+.catalogue-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--ct-space-5);
+}
+
+.catalogue-rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ct-space-4);
 }
 
 .pagination {
   display: flex;
   justify-content: center;
-  margin: 8px 0 24px;
+  margin: var(--ct-space-4) 0 var(--ct-space-5);
+}
+
+@media (max-width: 1100px) {
+  .catalogue-body {
+    grid-template-columns: 1fr;
+  }
+
+  .catalogue-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .catalogue-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .catalogue-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--ct-space-2);
+  }
 }
 </style>

@@ -13,6 +13,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getBuyOrders, getSellOrders, updateOrderStatus } from '@/api/order'
 import { demoImage, resolveImageUrl } from '@/utils/product'
+import StateError from '@/components/states/StateError.vue'
 
 const props = defineProps({
   role: { type: String, default: 'buy' } // buy | sell
@@ -22,6 +23,7 @@ const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
+const loadError = ref(false)
 const orders = ref([])
 const total = ref(0)
 const activeStatus = ref('all')
@@ -51,6 +53,7 @@ function statusTagType(status) {
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const params = {
       page: query.page,
@@ -63,7 +66,8 @@ async function load() {
   } catch (e) {
     orders.value = []
     total.value = 0
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -124,7 +128,7 @@ onMounted(() => {
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <b>{{ pageTitle }}</b>
+          <h1 class="card-title">{{ pageTitle }}</h1>
           <el-button-group>
             <el-button
               size="small"
@@ -148,11 +152,18 @@ onMounted(() => {
         <el-tab-pane v-for="tab in statusTabs" :key="tab.name" :label="tab.label" :name="tab.name" />
       </el-tabs>
 
-      <el-table v-loading="loading" :data="orders" border stripe>
+      <StateError
+        v-if="loadError && !loading"
+        title="加载失败，请稍后重试"
+        detail="网络可能不稳定，或服务正在重启"
+        retry-text="重新加载"
+        @retry="load"
+      />
+      <el-table v-else v-loading="loading" :data="orders" border stripe>
         <el-table-column label="商品" min-width="250">
           <template #default="{ row }">
             <div class="product-cell">
-              <img class="table-img" :src="imageOf(row)" alt="商品图片" />
+              <img class="table-img" :src="imageOf(row)" :alt="row.productTitle || '商品图片'" />
               <div class="product-info">
                 <el-link type="primary" :underline="false" @click="router.push(`/product/${row.productId}`)">
                   {{ row.productTitle }}
@@ -215,18 +226,41 @@ onMounted(() => {
   justify-content: space-between;
 }
 
+/* 订单表：纸面语言 —— 表头不填灰底、行间用 0.5px 墨线，去掉"后台表格"的厚重感。
+   端到端只依赖商品标题与状态文案，因此这里可以自由调整视觉。 */
+:deep(.el-table) {
+  --el-table-border-color: var(--ct-border);
+  --el-table-header-bg-color: var(--ct-bg-surface);
+  --el-table-header-text-color: var(--ct-text-muted);
+  --el-table-row-hover-bg-color: var(--ct-bg-subtle);
+  font-size: var(--ct-text-base);
+}
+
+:deep(.el-table th.el-table__cell) {
+  font-weight: var(--ct-weight-medium);
+  border-bottom: var(--ct-hairline) solid var(--ct-border);
+}
+
+:deep(.el-table td.el-table__cell) {
+  border-bottom: var(--ct-hairline) solid var(--ct-border);
+}
+
+:deep(.el-table__inner-wrapper::before) {
+  display: none;                     /* 去掉表格底部的整条横线 */
+}
+
 .product-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--ct-space-3);
 }
 
 .table-img {
   width: 56px;
   height: 56px;
-  border-radius: 6px;
+  border-radius: var(--ct-radius-sm);
   object-fit: cover;
-  background: #f7f9fc;
+  background: var(--ct-bg-subtle);
   flex-shrink: 0;
 }
 
@@ -234,20 +268,32 @@ onMounted(() => {
   min-width: 0;
 }
 
+/* 订单号用等宽字体：与目录里的索书号同一套"可检索编号"语言 */
 .order-no {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
+  font-family: var(--ct-font-mono);
+  font-size: var(--ct-text-xs);
+  color: var(--ct-text-muted);
+  margin-top: var(--ct-space-1);
+  letter-spacing: 0.02em;
 }
 
+/* 金额用等宽数字：列表滚动时宽度不跳动 */
 .price {
-  color: #f56c6c;
-  font-weight: 600;
+  color: var(--ct-price);
+  font-weight: var(--ct-weight-semibold);
+  font-variant-numeric: tabular-nums;
 }
 
 .pagination {
-  margin-top: 16px;
+  margin-top: var(--ct-space-4);
   display: flex;
   justify-content: flex-end;
+}
+
+/* 卡片头里的页级主标题（原为 <b>，现为 h1）：保持与原先一致的视觉重量 */
+.card-title {
+  margin: 0;
+  font-size: var(--ct-text-md);
+  font-weight: var(--ct-weight-semibold);
 }
 </style>

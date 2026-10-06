@@ -10,6 +10,7 @@
 执行：python tests/e2e/e2e-browser-test.py
 产物：docs/test-evidence/*.png（截图证据）、%TEMP%/dsh-sqlval/e2e_result.json
 """
+import atexit
 import json
 import os
 import pathlib
@@ -24,6 +25,64 @@ from playwright.sync_api import sync_playwright
 # 入口可用环境变量覆盖（E2E_BASE / API_BASE），便于验证 Nginx 部署形态
 BASE = os.environ.get('E2E_BASE', 'http://127.0.0.1:5173')
 API = os.environ.get('API_BASE', 'http://127.0.0.1:8080/api')
+
+
+def preflight(base, api):
+    """探活：地址不通就早停并给出可执行提示。
+
+    没有这一步时，地址写错会让 31 条用例各报一次 ERR_CONNECTION_REFUSED，
+    真正的病因（基址不对）被淹没在几十条异常里 —— 这个坑实际踩过一次。
+    """
+    import urllib.error
+    import urllib.request
+
+    def probe(url):
+        try:
+            with urllib.request.urlopen(url, timeout=5) as r:
+                return r.status < 500
+        except urllib.error.HTTPError as e:
+            return e.code < 500          # 4xx 说明服务在，只是这个路径不允许
+        except Exception:
+            return False
+
+    if probe(base):
+        return True
+
+    print(f'✗ 前端入口不可达：{base}')
+    print('  请确认部署/开发服务器已启动，或用环境变量指定地址。常见两种：')
+    print('    · 开发服务器（Vite）      : E2E_BASE=http://127.0.0.1:5173')
+    print('    · 部署形态（Nginx 8081）  : E2E_BASE=http://127.0.0.1:8081 API_BASE=http://127.0.0.1:8081/api')
+    for alt in ('http://127.0.0.1:5173', 'http://127.0.0.1:8081'):
+        if alt != base and probe(alt):
+            print(f'  探测到 {alt} 是通的 → 可改用：E2E_BASE={alt}' +
+                  ('  API_BASE=http://127.0.0.1:8081/api' if alt.endswith('8081') else ''))
+    print(f'  后端接口地址：{api}（可达性：{probe(api.rstrip("/") + "/health")}）')
+    print('  ✗ 已提前终止，未产生任何用例结果（不是回归失败）')
+    return False
+
+
+if not preflight(BASE, API):
+    raise SystemExit(2)
+
+# ---------------------------------------------------------------- 限流计数复位
+# 生产配置下 rate-limit-skip-local=false，本机同样受限（register 10 次/5 分钟、
+# login 20 次/60 秒，均为按 IP 计数）。本套件每次运行要注册 3 个账号并多次登录，
+# 短窗口内重复运行会耗尽注册预算，表现为账号建不出来、后续步骤连锁超时
+# （实际踩过：连跑 5 次后失败数从 2 个涨到 4 个，看起来像"代码改坏了"）。
+# 限流本身由部署验证的 D17/D18 专项用例负责验证，因此这里跑前复位计数是可接受的。
+_REDIS_CLI = os.environ.get('REDIS_CLI', r'D:\major\tool\redis\redis-cli.exe')
+if pathlib.Path(_REDIS_CLI).exists():
+    try:
+        _keys = subprocess.run([_REDIS_CLI, 'KEYS', 'campus:ratelimit:*'],
+                               capture_output=True, text=True, encoding='utf-8', timeout=15)
+        _list = [k.strip() for k in (_keys.stdout or '').splitlines() if k.strip()]
+        if _list:
+            subprocess.run([_REDIS_CLI, 'DEL'] + _list, capture_output=True, timeout=15)
+        print(f'限流计数已复位（清除 {len(_list)} 个 key）—— 生产配置下本机同样受限，'
+              f'本套件需在短窗口内可重复运行')
+    except Exception as _e:                                   # noqa: BLE001
+        print(f'（限流计数复位失败，若后续出现账号创建失败请检查限流：{_e}）')
+
 MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
 EV = pathlib.Path(r'D:\campus-secondhand-trade\docs\test-evidence')
 EV.mkdir(parents=True, exist_ok=True)
@@ -38,6 +97,40 @@ A_USER, B_USER = f'e2ea{TAG}', f'e2eb{TAG}'
 A_PASS = B_PASS = 'abc12345'
 PRODUCT_TITLE = f'E2E测试商品-{TAG}'
 PRODUCT_TITLE2 = f'E2E取消流程商品-{TAG}'
+
+# ---------------------------------------------------------------- 夹具自动清理
+# 本脚本会注册 e2e* 账号、发布 E2E* 商品、产生收藏/订单/消息/行为数据与上传文件。
+# 原先没有清理逻辑，跑一次就会污染演示数据：部署验证 D20 断言 4/17/4/4 会失败，
+# 公开首页首屏也会出现 "E2E测试商品-xxxxx"（答辩演示前尤其致命）。
+# 这里注册 atexit：无论正常结束还是中途抛异常，都按本次 TAG 精确清理；
+# 需要保留现场时设 E2E_KEEP_DATA=1。
+_KEEP_FIXTURES = os.environ.get('E2E_KEEP_DATA', '') == '1'
+
+# 注意：atexit 回调在解释器拆卸阶段执行，此时模块全局变量可能已被清理
+# （实际踩过：回调里读 __file__ 报 NameError，导致清理静默失败、数据被留在演示库里）。
+# 因此把需要的路径与依赖在**注册时**绑定成默认参数，存进函数对象，不依赖全局查找。
+_CLEANUP_TOOL = pathlib.Path(__file__).resolve().parent.parent.parent / 'tools' / 'clean-test-data.py'
+_EXE = sys.executable
+_RUN = subprocess.run
+
+
+def _auto_cleanup(tool=_CLEANUP_TOOL, tag=TAG, keep=_KEEP_FIXTURES, exe=_EXE, run=_RUN, out=print):
+    if keep:
+        out('（E2E_KEEP_DATA=1，跳过夹具清理，数据将保留以便排查）')
+        return
+    if not tool.exists():
+        out(f'（未找到清理工具 {tool}，请手动清理 e2e* 夹具）')
+        return
+    try:
+        r = run([exe, str(tool), '--tag', tag], capture_output=True, text=True,
+                encoding='utf-8', timeout=300)
+        tail = [x.strip() for x in (r.stdout or '').strip().splitlines() if x.strip()][-3:]
+        out('夹具清理（TAG=%s）：%s' % (tag, ' / '.join(tail)))
+    except Exception as e:                                   # noqa: BLE001
+        out(f'夹具清理失败，请手动运行：python tools/clean-test-data.py --tag {tag}（{e}）')
+
+
+atexit.register(_auto_cleanup)
 
 RESULTS = []      # 所有用例结果
 SHOTS = []        # 截图文件名

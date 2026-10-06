@@ -18,6 +18,8 @@ const router = useRouter()
 const formRef = ref()
 const submitting = ref(false)
 const uploading = ref(false)
+/** 图片上传失败：toast 会消失，用这个标记驱动一条持续可见的失败说明 */
+const uploadError = ref(false)
 const fileList = ref([])
 /** 上传成功后拿到的图片地址（提交时一并发送） */
 const uploadedUrls = ref([])
@@ -115,10 +117,13 @@ function onUploadSuccess(response, uploadFile) {
   // 用服务器返回的地址作为缩略图
   uploadFile.url = response.url
   uploadedUrls.value.push(response.url)
+  uploadError.value = false
   ElMessage.success('图片上传成功')
 }
 
 function onUploadError() {
+  // toast 会消失，因此额外留一个持续可见的失败说明（模板里的 role="alert"）
+  uploadError.value = true
   ElMessage.error('图片上传失败，请重试')
 }
 
@@ -171,28 +176,32 @@ onMounted(loadCategories)
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <b>发布闲置商品</b>
+          <h1 class="form-title">发布闲置商品</h1>
           <el-tag size="small" type="warning" effect="plain">卖家：当前登录用户</el-tag>
         </div>
       </template>
 
       <el-form ref="formRef" :model="form" :rules="rules" label-width="96px" class="publish-form">
+        <p class="section-title">基本信息</p>
+
         <el-form-item label="商品名称" prop="title">
-          <el-input v-model="form.title" maxlength="100" show-word-limit placeholder="例如：《数据结构》教材 九成新" />
+          <el-input v-model="form.title" maxlength="100" show-word-limit aria-label="商品名称" placeholder="例如：《数据结构》教材 九成新" />
         </el-form-item>
 
         <el-form-item label="商品分类" prop="categoryId">
-          <el-select v-model="form.categoryId" placeholder="请选择分类" class="w-320">
+          <el-select v-model="form.categoryId" placeholder="请选择分类" aria-label="商品分类" class="w-320">
             <el-option-group v-for="group in categoryGroups" :key="group.label" :label="group.label">
               <el-option v-for="item in group.options" :key="item.id" :label="item.name" :value="item.id" />
             </el-option-group>
           </el-select>
         </el-form-item>
 
+        <p class="section-title">价格与成色</p>
+
         <el-form-item label="售价(元)" prop="price">
-          <el-input-number v-model="form.price" :min="0.01" :max="99999999" :precision="2" :step="1" />
+          <el-input-number v-model="form.price" :min="0.01" :max="99999999" :precision="2" :step="1" aria-label="售价（元）" />
           <span class="tip-text">原价（选填）：</span>
-          <el-input-number v-model="form.originalPrice" :min="0" :max="99999999" :precision="2" :step="1" />
+          <el-input-number v-model="form.originalPrice" :min="0" :max="99999999" :precision="2" :step="1" aria-label="原价（选填）" />
         </el-form-item>
 
         <el-form-item label="成色" prop="conditionLevel">
@@ -203,13 +212,17 @@ onMounted(loadCategories)
           </el-radio-group>
         </el-form-item>
 
+        <p class="section-title">交易信息</p>
+
         <el-form-item label="交易校区">
-          <el-input v-model="form.campus" class="w-320" placeholder="例如：东校区" />
+          <el-input v-model="form.campus" class="w-320" placeholder="例如：东校区" aria-label="交易校区" />
         </el-form-item>
 
         <el-form-item label="交易地点">
-          <el-input v-model="form.tradePlace" class="w-480" placeholder="例如：东校区图书馆门口" />
+          <el-input v-model="form.tradePlace" class="w-480" placeholder="例如：东校区图书馆门口" aria-label="交易地点" />
         </el-form-item>
+
+        <p class="section-title">图片与描述</p>
 
         <el-form-item label="商品图片">
           <div class="upload-area">
@@ -229,6 +242,10 @@ onMounted(loadCategories)
             </el-upload>
             <div class="upload-tip">
               <p>支持 jpg/png/gif/webp/bmp，单张 ≤ 5MB，最多 9 张，第一张作为封面。</p>
+              <!-- 上传失败时留痕并可重试：toast 会消失，这里给一条持续可见的说明 -->
+              <p v-if="uploadError" class="upload-error" role="alert">
+                图片上传失败，请重新选择图片再试一次（已填写的其他内容不会丢失）。
+              </p>
               <p v-if="uploadedUrls.length === 0" class="text-muted">
                 未上传图片时会自动使用分类占位图：
               </p>
@@ -244,6 +261,7 @@ onMounted(loadCategories)
             :rows="5"
             maxlength="2000"
             show-word-limit
+            aria-label="商品描述"
             placeholder="说明成色、入手渠道、瑕疵、交易方式等"
           />
         </el-form-item>
@@ -265,6 +283,27 @@ onMounted(loadCategories)
   justify-content: space-between;
 }
 
+/* 页面主标题（此前是 <b>，全页无 h1） */
+.form-title {
+  margin: 0;
+  font-size: var(--ct-text-lg);
+  font-weight: var(--ct-weight-semibold);
+}
+
+/* 分组小标题：把 8 个字段分成四段，降低表单的认知负担 */
+.section-title {
+  margin: var(--ct-space-5) 0 var(--ct-space-4);
+  padding-bottom: var(--ct-space-2);
+  border-bottom: var(--ct-hairline) solid var(--ct-border);
+  font-size: var(--ct-text-sm);
+  font-weight: var(--ct-weight-semibold);
+  color: var(--ct-text-primary);
+}
+
+.section-title:first-of-type {
+  margin-top: 0;
+}
+
 .publish-form {
   max-width: 900px;
 }
@@ -278,36 +317,42 @@ onMounted(loadCategories)
 }
 
 .tip-text {
-  margin: 0 12px 0 20px;
-  color: #909399;
-  font-size: 13px;
+  margin: 0 var(--ct-space-3) 0 var(--ct-space-4);
+  color: var(--ct-text-muted);
+  font-size: var(--ct-text-sm);
 }
 
 .upload-area {
   display: flex;
-  gap: 20px;
+  gap: var(--ct-space-5);
   align-items: flex-start;
   flex-wrap: wrap;
 }
 
 .upload-plus {
-  font-size: 26px;
-  color: #8c939d;
+  font-size: var(--ct-text-2xl);
+  color: var(--ct-text-muted);
   line-height: 1;
 }
 
 .upload-tip {
-  font-size: 12px;
-  color: #909399;
+  font-size: var(--ct-text-xs);
+  color: var(--ct-text-muted);
   line-height: 1.8;
   max-width: 320px;
+}
+
+.upload-error {
+  margin: var(--ct-space-2) 0 0;
+  color: var(--ct-cat-6-bar);
+  font-weight: var(--ct-weight-medium);
 }
 
 .placeholder-preview {
   width: 96px;
   height: 96px;
-  border-radius: 8px;
-  border: 1px dashed #dcdfe6;
-  margin-top: 4px;
+  border-radius: var(--ct-radius-sm);
+  border: var(--ct-hairline) dashed var(--ct-border);
+  margin-top: var(--ct-space-1);
 }
 </style>

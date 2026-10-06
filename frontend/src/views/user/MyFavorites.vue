@@ -10,10 +10,13 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyFavorites, operateFavorite } from '@/api/favorite'
 import { demoImage, formatPrice, resolveImageUrl } from '@/utils/product'
+import StateError from '@/components/states/StateError.vue'
+import SkeletonList from '@/components/states/SkeletonList.vue'
 
 const router = useRouter()
 
 const loading = ref(false)
+const loadError = ref(false)
 const favorites = ref([])
 const total = ref(0)
 const failedImages = reactive(new Set())
@@ -29,6 +32,7 @@ function imageOf(item) {
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getMyFavorites({ page: query.page, size: query.size })
     favorites.value = res.data.records || []
@@ -36,7 +40,8 @@ async function load() {
   } catch (e) {
     favorites.value = []
     total.value = 0
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -74,24 +79,45 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-loading="loading">
+  <StateError
+    v-if="loadError && !loading"
+    title="加载失败，请稍后重试"
+    detail="网络可能不稳定，或服务正在重启"
+    retry-text="重新加载"
+    @retry="load"
+  />
+  <div v-else>
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <b>我的收藏</b>
+          <h1 class="card-title">我的收藏</h1>
           <span class="text-muted">共 {{ total }} 件（仅显示当前在售商品）</span>
         </div>
       </template>
 
-      <el-empty v-if="!loading && favorites.length === 0" description="还没有收藏任何商品，去首页逛逛吧～">
+      <!-- v0.16：加载态由转圈遮罩改为版式对齐的骨架屏（媒体块 + 三行信息，与卡片同形） -->
+      <SkeletonList v-if="loading" :count="8" :columns="4" />
+
+      <el-empty v-else-if="favorites.length === 0" description="还没有收藏任何商品，去首页逛逛吧～">
         <el-button type="primary" @click="router.push('/home')">去逛商品</el-button>
       </el-empty>
 
       <el-row v-else :gutter="16">
         <el-col v-for="item in favorites" :key="item.favoriteId" :xs="12" :sm="8" :md="6">
-          <el-card class="fav-card" shadow="hover" :body-style="{ padding: '0' }" @click="goDetail(item.productId)">
+          <el-card
+            class="fav-card"
+            shadow="hover"
+            :body-style="{ padding: '0' }"
+            role="link"
+            tabindex="0"
+            :aria-label="`${item.title}，${formatPrice(item.price)}`"
+            @click="goDetail(item.productId)"
+            @keydown.enter.prevent="goDetail(item.productId)"
+            @keydown.space.prevent="goDetail(item.productId)"
+          >
             <div class="cover">
-              <img :src="imageOf(item)" alt="商品图片" @error="failedImages.add(item.productId)" />
+              <img :src="imageOf(item)" :alt="item.title || '商品图片'"
+                   @error="failedImages.add(item.productId)" />
             </div>
             <div class="info">
               <div class="title" :title="item.title">{{ item.title }}</div>
@@ -154,7 +180,7 @@ onMounted(load)
 .cover {
   width: 100%;
   aspect-ratio: 1 / 1;
-  background: #f7f9fc;
+  background: var(--ct-bg-subtle);
   overflow: hidden;
 }
 
@@ -188,13 +214,13 @@ onMounted(load)
 }
 
 .price {
-  color: #f56c6c;
+  color: var(--ct-price);
   font-size: 18px;
   font-weight: 700;
 }
 
 .origin {
-  color: #a8abb2;
+  color: var(--ct-text-muted);
   font-size: 12px;
   text-decoration: line-through;
 }
@@ -205,7 +231,7 @@ onMounted(load)
   align-items: center;
   justify-content: space-between;
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
   gap: 6px;
 }
 
@@ -218,5 +244,12 @@ onMounted(load)
   display: flex;
   justify-content: center;
   margin-top: 8px;
+}
+
+/* 卡片头里的页级主标题（原为 <b>，现为 h1）：保持与原先一致的视觉重量 */
+.card-title {
+  margin: 0;
+  font-size: var(--ct-text-md);
+  font-weight: var(--ct-weight-semibold);
 }
 </style>

@@ -21,6 +21,8 @@ import { getChatPeer, getMessageHistory, markMessageRead, sendMessage } from '@/
 import { useUserStore } from '@/store/user'
 import { useChatStore } from '@/store/chat'
 import chatSocket from '@/utils/websocket'
+import StateError from '@/components/states/StateError.vue'
+import SkeletonList from '@/components/states/SkeletonList.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -32,6 +34,7 @@ const PRODUCT_ID = route.query.productId ? Number(route.query.productId) : null
 const PAGE_SIZE = 20
 
 const loading = ref(false)
+const loadError = ref(false)
 const sending = ref(false)
 const loadingMore = ref(false)
 const peer = ref(null)
@@ -48,6 +51,25 @@ const hasMore = computed(() => messages.value.length < total.value)
 /** 是否是我发出的消息 */
 function isMine(msg) {
   return msg.fromUserId === myId.value
+}
+
+/** 我发出的最后一条消息的下标：只在这一条上显示已读状态，避免每条都挂标签 */
+const lastMineIndex = computed(() => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    if (isMine(messages.value[i])) return i
+  }
+  return -1
+})
+
+/**
+ * 商品引用条只在"换了商品"的那条消息上显示。
+ * 原先每条带 productId 的消息都挂一条「关于：xxx」，同一商品连发三条就重复三遍。
+ */
+function showProductRef(index) {
+  const msg = messages.value[index]
+  if (!msg || !msg.productId || !msg.productTitle) return false
+  const prev = messages.value[index - 1]
+  return !prev || prev.productId !== msg.productId
 }
 
 /** 时间显示：HH:mm */
@@ -89,6 +111,7 @@ async function loadPeer() {
 /** 首次加载：最近一页 + 标记已读 */
 async function loadFirst() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getMessageHistory({ peerId: PEER_ID, page: 1, size: PAGE_SIZE })
     total.value = res.data.total || 0
@@ -102,7 +125,8 @@ async function loadFirst() {
     }
   } catch (e) {
     messages.value = []
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -292,7 +316,16 @@ function onEnter(event) {
 </script>
 
 <template>
-  <div class="chat-page" v-loading="loading">
+  <!-- 页面主标题（会话对象是动态值，视觉上由会话头承担） -->
+  <h1 class="sr-only">与 {{ peer?.nickname || '对方' }} 的聊天</h1>
+  <StateError
+    v-if="loadError && !loading"
+    title="加载失败，请稍后重试"
+    detail="网络可能不稳定，或服务正在重启"
+    retry-text="重新加载"
+    @retry="loadFirst"
+  />
+  <div v-else class="chat-page">
     <el-card shadow="never" :body-style="{ padding: '0' }">
       <!-- 顶部：对方信息 -->
       <div class="chat-header">
@@ -325,7 +358,10 @@ function onEnter(event) {
           <span v-else-if="messages.length > 0" class="text-muted">—— 已经是最早的消息 ——</span>
         </div>
 
-        <el-empty v-if="!loading && messages.length === 0" description="还没有聊天记录，发一条消息打个招呼吧～" :image-size="70" />
+        <!-- 加载态：与消息行同形的骨架（此前是整块转圈遮罩） -->
+        <SkeletonList v-if="loading" variant="row" :count="4" :columns="1" />
+
+        <el-empty v-else-if="messages.length === 0" description="还没有聊天记录，发一条消息打个招呼吧～" :image-size="70" />
 
         <div v-for="(msg, index) in messages" :key="msg.id" class="message-row">
           <div v-if="showTimeDivider(index)" class="time-divider">{{ msg.createTime }}</div>
@@ -337,9 +373,29 @@ function onEnter(event) {
               <div class="bubble" :class="isMine(msg) ? 'bubble-mine' : 'bubble-theirs'">
                 {{ msg.content }}
               </div>
-              <div v-if="msg.productId && msg.productTitle" class="product-ref" @click="router.push(`/product/${msg.productId}`)">
+              <div
+              v-if="showProductRef(index)"
+              class="product-ref"
+              role="link"
+              tabindex="0"
+              :aria-label="msg.productTitle"
+              @click="router.push(`/product/${msg.productId}`)"
+              @keydown.enter.prevent="router.push(`/product/${msg.productId}`)"
+              @keydown.space.prevent="router.push(`/product/${msg.productId}`)"
+            >
                 <el-tag size="small" effect="plain" type="info">关于：{{ msg.productTitle }}</el-tag>
               </div>
+
+              <!-- 已读回执：整段会话只挂在我发出的最后一条上。
+                   此前模板从未渲染它（尽管 isRead 字段与已读回执订阅都已具备），
+                   评审 P1-4「已读回执从未渲染」已核实属实。 -->
+              <span
+                v-if="isMine(msg) && index === lastMineIndex"
+                class="read-state"
+                :aria-label="msg.isRead === 1 ? '对方已读' : '对方未读'"
+              >
+                {{ msg.isRead === 1 ? '已读' : '未读' }}
+              </span>
             </div>
             <el-avatar v-if="isMine(msg)" :size="32" class="bubble-avatar">
               {{ (userStore.nickname || '我').slice(0, 1) }}
@@ -358,7 +414,8 @@ function onEnter(event) {
           show-word-limit
           resize="none"
           :disabled="peer?.self"
-          placeholder="输入消息，Enter 发送，Shift + Enter 换行"
+          aria-label="输入消息"
+              placeholder="输入消息，Enter 发送，Shift + Enter 换行"
           @keydown.enter="onEnter"
         />
         <div class="input-actions">
@@ -383,8 +440,8 @@ function onEnter(event) {
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border-bottom: 1px solid #ebeef5;
-  background: #fff;
+  border-bottom: 1px solid var(--ct-paper-200);
+  background: var(--ct-bg-surface);
   border-radius: 4px 4px 0 0;
 }
 
@@ -413,12 +470,12 @@ function onEnter(event) {
 
 .reconnecting {
   font-size: 11px;
-  color: #e6a23c;
+  color: var(--el-color-warning);
 }
 
 .peer-meta-text {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
   margin-top: 2px;
 }
 
@@ -430,7 +487,7 @@ function onEnter(event) {
   height: 460px;
   overflow-y: auto;
   padding: 16px;
-  background: #f5f7fa;
+  background: var(--ct-bg-canvas);
 }
 
 .load-more {
@@ -441,7 +498,7 @@ function onEnter(event) {
 .time-divider {
   text-align: center;
   font-size: 12px;
-  color: #a8abb2;
+  color: var(--ct-text-muted);
   margin: 12px 0 8px;
 }
 
@@ -458,6 +515,8 @@ function onEnter(event) {
 
 .bubble-wrap {
   max-width: 68%;
+  display: flex;
+  flex-direction: column;
 }
 
 .bubble {
@@ -467,17 +526,35 @@ function onEnter(event) {
   font-size: 14px;
   word-break: break-word;
   white-space: pre-wrap;
+  /* 气泡最大宽度：1440 宽下不加限制会横贯整屏，读起来很累 */
+  max-width: min(560px, 62vw);
+}
+
+/* 已读回执：小字弱化，只在最后一条出站消息下出现 */
+.read-state {
+  align-self: flex-end;
+  margin-top: var(--ct-space-1);
+  font-size: var(--ct-text-xs);
+  color: var(--ct-text-muted);
+}
+
+/* 已读回执：小字弱化，只在最后一条出站消息下出现 */
+.read-state {
+  align-self: flex-end;
+  margin-top: var(--ct-space-1);
+  font-size: var(--ct-text-xs);
+  color: var(--ct-text-muted);
 }
 
 .bubble-theirs {
-  background: #fff;
-  border: 1px solid #ebeef5;
+  background: var(--ct-bg-surface);
+  border: 1px solid var(--ct-paper-200);
   border-top-left-radius: 2px;
 }
 
 .bubble-mine {
-  background: #409eff;
-  color: #fff;
+  background: var(--ct-action);
+  color: var(--ct-text-inverse);
   border-top-right-radius: 2px;
 }
 
@@ -496,8 +573,8 @@ function onEnter(event) {
 
 .input-area {
   padding: 12px 16px 16px;
-  border-top: 1px solid #ebeef5;
-  background: #fff;
+  border-top: 1px solid var(--ct-paper-200);
+  background: var(--ct-bg-surface);
 }
 
 .input-actions {

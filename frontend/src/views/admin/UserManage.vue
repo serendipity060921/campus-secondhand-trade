@@ -7,8 +7,12 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { changeUserStatus, getAdminUsers } from '@/api/admin'
+import SkeletonTable from '@/components/states/SkeletonTable.vue'
+import StateEmpty from '@/components/states/StateEmpty.vue'
+import StateError from '@/components/states/StateError.vue'
 
 const loading = ref(false)
+const loadError = ref(false)
 const users = ref([])
 const total = ref(0)
 
@@ -16,6 +20,7 @@ const query = reactive({ page: 1, size: 10, keyword: '', role: null, status: nul
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getAdminUsers({
       page: query.page,
@@ -26,6 +31,8 @@ async function load() {
     })
     users.value = res.data.records || []
     total.value = res.data.total || 0
+  } catch (e) {
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -60,15 +67,18 @@ onMounted(load)
 
 <template>
   <div>
+    <!-- 页级标题：可见标题由 AdminLayout 顶栏承担（避免重复），这里供读屏使用 -->
+    <h1 class="sr-only">用户管理</h1>
     <el-card shadow="never" class="filter-card">
       <div class="filter-bar">
-        <el-input v-model="query.keyword" placeholder="用户名 / 昵称 / 学号 / 手机号" clearable
+        <el-input v-model="query.keyword" placeholder="用户名 / 昵称 / 学号 / 手机号"
+                    aria-label="搜索用户" clearable
                   class="keyword" @keyup.enter="handleSearch" />
-        <el-select v-model="query.role" placeholder="全部角色" clearable class="role" @change="handleSearch">
+        <el-select v-model="query.role" placeholder="全部角色" aria-label="按角色筛选" clearable class="role" @change="handleSearch">
           <el-option label="学生" :value="0" />
           <el-option label="管理员" :value="1" />
         </el-select>
-        <el-select v-model="query.status" placeholder="全部状态" clearable class="status" @change="handleSearch">
+        <el-select v-model="query.status" placeholder="全部状态" aria-label="按状态筛选" clearable class="status" @change="handleSearch">
           <el-option label="正常" :value="1" />
           <el-option label="已禁用" :value="0" />
         </el-select>
@@ -78,7 +88,18 @@ onMounted(load)
     </el-card>
 
     <el-card shadow="never">
-      <el-table v-loading="loading" :data="users" border stripe>
+      <SkeletonTable v-if="loading" :rows="8" :columns="6" />
+      <StateError
+        v-else-if="loadError"
+        title="列表加载失败"
+        detail="请检查网络后重试，或稍后再来"
+        retry-text="重新加载"
+        @retry="load"
+      />
+      <el-table v-else :data="users" border stripe>
+        <template #empty>
+          <StateEmpty title="没有符合条件的用户" hint="换个关键词或状态再试" />
+        </template>
         <el-table-column label="用户" min-width="200">
           <template #default="{ row }">
             <div class="user-cell">
@@ -178,7 +199,7 @@ onMounted(load)
 
 .sub {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
 }
 
 .pagination {

@@ -10,10 +10,13 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyProducts, updateProductStatus } from '@/api/product'
 import { demoImage, formatPrice, PRODUCT_STATUS, resolveImageUrl } from '@/utils/product'
+import StateError from '@/components/states/StateError.vue'
+import SkeletonTable from '@/components/states/SkeletonTable.vue'
 
 const router = useRouter()
 
 const loading = ref(false)
+const loadError = ref(false)
 const products = ref([])
 const total = ref(0)
 const activeStatus = ref('all')
@@ -43,6 +46,7 @@ function canToggle(status) {
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getMyProducts({
       page: query.page,
@@ -54,7 +58,8 @@ async function load() {
   } catch (e) {
     products.value = []
     total.value = 0
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -96,7 +101,7 @@ onMounted(load)
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <b>我的商品</b>
+          <h1 class="card-title">我的商品</h1>
           <el-button type="primary" size="small" @click="router.push('/product/publish')">+ 发布新商品</el-button>
         </div>
       </template>
@@ -105,10 +110,20 @@ onMounted(load)
         <el-tab-pane v-for="tab in statusTabs" :key="tab.name" :label="tab.label" :name="tab.name" />
       </el-tabs>
 
-      <el-table v-loading="loading" :data="products" border stripe>
+      <StateError
+        v-if="loadError && !loading"
+        title="加载失败，请稍后重试"
+        detail="网络可能不稳定，或服务正在重启"
+        retry-text="重新加载"
+        @retry="load"
+      />
+      <!-- v0.16：加载态改为表格骨架（与最终列宽对齐，避免表格出现时跳动） -->
+      <SkeletonTable v-if="loading" :rows="8" :columns="5" />
+
+      <el-table v-else :data="products" border stripe>
         <el-table-column label="图片" width="92">
           <template #default="{ row }">
-            <img class="table-img" :src="imageOf(row)" alt="商品图片" />
+            <img class="table-img" :src="imageOf(row)" :alt="row.title || '商品图片'" />
           </template>
         </el-table-column>
 
@@ -184,11 +199,11 @@ onMounted(load)
   border-radius: 6px;
   object-fit: cover;
   display: block;
-  background: #f7f9fc;
+  background: var(--ct-bg-subtle);
 }
 
 .price {
-  color: #f56c6c;
+  color: var(--ct-price);
   font-weight: 600;
 }
 
@@ -196,5 +211,12 @@ onMounted(load)
   margin-top: 16px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* 卡片头里的页级主标题（原为 <b>，现为 h1）：保持与原先一致的视觉重量 */
+.card-title {
+  margin: 0;
+  font-size: var(--ct-text-md);
+  font-weight: var(--ct-weight-semibold);
 }
 </style>

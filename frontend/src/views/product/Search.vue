@@ -13,11 +13,25 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getSearchCategories, searchProducts } from '@/api/search'
 import { demoImage, formatPrice, resolveImageUrl } from '@/utils/product'
+import { buildClassIndex, classTintVar, shelfCode } from '@/utils/catalogue'
+import CatalogueCard from '@/components/catalogue/CatalogueCard.vue'
+import StateError from '@/components/states/StateError.vue'
+import SkeletonList from '@/components/states/SkeletonList.vue'
 
 const route = useRoute()
 const router = useRouter()
 
+/** 分类索引：给搜索结果卡派生索书号与分类浅底色（与首页目录卡同一套规则） */
+const classIndex = computed(() => buildClassIndex(categories.value))
+function codeOf(item) {
+  return shelfCode(item, classIndex.value.byId).code
+}
+function tintOf(item) {
+  return classTintVar(shelfCode(item, classIndex.value.byId).index)
+}
+
 const loading = ref(false)
+const loadError = ref(false)
 const products = ref([])
 const categories = ref([])
 const total = ref(0)
@@ -73,6 +87,7 @@ async function loadCategories() {
 
 async function loadProducts() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await searchProducts({
       keyword: query.keyword || undefined,
@@ -86,7 +101,8 @@ async function loadProducts() {
   } catch (e) {
     products.value = []
     total.value = 0
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -201,35 +217,32 @@ onMounted(() => {
     </el-card>
 
     <!-- 结果列表 -->
-    <div v-loading="loading" class="result-area">
-      <el-empty v-if="!loading && products.length === 0" description="没有找到符合条件的商品，换个关键词试试～">
+    <!-- 页面主标题：视觉上由结果统计行承担，这里补一个屏幕阅读器可读的 h1（此前全页无 h1） -->
+    <h1 class="sr-only">搜索结果</h1>
+    <StateError
+      v-if="loadError && !loading"
+      title="加载失败，请稍后重试"
+      detail="网络可能不稳定，或服务正在重启"
+      retry-text="重新加载"
+      @retry="loadProducts"
+    />
+    <div v-else class="result-area">
+      <!-- v0.16：加载态改为版式对齐的骨架屏，避免结果出来时的布局跳动 -->
+      <SkeletonList v-if="loading" :count="8" :columns="4" />
+
+      <el-empty v-else-if="products.length === 0" description="没有找到符合条件的商品，换个关键词试试～">
         <el-button type="primary" @click="router.push('/home')">返回首页</el-button>
       </el-empty>
 
-      <el-row v-else :gutter="16">
-        <el-col v-for="item in products" :key="item.id" :xs="12" :sm="8" :md="6">
-          <el-card class="product-card" shadow="hover" :body-style="{ padding: '0' }" @click="router.push(`/product/${item.id}`)">
-            <div class="cover">
-              <img :src="imageOf(item)" alt="商品图片" @error="failedImages.add(item.id)" />
-            </div>
-            <div class="info">
-              <div class="title" :title="item.title">{{ item.title }}</div>
-              <div class="price-row">
-                <span class="price">{{ formatPrice(item.price) }}</span>
-                <span v-if="item.originalPrice" class="origin">{{ formatPrice(item.originalPrice) }}</span>
-              </div>
-              <div class="meta">
-                <el-tag size="small" effect="plain">{{ item.categoryName || '未分类' }}</el-tag>
-                <span class="time">{{ item.createTime ? String(item.createTime).slice(0, 16) : '' }}</span>
-              </div>
-              <div class="meta second">
-                <span>卖家：{{ item.sellerNickname || '匿名' }}</span>
-                <span>{{ item.viewCount || 0 }} 次浏览</span>
-              </div>
-            </div>
-          </el-card>
-        </el-col>
-      </el-row>
+      <div v-else class="result-grid">
+        <CatalogueCard
+          v-for="item in products"
+          :key="item.id"
+          :item="item"
+          :code="codeOf(item)"
+          :tint-var="tintOf(item)"
+        />
+      </div>
 
       <div v-if="total > query.size" class="pagination">
         <el-pagination
@@ -276,80 +289,39 @@ onMounted(() => {
   font-size: 13px;
 }
 
+/* 搜索结果与首页目录卡同一套卡片与栅格 */
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--ct-space-5);
+}
+
+@media (max-width: 1100px) {
+  .result-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .result-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 .result-area {
   min-height: 300px;
 }
 
-.product-card {
-  margin-bottom: 16px;
-  cursor: pointer;
-  transition: transform 0.15s ease;
-}
 
-.product-card:hover {
-  transform: translateY(-3px);
-}
 
-.cover {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  background: #f7f9fc;
-  overflow: hidden;
-}
 
-.cover img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
 
-.info {
-  padding: 10px 12px 14px;
-}
 
-.title {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.4;
-  height: 40px;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
 
-.price-row {
-  margin-top: 6px;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-}
 
-.price {
-  color: #f56c6c;
-  font-size: 18px;
-  font-weight: 700;
-}
 
-.origin {
-  color: #a8abb2;
-  font-size: 12px;
-  text-decoration: line-through;
-}
 
-.meta {
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  color: #909399;
-}
 
-.meta.second {
-  margin-top: 4px;
-}
 
 .pagination {
   display: flex;

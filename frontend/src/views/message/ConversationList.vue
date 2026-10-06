@@ -15,11 +15,14 @@ import { useRouter } from 'vue-router'
 import { getConversationList } from '@/api/message'
 import { useChatStore } from '@/store/chat'
 import chatSocket from '@/utils/websocket'
+import StateError from '@/components/states/StateError.vue'
+import SkeletonList from '@/components/states/SkeletonList.vue'
 
 const router = useRouter()
 const chatStore = useChatStore()
 
 const loading = ref(false)
+const loadError = ref(false)
 const conversations = ref([])
 let timer = null
 let unsubscribers = []
@@ -50,14 +53,21 @@ function formatTime(time) {
 }
 
 async function load(silent = false) {
-  if (!silent) loading.value = true
+  if (!silent) {
+    loading.value = true
+    loadError.value = false
+  }
   try {
     const res = await getConversationList()
     conversations.value = res.data || []
     // v0.14：一次性查询所有会话对象的在线状态（WebSocket 批量查询优先）
     chatStore.queryOnline(conversations.value.map((item) => item.peerId).filter(Boolean))
   } catch (e) {
-    if (!silent) conversations.value = []
+    // 静默刷新（定时器/推送触发）失败不打断页面；只有用户主动进入时才呈现错误态
+    if (!silent) {
+      conversations.value = []
+      loadError.value = true
+    }
   } finally {
     loading.value = false
   }
@@ -88,11 +98,22 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div v-loading="loading">
-    <el-card shadow="never">
+  <div>
+    <StateError
+      v-if="loadError && !loading"
+      title="会话列表加载失败"
+      detail="网络可能不稳定，或服务正在重启"
+      retry-text="重新加载"
+      @retry="load(false)"
+    />
+    <!-- 加载态：与最终列表同形的行骨架（此前是转圈遮罩） -->
+    <div v-else-if="loading" class="loading-wrap">
+      <SkeletonList variant="row" :count="6" :columns="1" />
+    </div>
+    <el-card v-else shadow="never">
       <template #header>
         <div class="card-header">
-          <b>我的消息</b>
+          <h1 class="card-title">我的消息</h1>
           <div class="header-right">
             <el-tag v-if="totalUnread > 0" type="danger" size="small" effect="dark">
               {{ totalUnread }} 条未读
@@ -107,7 +128,17 @@ onUnmounted(() => {
       </el-empty>
 
       <div v-else class="conversation-list">
-        <div v-for="item in conversations" :key="item.peerId" class="conversation-item" @click="openChat(item)">
+        <div
+          v-for="item in conversations"
+          :key="item.peerId"
+          class="conversation-item"
+          role="link"
+          tabindex="0"
+          :aria-label="`与 ${item.peerNickname || '对方'} 的会话`"
+          @click="openChat(item)"
+          @keydown.enter.prevent="openChat(item)"
+          @keydown.space.prevent="openChat(item)"
+        >
           <el-badge :value="item.unreadCount" :hidden="!item.unreadCount" :max="99" class="avatar-badge">
             <el-avatar :size="48">{{ avatarText(item) }}</el-avatar>
           </el-badge>
@@ -145,6 +176,14 @@ onUnmounted(() => {
   justify-content: space-between;
 }
 
+/* 行骨架的承载：与列表卡片同宽同边距，避免加载完时跳动 */
+.loading-wrap {
+  background: var(--ct-bg-surface);
+  border: var(--ct-hairline) solid var(--ct-border);
+  border-radius: var(--ct-radius-sm);
+  padding: var(--ct-space-4);
+}
+
 .header-right {
   display: flex;
   align-items: center;
@@ -161,13 +200,13 @@ onUnmounted(() => {
   align-items: center;
   gap: 14px;
   padding: 14px 6px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--ct-paper-100);
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .conversation-item:hover {
-  background: #f7f9fc;
+  background: var(--ct-bg-subtle);
 }
 
 .avatar-badge {
@@ -193,17 +232,17 @@ onUnmounted(() => {
 /* v0.14：在线状态标签 */
 .online {
   font-size: 11px;
-  color: #a8abb2;
+  color: var(--ct-text-muted);
   flex: 1;
 }
 
 .online.on {
-  color: #67c23a;
+  color: var(--el-color-success);
 }
 
 .time {
   font-size: 12px;
-  color: #a8abb2;
+  color: var(--ct-text-muted);
 }
 
 .row-2 {
@@ -212,7 +251,7 @@ onUnmounted(() => {
 
 .last-message {
   font-size: 13px;
-  color: #909399;
+  color: var(--ct-text-muted);
   display: inline-block;
   max-width: 100%;
   overflow: hidden;
@@ -222,7 +261,7 @@ onUnmounted(() => {
 }
 
 .last-message.unread {
-  color: #303133;
+  color: var(--ct-text-primary);
   font-weight: 600;
 }
 
@@ -231,7 +270,14 @@ onUnmounted(() => {
 }
 
 .arrow {
-  color: #c0c4cc;
+  color: var(--ct-text-muted);
   font-size: 20px;
+}
+
+/* 卡片头里的页级主标题（原为 <b>，现为 h1）：保持与原先一致的视觉重量 */
+.card-title {
+  margin: 0;
+  font-size: var(--ct-text-md);
+  font-weight: var(--ct-weight-semibold);
 }
 </style>

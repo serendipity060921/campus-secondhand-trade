@@ -8,8 +8,12 @@ import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { auditProduct, getAdminProducts, offlineProduct } from '@/api/admin'
 import { formatPrice, resolveImageUrl } from '@/utils/product'
+import SkeletonTable from '@/components/states/SkeletonTable.vue'
+import StateEmpty from '@/components/states/StateEmpty.vue'
+import StateError from '@/components/states/StateError.vue'
 
 const loading = ref(false)
+const loadError = ref(false)
 const products = ref([])
 const total = ref(0)
 
@@ -36,6 +40,7 @@ const auditDialog = reactive({ visible: false, product: null, approve: true, rem
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getAdminProducts({
       page: query.page,
@@ -45,6 +50,8 @@ async function load() {
     })
     products.value = res.data.records || []
     total.value = res.data.total || 0
+  } catch (e) {
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -97,11 +104,14 @@ onMounted(load)
 
 <template>
   <div>
+    <!-- 页级标题：可见标题由 AdminLayout 顶栏承担（避免重复），这里供读屏使用 -->
+    <h1 class="sr-only">商品管理</h1>
     <el-card shadow="never" class="filter-card">
       <div class="filter-bar">
-        <el-input v-model="query.keyword" placeholder="搜索商品名称" clearable class="keyword"
+        <el-input v-model="query.keyword" placeholder="搜索商品名称" aria-label="搜索商品名称"
+                    clearable class="keyword"
                   @keyup.enter="handleSearch" />
-        <el-select v-model="query.status" class="status" @change="handleSearch">
+        <el-select v-model="query.status" aria-label="按状态筛选" class="status" @change="handleSearch">
           <el-option v-for="item in STATUS_OPTIONS" :key="String(item.value)"
                      :label="item.label" :value="item.value" />
         </el-select>
@@ -112,7 +122,18 @@ onMounted(load)
     </el-card>
 
     <el-card shadow="never">
-      <el-table v-loading="loading" :data="products" border stripe>
+      <SkeletonTable v-if="loading" :rows="8" :columns="6" />
+      <StateError
+        v-else-if="loadError"
+        title="列表加载失败"
+        detail="请检查网络后重试，或稍后再来"
+        retry-text="重新加载"
+        @retry="load"
+      />
+      <el-table v-else :data="products" border stripe>
+        <template #empty>
+          <StateEmpty title="没有符合条件的商品" hint="换个状态或关键词再试，或去前台看看在售商品" action-text="去前台看看" action-to="/home" />
+        </template>
         <el-table-column label="商品" min-width="240">
           <template #default="{ row }">
             <div class="product-cell">
@@ -227,7 +248,7 @@ onMounted(load)
 .tip {
   margin-left: auto;
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
 }
 
 .product-cell {
@@ -241,7 +262,7 @@ onMounted(load)
   height: 46px;
   object-fit: cover;
   border-radius: 4px;
-  background: #f5f7fa;
+  background: var(--ct-bg-canvas);
 }
 
 .title {
@@ -251,18 +272,18 @@ onMounted(load)
 
 .sub {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
 }
 
 .remark {
-  color: #e6a23c;
+  color: var(--el-color-warning);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .price {
-  color: #f56c6c;
+  color: var(--ct-price);
   font-weight: 700;
 }
 

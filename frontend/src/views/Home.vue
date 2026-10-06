@@ -11,8 +11,10 @@ import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getHealth, getDbHealth, getCategories, getProducts } from '@/api/common'
 import { APP_VERSION, APP_VERSION_LABEL } from '@/utils/version'
+import StateError from '@/components/states/StateError.vue'
 
 const loading = ref(false)
+const loadError = ref(false)
 const health = ref(null)
 const dbHealth = ref(null)
 const categories = ref([])
@@ -20,6 +22,7 @@ const productPage = ref(null)
 
 async function loadAll() {
   loading.value = true
+  loadError.value = false
   try {
     const [h, d, c, p] = await Promise.all([
       getHealth(),
@@ -34,7 +37,8 @@ async function loadAll() {
     ElMessage.success('前后端连通正常')
   } catch (e) {
     // 错误提示已由 axios 拦截器统一处理
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -43,7 +47,14 @@ onMounted(loadAll)
 </script>
 
 <template>
-  <div v-loading="loading">
+  <StateError
+    v-if="loadError && !loading"
+    title="加载失败，请稍后重试"
+    detail="网络可能不稳定，或服务正在重启"
+    retry-text="重新加载"
+    @retry="loadAll"
+  />
+  <div v-else v-loading="loading">
     <!-- 顶部欢迎条 -->
     <el-card shadow="never" class="welcome-card">
       <div class="welcome">
@@ -123,7 +134,7 @@ onMounted(loadAll)
 
 <style scoped>
 .welcome-card {
-  border-left: 4px solid #409eff;
+  border-left: var(--ct-hairline) solid var(--ct-border);
 }
 
 .welcome {

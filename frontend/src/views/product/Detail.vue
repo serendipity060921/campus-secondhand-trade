@@ -17,6 +17,8 @@ import { conditionLabel, formatPrice, PRODUCT_STATUS, resolveDetailImages } from
 import { submitReport as submitReportApi } from '@/api/report'
 // v0.11 推荐模块：相关推荐面板
 import RecommendPanel from '@/components/RecommendPanel.vue'
+import SkeletonDetail from '@/components/states/SkeletonDetail.vue'
+import StateError from '@/components/states/StateError.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,6 +28,7 @@ const userStore = useUserStore()
 const productId = Number(route.params.id)
 
 const loading = ref(false)
+const loadError = ref(false)
 const notFound = ref(false)
 const product = ref(null)
 
@@ -100,6 +103,14 @@ async function submitOrder() {
 const images = computed(() => (product.value ? resolveDetailImages(product.value) : []))
 const statusInfo = computed(() => PRODUCT_STATUS[product.value?.status] || { label: '未知', type: 'info' })
 
+/**
+ * 缩略图的键盘等价操作：Enter / Space 时对当前元素派发一次 click，
+ * 由 el-image 内部的点击处理打开大图预览（否则键盘用户看不到放大图）。
+ */
+function openThumb(event) {
+  event.currentTarget?.click()
+}
+
 /* ---------------- v0.13 举报商品 ---------------- */
 const reportDialogVisible = ref(false)
 const reportSubmitting = ref(false)
@@ -140,6 +151,7 @@ async function submitReport() {
 
 async function loadDetail() {
   loading.value = true
+  loadError.value = false
   notFound.value = false
   try {
     const res = await getProductDetail(route.params.id)
@@ -153,7 +165,8 @@ async function loadDetail() {
     // 后端返回 3001「商品不存在或已被删除」，这里展示空状态
     notFound.value = true
     product.value = null
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -199,9 +212,19 @@ onMounted(loadDetail)
 </script>
 
 <template>
-  <div v-loading="loading">
+  <StateError
+    v-if="loadError && !loading"
+    title="加载失败，请稍后重试"
+    detail="网络可能不稳定，或服务正在重启"
+    retry-text="重新加载"
+    @retry="loadDetail"
+  />
+  <div v-else>
+    <!-- v0.16：加载态改为与详情版式对齐的骨架，避免内容到达时跳动 -->
+    <SkeletonDetail v-if="loading" />
+
     <el-result
-      v-if="notFound"
+      v-else-if="notFound"
       icon="warning"
       title="商品不存在或已被删除"
       sub-title="它可能已被卖家删除，或者链接不正确"
@@ -226,28 +249,36 @@ onMounted(loadDetail)
               v-if="images.length"
               class="main-image"
               :src="images[0]"
+              :alt="`${product.title} 主图`"
               :preview-src-list="images"
               fit="cover"
               :initial-index="0"
               preview-teleported
             />
             <div v-if="images.length > 1" class="thumbs">
+              <!-- 缩略图键盘可用：Enter/Space 等价于点击（el-image 内部监听 click 打开预览） -->
               <el-image
                 v-for="(img, index) in images"
                 :key="index"
                 class="thumb"
                 :src="img"
+                :alt="`${product.title} 图 ${index + 1}`"
                 fit="cover"
+                role="button"
+                tabindex="0"
+                :aria-label="`查看第 ${index + 1} 张图`"
                 :preview-src-list="images"
                 :initial-index="index"
                 preview-teleported
+                @keydown.enter.prevent="openThumb($event)"
+                @keydown.space.prevent="openThumb($event)"
               />
             </div>
           </el-col>
 
           <!-- 右侧信息 -->
           <el-col :xs="24" :sm="14">
-            <h2 class="title">{{ product.title }}</h2>
+            <h1 class="title">{{ product.title }}</h1>
 
             <div class="price-box">
               <span class="price">{{ formatPrice(product.price) }}</span>
@@ -329,7 +360,7 @@ onMounted(loadDetail)
             <span class="dialog-price">￥{{ Number(product.price).toFixed(2) }}</span>
           </el-form-item>
           <el-form-item label="交易地点">
-            <el-input v-model="orderForm.tradePlace" maxlength="100" placeholder="例如：东校区图书馆门口" />
+            <el-input v-model="orderForm.tradePlace" maxlength="100" aria-label="交易地点" placeholder="例如：东校区图书馆门口" />
           </el-form-item>
           <el-form-item label="买家备注">
             <el-input
@@ -338,6 +369,7 @@ onMounted(loadDetail)
               :rows="3"
               maxlength="255"
               show-word-limit
+              aria-label="买家备注"
               placeholder="例如：明天下午三点方便面交吗"
             />
           </el-form-item>
@@ -386,100 +418,111 @@ onMounted(loadDetail)
 
 <style scoped>
 .page-header {
-  margin-bottom: 16px;
+  margin-bottom: var(--ct-space-4);
 }
 
 .header-title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: var(--ct-text-md);
+  font-weight: var(--ct-weight-semibold);
 }
 
+/* 详情页图片：与目录卡同形态 —— 方形、2px 圆角、浅底 */
 .main-image {
   width: 100%;
   aspect-ratio: 1 / 1;
-  border-radius: 8px;
-  background: #f7f9fc;
+  border-radius: var(--ct-radius-sm);
+  background: var(--ct-bg-subtle);
 }
 
 .thumbs {
-  margin-top: 10px;
+  margin-top: var(--ct-space-3);
   display: flex;
-  gap: 8px;
+  gap: var(--ct-space-2);
   flex-wrap: wrap;
 }
 
 .thumb {
   width: 62px;
   height: 62px;
-  border-radius: 6px;
-  border: 1px solid #ebeef5;
+  border-radius: var(--ct-radius-sm);
+  border: var(--ct-hairline) solid var(--ct-border);
   cursor: pointer;
 }
 
-.title {
-  margin: 0 0 12px;
-  font-size: 20px;
-  line-height: 1.4;
+.thumb:focus-visible {
+  outline: 2px solid var(--ct-action);
+  outline-offset: 2px;
 }
 
+/* 标题是本页的 h1：26px，与价格形成"标题—价格"两级主导 */
+.title {
+  margin: 0 0 var(--ct-space-4);
+  font-size: var(--ct-text-2xl);
+  line-height: 1.3;
+  font-weight: var(--ct-weight-semibold);
+}
+
+/* 价格主导：40px 墨色，原价划线弱化，状态书标并排 */
 .price-box {
   display: flex;
   align-items: baseline;
-  gap: 12px;
-  background: #fff6f6;
-  padding: 12px 16px;
-  border-radius: 8px;
+  gap: var(--ct-space-3);
+  background: var(--ct-bg-subtle);
+  padding: var(--ct-space-4);
+  border-radius: var(--ct-radius-sm);
 }
 
 .price {
-  color: #f56c6c;
-  font-size: 30px;
-  font-weight: 700;
+  color: var(--ct-price);
+  font-size: var(--ct-text-3xl);
+  font-weight: var(--ct-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
 .origin {
-  color: #a8abb2;
-  font-size: 13px;
+  color: var(--ct-text-muted);
+  font-size: var(--ct-text-sm);
   text-decoration: line-through;
 }
 
 .tags {
-  margin-top: 14px;
+  margin-top: var(--ct-space-4);
   display: flex;
-  gap: 8px;
+  gap: var(--ct-space-2);
   flex-wrap: wrap;
 }
 
 .mt-16 {
-  margin-top: 16px;
+  margin-top: var(--ct-space-4);
 }
 
 .seller-card {
-  margin-top: 16px;
-  background: #f7f9fc;
+  margin-top: var(--ct-space-4);
+  background: var(--ct-bg-subtle);
 }
 
 .seller {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--ct-space-3);
 }
 
 .seller-name {
-  font-weight: 600;
+  font-weight: var(--ct-weight-semibold);
 }
 
 .seller-meta {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
+  font-size: var(--ct-text-xs);
+  color: var(--ct-text-muted);
+  margin-top: var(--ct-space-1);
 }
 
 .actions {
-  margin-top: 18px;
+  margin-top: var(--ct-space-5);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--ct-space-3);
   flex-wrap: wrap;
 }
 
@@ -487,12 +530,12 @@ onMounted(loadDetail)
   margin: 0;
   line-height: 1.9;
   white-space: pre-wrap;
-  color: #303133;
+  color: var(--ct-text-primary);
 }
 
 .dialog-price {
-  color: #f56c6c;
-  font-weight: 700;
-  font-size: 16px;
+  color: var(--ct-price);
+  font-weight: var(--ct-weight-semibold);
+  font-size: var(--ct-text-md);
 }
 </style>

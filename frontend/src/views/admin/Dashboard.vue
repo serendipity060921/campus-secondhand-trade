@@ -21,12 +21,15 @@ import {
 } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { getDashboard } from '@/api/admin'
+import { chartPalette } from '@/utils/design-tokens'
+import StateError from '@/components/states/StateError.vue'
 
 echarts.use([LineChart, PieChart, BarChart, GridComponent, TooltipComponent,
   LegendComponent, TitleComponent, CanvasRenderer])
 
 const router = useRouter()
 const loading = ref(false)
+const loadError = ref(false)
 const overview = ref({})
 const generatedAt = ref('')
 
@@ -62,26 +65,30 @@ function renderTrend(data) {
       { type: 'value', name: '金额(元)' }
     ],
     series: [
-      { name: '新增用户', type: 'line', smooth: true, data: data.userTrend.map((i) => i.value), itemStyle: { color: '#409eff' } },
-      { name: '新增商品', type: 'line', smooth: true, data: data.productTrend.map((i) => i.value), itemStyle: { color: '#67c23a' } },
-      { name: '新增订单', type: 'line', smooth: true, data: data.orderTrend.map((i) => i.value), itemStyle: { color: '#e6a23c' } },
-      { name: '成交额', type: 'bar', yAxisIndex: 1, data: gmv, barWidth: 14, itemStyle: { color: '#f56c6c', opacity: 0.75 } }
+      { name: '新增用户', type: 'line', smooth: true, data: data.userTrend.map((i) => i.value), itemStyle: { color: chartPalette.category()[1] } },
+      { name: '新增商品', type: 'line', smooth: true, data: data.productTrend.map((i) => i.value), itemStyle: { color: chartPalette.category()[2] } },
+      { name: '新增订单', type: 'line', smooth: true, data: data.orderTrend.map((i) => i.value), itemStyle: { color: chartPalette.warning() } },
+      { name: '成交额', type: 'bar', yAxisIndex: 1, data: gmv, barWidth: 14, itemStyle: { color: chartPalette.ink(), opacity: 0.75 } }
     ]
   })
 }
 
 function renderPie(el, title, data, colors) {
   initChart(el, {
-    title: { text: title, left: 'center', top: 0, textStyle: { fontSize: 13, color: '#606266' } },
+    title: { text: title, left: 'center', top: 0, textStyle: { fontSize: 13, color: chartPalette.muted() } },
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
-    legend: { bottom: 0, type: 'scroll', textStyle: { fontSize: 11 } },
+    // 图例给出完整名称；环图**不再画外置标签** —— 两者同时出现时，
+    // 在后台这些窄卡片里（尤其"订单状态分布/商品状态分布"）标签会互相压叠。
+    legend: { bottom: 0, type: 'scroll', textStyle: { fontSize: 11 }, itemWidth: 8, itemHeight: 8 },
     color: colors,
     series: [{
       type: 'pie',
-      radius: ['38%', '62%'],
-      center: ['50%', '48%'],
+      radius: ['28%', '48%'],
+      center: ['50%', '44%'],
       avoidLabelOverlap: true,
-      label: { fontSize: 11, formatter: '{b}\n{c}' },
+      minAngle: 3,                                   // 极小占比的扇区也保留可见角度，避免"信息只剩颜色"
+      label: { show: false },
+      labelLine: { show: false },
       data: data.map((i) => ({ name: i.label, value: i.value }))
     }]
   })
@@ -89,6 +96,7 @@ function renderPie(el, title, data, colors) {
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getDashboard()
     const data = res.data
@@ -98,13 +106,16 @@ async function load() {
     setTimeout(() => {
       disposeCharts()
       renderTrend(data)
-      renderPie(categoryRef.value, '商品分类分布', data.categoryDist,
-        ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#9c27b0', '#00bcd4', '#ff9800', '#795548', '#607d8b', '#3f51b5', '#8bc34a'])
-      renderPie(orderStatusRef.value, '订单状态分布', data.orderStatusDist, ['#e6a23c', '#67c23a', '#909399'])
+      renderPie(categoryRef.value, '商品分类分布', data.categoryDist, chartPalette.category())
+      renderPie(orderStatusRef.value, '订单状态分布', data.orderStatusDist,
+        [chartPalette.trading(), chartPalette.success(), chartPalette.sold()])
       renderPie(productStatusRef.value, '商品状态分布', data.productStatusDist,
-        ['#f56c6c', '#67c23a', '#e6a23c', '#909399', '#409eff', '#9c27b0'])
+        [chartPalette.danger(), chartPalette.success(), chartPalette.warning(),
+          chartPalette.sold(), chartPalette.ink()])
     }, 50)
-  } finally {
+  } catch (e) {
+    loadError.value = true
+   } finally {
     loading.value = false
   }
 }
@@ -130,7 +141,16 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div v-loading="loading">
+  <!-- 页面主标题（后台看板） -->
+  <h1 class="sr-only">数据看板</h1>
+  <StateError
+    v-if="loadError && !loading"
+    title="加载失败，请稍后重试"
+    detail="网络可能不稳定，或服务正在重启"
+    retry-text="重新加载"
+    @retry="load"
+  />
+  <div v-else v-loading="loading">
     <!-- 待办提醒 -->
     <el-alert v-if="overview.pendingAuditCount || overview.pendingReportCount" type="warning"
               :closable="false" show-icon class="todo-alert">
@@ -243,38 +263,38 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .todo-alert {
-  margin-bottom: 14px;
+  margin-bottom: var(--ct-space-4);
 }
 
 .stat-card {
-  margin-bottom: 14px;
+  margin-bottom: var(--ct-space-4);
   text-align: center;
 }
 
 .stat-label {
-  font-size: 13px;
-  color: #909399;
+  font-size: var(--ct-text-sm);
+  color: var(--ct-text-muted);
 }
 
 .stat-value {
-  font-size: 26px;
+  font-size: var(--ct-text-2xl);
   font-weight: 700;
-  color: #303133;
-  margin: 6px 0 2px;
+  color: var(--ct-text-primary);
+  margin: var(--ct-space-1) 0 var(--ct-space-1);
 }
 
 .stat-value.price {
-  color: #f56c6c;
-  font-size: 22px;
+  color: var(--ct-price);
+  font-size: var(--ct-text-xl);
 }
 
 .stat-value.warn {
-  color: #e6a23c;
+  color: var(--el-color-warning);
 }
 
 .stat-sub {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
   min-height: 20px;
 }
 
@@ -290,15 +310,15 @@ onBeforeUnmount(() => {
 
 .chart {
   width: 100%;
-  height: 300px;
+  height: 340px;         /* 环形图标签与图例需要更多竖直空间，原先 300px 时标签易被省略 */
 }
 
 .chart-lg {
-  height: 330px;
+  height: 340px;
 }
 
 .text-muted {
-  color: #909399;
+  color: var(--ct-text-muted);
   font-size: 12px;
 }
 </style>

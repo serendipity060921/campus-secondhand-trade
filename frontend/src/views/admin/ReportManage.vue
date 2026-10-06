@@ -7,8 +7,12 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getAdminReports, handleReport } from '@/api/admin'
+import SkeletonTable from '@/components/states/SkeletonTable.vue'
+import StateEmpty from '@/components/states/StateEmpty.vue'
+import StateError from '@/components/states/StateError.vue'
 
 const loading = ref(false)
+const loadError = ref(false)
 const reports = ref([])
 const total = ref(0)
 const query = reactive({ page: 1, size: 10, status: 0 })
@@ -19,6 +23,7 @@ const handleDialog = reactive({ visible: false, report: null, action: 1, result:
 
 async function load() {
   loading.value = true
+  loadError.value = false
   try {
     const res = await getAdminReports({
       page: query.page,
@@ -27,6 +32,8 @@ async function load() {
     })
     reports.value = res.data.records || []
     total.value = res.data.total || 0
+  } catch (e) {
+    loadError.value = true
   } finally {
     loading.value = false
   }
@@ -67,6 +74,8 @@ onMounted(load)
 
 <template>
   <div>
+    <!-- 页级标题：可见标题由 AdminLayout 顶栏承担（避免重复），这里供读屏使用 -->
+    <h1 class="sr-only">举报处理</h1>
     <el-card shadow="never" class="filter-card">
       <div class="filter-bar">
         <el-radio-group v-model="query.status" @change="handleSearch">
@@ -81,7 +90,18 @@ onMounted(load)
     </el-card>
 
     <el-card shadow="never">
-      <el-table v-loading="loading" :data="reports" border stripe>
+      <SkeletonTable v-if="loading" :rows="8" :columns="6" />
+      <StateError
+        v-else-if="loadError"
+        title="列表加载失败"
+        detail="请检查网络后重试，或稍后再来"
+        retry-text="重新加载"
+        @retry="load"
+      />
+      <el-table v-else :data="reports" border stripe>
+        <template #empty>
+          <StateEmpty title="没有符合条件的举报" hint="换个状态再试；已处理的举报会保留在列表里" />
+        </template>
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column label="举报对象" min-width="220">
           <template #default="{ row }">
@@ -189,7 +209,7 @@ onMounted(load)
 .tip {
   margin-left: auto;
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
 }
 
 .target {
@@ -205,7 +225,7 @@ onMounted(load)
 
 .sub {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
 }
 
 .pagination {

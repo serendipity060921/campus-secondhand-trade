@@ -10,11 +10,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getOrderDetail, updateOrderStatus } from '@/api/order'
 import { demoImage, resolveImageUrl } from '@/utils/product'
+import StateError from '@/components/states/StateError.vue'
 
 const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
+const loadError = ref(false)
 const notAllowed = ref(false)
 const order = ref(null)
 
@@ -54,6 +56,7 @@ const statusTagType = computed(() => {
 
 async function load() {
   loading.value = true
+  loadError.value = false
   notAllowed.value = false
   try {
     const res = await getOrderDetail(route.params.id)
@@ -61,7 +64,8 @@ async function load() {
   } catch (e) {
     notAllowed.value = true
     order.value = null
-  } finally {
+    loadError.value = true
+    } finally {
     loading.value = false
   }
 }
@@ -121,7 +125,16 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-loading="loading">
+  <!-- 页面主标题（订单详情） -->
+  <h1 class="sr-only">订单详情</h1>
+  <StateError
+    v-if="loadError && !loading"
+    title="加载失败，请稍后重试"
+    detail="网络可能不稳定，或服务正在重启"
+    retry-text="重新加载"
+    @retry="load"
+  />
+  <div v-else v-loading="loading">
     <el-result
       v-if="notAllowed"
       icon="warning"
@@ -150,8 +163,16 @@ onMounted(load)
         <el-col :xs="24" :md="10">
           <el-card shadow="never">
             <template #header><b>商品信息</b></template>
-            <div class="product-block" @click="router.push(`/product/${order.productId}`)">
-              <img class="product-img" :src="productImage" alt="商品图片" />
+            <div
+              class="product-block"
+              role="link"
+              tabindex="0"
+              :aria-label="order.productTitle"
+              @click="router.push(`/product/${order.productId}`)"
+              @keydown.enter.prevent="router.push(`/product/${order.productId}`)"
+              @keydown.space.prevent="router.push(`/product/${order.productId}`)"
+            >
+              <img class="product-img" :src="productImage" :alt="order.productTitle" />
               <div class="product-detail">
                 <div class="product-title">{{ order.productTitle }}</div>
                 <div class="price">￥{{ Number(order.amount).toFixed(2) }}</div>
@@ -259,7 +280,7 @@ onMounted(load)
   height: 96px;
   border-radius: 8px;
   object-fit: cover;
-  background: #f7f9fc;
+  background: var(--ct-bg-subtle);
   flex-shrink: 0;
 }
 
@@ -274,7 +295,7 @@ onMounted(load)
 }
 
 .price {
-  color: #f56c6c;
+  color: var(--ct-price);
   font-size: 20px;
   font-weight: 700;
   margin-bottom: 6px;
@@ -297,7 +318,7 @@ onMounted(load)
 
 .user-meta {
   font-size: 12px;
-  color: #909399;
+  color: var(--ct-text-muted);
   margin-top: 4px;
 }
 

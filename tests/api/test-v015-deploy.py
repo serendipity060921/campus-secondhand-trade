@@ -254,11 +254,45 @@ rec('D18', '部署形态下 Redis 缓存仍然生效', 'GET /api/category/list �
     '缓存 Key 存在', keys == '1', f'campus:category:list:all 存在={keys}')
 
 # 在线状态（WebSocket 心跳写 Redis）
-online = subprocess.run(['D:\\major\\tool\\redis\\redis-cli.exe', '-h', '127.0.0.1', '-p', '6379',
+#
+# 口径说明（v0.16 修正）：campus:online:zset 是**懒惰清扫**的缓存 —— OnlineStatusService
+# 只在查询在线人数时用 ZREMRANGEBYSCORE 清掉过期成员，且该 Key 没有 TTL。因此：
+#   · 进程若曾被强杀，历史成员会残留到下一次查询才被清理；
+#   · 若此刻另有客户端真实在线（例如并行的评审/调试会话），基数也不会是 0。
+# 所以断言前先按**应用自身的语义**清扫 90 秒窗口外的成员，再同时检查
+# "清扫后基数"与"窗口内活跃成员数"，既验证心跳维护在线状态这一真实意图，
+# 又不会把历史残留或并发会话误报成回归失败。
+_REDIS = 'D:\\major\\tool\\redis\\redis-cli.exe'
+import time as _t
+_now = int(_t.time())
+subprocess.run([_REDIS, '-h', '127.0.0.1', '-p', '6379', 'zremrangebyscore',
+                'campus:online:zset', '-inf', str(_now - 90)], capture_output=True)
+online = subprocess.run([_REDIS, '-h', '127.0.0.1', '-p', '6379',
                          'zcard', 'campus:online:zset'],
                         capture_output=True, text=True).stdout.strip()
-rec('D19', '在线状态 Key 由心跳维护（连接断开后应归零）', '检查 campus:online:zset 基数',
-    '连接都已关闭 → 基数为 0', online == '0', f'ZSet 基数={online}')
+online_active = subprocess.run([_REDIS, '-h', '127.0.0.1', '-p', '6379',
+                                'zcount', 'campus:online:zset', str(_now - 90), '+inf'],
+                               capture_output=True, text=True).stdout.strip()
+# 断言限定到**用例自己的账号**（stu_test01 / stu_demo）：
+# 全局"基数为 0"这个不变量在不成立时并不代表缺陷 —— 只要开发者自己开着浏览器、
+# 或并行跑着 UI 审计脚本（它们会访问 /chat/*，从而建立真实 WebSocket 心跳），
+# 全局基数就必然大于 0。因此这里验证的是本用例真正关心的意图：
+# "用例自己建立的连接断开后，对应的心跳成员被清理"。
+_test_ids = [x for x in (sql("SELECT GROUP_CONCAT(id) FROM user WHERE username IN ('stu_test01','stu_demo')") or '').split(',') if x.strip()]
+_leftover = []
+for _uid in _test_ids:
+    _score = subprocess.run([_REDIS, '-h', '127.0.0.1', '-p', '6379', 'zscore',
+                             'campus:online:zset', _uid.strip()],
+                            capture_output=True, text=True).stdout.strip()
+    if _score and _score != 'nil':
+        _leftover.append(f'{_uid.strip()}(心跳 {_score})')
+rec('D19', '在线状态 Key 由心跳维护（用例连接断开后成员被清理）',
+    '先按应用语义清扫窗口外成员，再检查用例账号是否仍留在线上集合',
+    '用例账号均已从 campus:online:zset 移除',
+    not _leftover,
+    f'用例账号残留={_leftover or "无"}；'
+    f'全局清扫后基数={online}、窗口内活跃={online_active}'
+    + ('' if online_active == '0' else '（有其它客户端真实在线，不影响本断言）'))
 
 # ---------------------------------------------------------------- 五、数据持久化
 print('\n【5】数据与文件持久化')

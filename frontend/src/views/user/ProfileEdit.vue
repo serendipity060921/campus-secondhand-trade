@@ -132,7 +132,7 @@ onMounted(loadProfile)
     <el-card shadow="never">
       <template #header>
         <div class="card-header">
-          <b>编辑个人资料</b>
+          <h1 class="card-title">编辑个人资料</h1>
           <el-button text type="primary" @click="router.push('/profile')">← 返回个人中心</el-button>
         </div>
       </template>
@@ -231,7 +231,7 @@ onMounted(loadProfile)
 .avatar-tip {
   margin-top: 8px;
   font-size: 13px;
-  color: #409eff;
+  color: var(--ct-text-primary);
 }
 
 .small {
@@ -242,5 +242,12 @@ onMounted(loadProfile)
 .mt-16 {
   margin-top: 16px;
   text-align: left;
+}
+
+/* 卡片头里的页级主标题（原为 <b>，现为 h1）：保持与原先一致的视觉重量 */
+.card-title {
+  margin: 0;
+  font-size: var(--ct-text-md);
+  font-weight: var(--ct-weight-semibold);
 }
 </style>

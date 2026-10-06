@@ -27,6 +27,23 @@ onMounted(() => {
 /* ---------------- v0.09 顶部全局搜索 ---------------- */
 const searchKeyword = ref('')
 
+/* ---------------- v0.16 窄屏导航抽屉 ---------------- */
+const drawerVisible = ref(false)
+const navItems = [
+  { path: '/home', label: '首页' },
+  { path: '/product/publish', label: '发布商品' },
+  { path: '/product/mine', label: '我的商品' },
+  { path: '/messages', label: '消息' },
+  { path: '/orders/bought', label: '订单' },
+  { path: '/profile', label: '个人中心' }
+]
+
+/** 抽屉里搜索：先关抽屉再跳转，避免跳转后抽屉还盖在页面上 */
+function handleDrawerSearch() {
+  drawerVisible.value = false
+  handleSearch()
+}
+
 // 进入 /search 页时回显关键词
 watch(
   () => route.query.keyword,
@@ -73,13 +90,19 @@ async function handleLogout() {
     <!-- 顶部导航 -->
     <el-header class="layout-header">
       <div class="page-container header-inner">
-        <div class="logo" @click="router.push('/home')">
-          <span class="logo-icon">♻</span>
+        <router-link class="logo" to="/home" aria-label="回到首页">
+          <span class="logo-icon" aria-hidden="true">♻</span>
           <span class="logo-text">校园二手交易平台</span>
           <el-tag size="small" type="success" effect="plain">{{ APP_VERSION }}</el-tag>
-        </div>
+        </router-link>
 
-        <el-menu :default-active="activeMenu" mode="horizontal" class="nav-menu" router :ellipsis="false">
+        <!-- v0.16：窄屏导航开关（768px 以下显示；导航收进抽屉，避免整站横向溢出） -->
+        <button class="nav-toggle" type="button" aria-label="打开导航菜单" @click="drawerVisible = true">
+          ☰
+        </button>
+
+        <nav aria-label="主导航" class="nav-wrap">
+          <el-menu :default-active="activeMenu" mode="horizontal" class="nav-menu" router :ellipsis="false">
           <el-menu-item index="/home">首页</el-menu-item>
           <el-menu-item index="/product/publish">发布商品</el-menu-item>
           <el-menu-item index="/product/mine">我的商品</el-menu-item>
@@ -91,13 +114,15 @@ async function handleLogout() {
           </el-menu-item>
           <el-menu-item index="/orders/bought">订单</el-menu-item>
           <el-menu-item index="/profile">个人中心</el-menu-item>
-        </el-menu>
+          </el-menu>
+        </nav>
 
         <div class="header-right">
           <!-- v0.09 顶部搜索框：首页顶部即可直接搜索商品，回车跳到搜索结果页 -->
           <el-input
             v-model="searchKeyword"
             class="header-search"
+            aria-label="搜索商品名称"
             placeholder="搜索商品名称"
             clearable
             maxlength="50"
@@ -136,6 +161,25 @@ async function handleLogout() {
       </div>
     </el-header>
 
+    <!-- v0.16：窄屏导航抽屉（768px 以下由 ☰ 打开；桌面端不显示） -->
+    <el-drawer v-model="drawerVisible" direction="ltr" size="78%" :with-header="false">
+      <nav class="drawer-nav" aria-label="主导航">
+        <router-link v-for="item in navItems" :key="item.path" :to="item.path" class="drawer-link"
+                     :class="{ active: activeMenu === item.path }" @click="drawerVisible = false">
+          <span>{{ item.label }}</span>
+          <el-badge v-if="item.path === '/messages' && chatStore.unreadTotal > 0"
+                    :value="chatStore.unreadTotal" :max="99" />
+        </router-link>
+      </nav>
+      <el-input v-model="searchKeyword" class="drawer-search" aria-label="搜索商品名称"
+                placeholder="搜索商品名称" clearable
+                maxlength="50" @keyup.enter="handleDrawerSearch">
+        <template #append>
+          <el-button @click="handleDrawerSearch">搜索</el-button>
+        </template>
+      </el-input>
+    </el-drawer>
+
     <!-- 内容区 -->
     <el-main class="layout-main">
       <div class="page-container">
@@ -167,8 +211,8 @@ async function handleLogout() {
 
 .layout-header {
   height: 64px;
-  background: #fff;
-  border-bottom: 1px solid #ebeef5;
+  background: var(--ct-bg-surface);
+  border-bottom: 1px solid var(--ct-paper-200);
   padding: 0;
   position: sticky;
   top: 0;
@@ -185,9 +229,17 @@ async function handleLogout() {
 .logo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  cursor: pointer;
+  gap: var(--ct-space-2);
+  /* 触控目标下限：作为链接（v0.16 起）它的可点高度不应低于 44px */
+  min-height: 44px;
+  color: inherit;
+  text-decoration: none;
   white-space: nowrap;
+}
+
+.logo:focus-visible {
+  outline: 2px solid var(--ct-action);
+  outline-offset: 2px;
 }
 
 .logo-icon {
@@ -197,12 +249,93 @@ async function handleLogout() {
 .logo-text {
   font-size: 18px;
   font-weight: 600;
-  color: #409eff;
+  color: var(--ct-text-primary);
+}
+
+/* 主导航地标（v0.16：此前导航只是 el-menu，页面上没有 nav 地标） */
+.nav-wrap {
+  flex: 1;
+  min-width: 0;
+  display: flex;
 }
 
 .nav-menu {
   flex: 1;
   border-bottom: none;
+}
+
+/* ---------- v0.16 窄屏导航 ----------
+   768px 以下把主导航与搜索收进抽屉：原来 .header-inner 的固有宽度是 1094px
+   （240px 搜索框 + 6 项横向菜单且不折叠），导致 390/768/1024 下分别恒定溢出
+   704/326/70px，连"消息/订单/个人中心"入口都在屏外。 */
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: var(--ct-text-lg);
+  color: var(--ct-text-primary);
+  background: transparent;
+  border: var(--ct-hairline) solid var(--ct-border);
+  border-radius: var(--ct-radius-sm);
+  cursor: pointer;
+}
+
+.drawer-nav {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--ct-space-4);
+}
+
+.drawer-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;                      /* 触控目标下限 */
+  padding: 0 var(--ct-space-2);
+  color: var(--ct-text-primary);
+  border-bottom: var(--ct-hairline) solid var(--ct-border);
+}
+
+.drawer-link.active {
+  background: var(--ct-bg-subtle);
+  font-weight: var(--ct-weight-semibold);
+}
+
+.drawer-search {
+  width: 100%;
+}
+
+/* 断点取 1100px：顶栏固有宽度是 1094px（240px 搜索框 + 6 项不折叠的横向菜单），
+   所以 1024/1080 这类小屏笔记本也必须收进抽屉，否则仍会横向溢出（实测 1024 溢出 70px）。 */
+@media (max-width: 1100px) {
+  .header-inner {
+    gap: var(--ct-space-2);
+    padding-left: var(--ct-space-3);
+    padding-right: var(--ct-space-3);
+    min-width: 0;
+  }
+
+  .nav-wrap,
+  .header-search {
+    display: none;
+  }
+
+  .nav-toggle {
+    display: inline-flex;
+  }
+
+  .logo {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .logo-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 /* v0.14：顶部导航的未读消息角标 */
@@ -240,10 +373,10 @@ async function handleLogout() {
 .layout-footer {
   height: auto;
   padding: 16px 0;
-  background: #fff;
-  border-top: 1px solid #ebeef5;
+  background: var(--ct-bg-surface);
+  border-top: 1px solid var(--ct-paper-200);
   text-align: center;
-  color: #606266;
+  color: var(--ct-text-primary);
   font-size: 13px;
   line-height: 1.8;
 }
