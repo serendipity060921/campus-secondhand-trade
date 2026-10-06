@@ -45,7 +45,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # 必须与仓库实际使用的 Node 版本对齐：pnpm 11 要求 Node >= 22，
+          # 早期写 20 会导致 pnpm 安装/运行失败（本地为 Node 24 + pnpm 11.7.0，已实测通过）。
+          node-version: 24
 
       - name: 纯函数单元验证（索书号编号规则）
         run: node tests/unit/catalogue.test.mjs
@@ -66,15 +68,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # 顺序很重要：先装 Node，再装 pnpm。
+      # 反过来的话，pnpm/action-setup 会在 runner 默认的旧 Node 上安装 pnpm 11 并自检失败。
+      # 因此这里不使用 setup-node 的 pnpm 缓存（缓存要求 pnpm 已存在）。
+      - uses: actions/setup-node@v4
+        with:
+          # pnpm 11 要求 Node >= 22；本地验证环境为 Node 24 + pnpm 11.7.0。
+          node-version: 24
+
       - uses: pnpm/action-setup@v4
         with:
           version: 11
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-          cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: 安装依赖（冻结锁文件，杜绝"本机能跑"）
         run: pnpm install --frozen-lockfile
@@ -97,5 +101,5 @@ jobs:
           java-version: 17
           cache: maven
 
-      - name: 打包（跳过测试）
-        run: mvn -B -DskipTests package
+      - name: 打包（跳过测试；使用仓库自带的 Maven Wrapper，不依赖 runner 预装版本）
+        run: ./mvnw -B -DskipTests package
