@@ -1,5 +1,5 @@
 # =============================================================================
-# 校园二手交易平台 · 一键部署编排（v0.15）
+# 校园二手交易平台 · 一键部署编排（v0.16）
 #
 # 启动：docker compose --env-file deploy/docker/.env -f deploy/docker/docker-compose.yml up -d
 # 查看：docker compose -f deploy/docker/docker-compose.yml ps
@@ -84,7 +84,7 @@ services:
     build:
       context: ../..
       dockerfile: deploy/docker/backend.Dockerfile
-    image: campus-trade-backend:v0.15
+    image: campus-trade-backend:v0.16
     container_name: campus-backend
     restart: unless-stopped
     depends_on:
@@ -125,7 +125,7 @@ services:
     build:
       context: ../..
       dockerfile: deploy/docker/frontend.Dockerfile
-    image: campus-trade-frontend:v0.15
+    image: campus-trade-frontend:v0.16
     container_name: campus-frontend
     restart: unless-stopped
     depends_on:

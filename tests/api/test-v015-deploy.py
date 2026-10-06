@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""校园二手交易平台 v0.15 部署验证用例（Nginx 反向代理 + 生产配置）
+"""校园二手交易平台 v0.16 部署验证用例（Nginx 反向代理 + 生产配置）
 
 验证目标（针对"部署"这件事本身，而不是业务功能）：
   · 前端静态资源与 SPA 路由回退（刷新 /chat/5 不能 404）
@@ -84,7 +84,7 @@ subprocess.run(['D:\\major\\tool\\redis\\redis-cli.exe', '-h', '127.0.0.1', '-p'
                 'del', 'campus:ratelimit:login:ip127.0.0.1'], capture_output=True)
 
 print('=' * 106)
-print(f'v0.15 部署验证用例（入口：{WEB}）')
+print(f'v0.16 部署验证用例（入口：{WEB}）')
 print('=' * 106)
 
 # ---------------------------------------------------------------- 一、静态资源与 SPA
@@ -147,8 +147,8 @@ rec('D10', '生产配置：数据库详情探针已关闭', 'GET /api/health/db'
 
 code8, body8, _ = http('GET', '/api/health')
 rec('D11', '运行环境为 prod 且版本正确', 'GET /api/health',
-    'profile=prod、version=v0.15',
-    isinstance(body8, dict) and body8['data']['profile'] == 'prod' and body8['data']['version'] == 'v0.15',
+    'profile=prod、version=v0.16',
+    isinstance(body8, dict) and body8['data']['profile'] == 'prod' and body8['data']['version'] == 'v0.16',
     f"profile={body8['data']['profile']}，version={body8['data']['version']}")
 
 code9, _, _ = http('GET', '/upload/not-exist-2026.png')
@@ -195,7 +195,7 @@ async def ws_checks():
             async with websockets.connect(f'{WS_URL}?token={token_b}',
                                           additional_headers={'Origin': f'{WEB}'}) as ws_b:
                 await asyncio.wait_for(ws_b.recv(), timeout=8)
-                content = f'v0.15 部署验证（经 Nginx 实时消息） {time.strftime("%H%M%S")}'
+                content = f'v0.16 部署验证（经 Nginx 实时消息） {time.strftime("%H%M%S")}'
                 await ws.send(json.dumps({'type': 'chat', 'toUserId': 7, 'content': content}))
                 got = None
                 deadline = time.time() + 10
@@ -338,7 +338,7 @@ clear_limits()
 title = f'【部署验证】{time.strftime("%H%M%S")}'
 code_p, body_p, _ = http('POST', '/api/product/publish',
                          {'title': title, 'categoryId': 8, 'price': 12.5, 'conditionLevel': 1,
-                          'description': 'v0.15 部署验证商品'}, token=token)
+                          'description': 'v0.16 部署验证商品'}, token=token)
 new_id = body_p.get('data', {}).get('id') if isinstance(body_p, dict) else None
 code_l, body_l, _ = http('GET', '/api/product/list?page=1&size=100')
 visible = isinstance(body_l, dict) and any(x['id'] == new_id for x in body_l['data']['records'])
@@ -397,7 +397,7 @@ total = len(RESULTS)
 passed = sum(1 for x in RESULTS if x['ok'])
 print()
 print('=' * 106)
-print(f'v0.15 部署验证汇总：{passed}/{total} 通过')
+print(f'v0.16 部署验证汇总：{passed}/{total} 通过')
 for x in RESULTS:
     if not x['ok']:
         print(f"  [FAIL] {x['id']} {x['scenario']} —— {x['actual']}")

@@ -64,7 +64,7 @@ logging:
 # =============================================================================
 app:
   # 应用版本（前端 src/utils/version.js 与之保持一致）
-  version: v0.15
+  version: v0.16
 
 campus:
   recommend:

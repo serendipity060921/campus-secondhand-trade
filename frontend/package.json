@@ -1,6 +1,6 @@
 {
   "name": "campus-trade-frontend",
-  "version": "0.15.0",
+  "version": "0.16.0",
   "private": true,
   "description": "校园二手交易平台 - 前端（Vue3 + Vite + Element Plus）",
   "type": "module",
