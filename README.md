@@ -24,7 +24,8 @@
 | 后台管理端到端 | 通过（页面 JS 错误 0、测试数据残留 0） |
 | 静态检查门禁 | 设计令牌纪律 0 错误、状态完备性 20/20、可访问性 12 页核心项通过 |
 
-各版本实现内容见 [docs/milestones/](./docs/milestones/) 与 [CHANGELOG.md](./CHANGELOG.md)。
+各版本实现内容见 [docs/milestones/](./docs/milestones/) 与 [CHANGELOG.md](./CHANGELOG.md)；
+测试结论与缺陷记录见 [v0.16 测试报告](docs/test-report-v0.16.md) 与 [缺陷跟踪表](docs/defect-log.md)。
 
 ---
 
@@ -371,8 +372,10 @@ mysql -h 127.0.0.1 -P 3306 -u root -p123456
 | [docs/实时通信说明.md](docs/实时通信说明.md) | WebSocket 握手鉴权、消息协议、可靠性设计、在线状态 |
 | [docs/部署说明.md](docs/部署说明.md) | 部署手册：Docker Compose 与 Windows 原生两条路径、运维手册 |
 | [docs/数据库查看指南.md](docs/数据库查看指南.md) | 怎么看库结构、常用查询语句 |
-| [docs/test-cases.md](docs/test-cases.md) | 测试用例表（含预期/实际/结论） |
-| [docs/test-report-v0.10.md](docs/test-report-v0.10.md) | v0.10 系统测试报告 |
+| [docs/test-report-v0.16.md](docs/test-report-v0.16.md) | **v0.16 系统测试报告**：三套测试 90 条全通过、静态质量检查、界面指标对比、遗留问题 |
+| [docs/defect-log.md](docs/defect-log.md) | **缺陷跟踪表**：12 条缺陷的编号、严重级别、现象、根因、修复与验证，含根因分析与预防措施 |
+| [docs/test-report-v0.10.md](docs/test-report-v0.10.md) | v0.10 系统测试报告（功能与安全测试 161 条） |
+| [docs/test-cases.md](docs/test-cases.md) | 测试用例表（v0.10：含预期/实际/结论） |
 | [CHANGELOG.md](CHANGELOG.md) | 版本变更记录 |
 
 ## 版本里程碑详解
