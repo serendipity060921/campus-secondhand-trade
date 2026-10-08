@@ -12,6 +12,8 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getCategoryList, publishProduct, uploadProductImages } from '@/api/product'
 import { CONDITION_OPTIONS, demoImage } from '@/utils/product'
+// 表单校验规则统一来自 utils/productRules.js（单一来源，由 tests/unit/product-rules.test.mjs 覆盖）
+import { PRODUCT_RULES, MESSAGES, validateProductForm } from '@/utils/productRules'
 
 const router = useRouter()
 
@@ -38,24 +40,24 @@ const form = reactive({
 
 const rules = {
   title: [
-    { required: true, message: '请输入商品名称', trigger: 'blur' },
-    { min: 2, max: 100, message: '商品名称长度为 2~100 个字符', trigger: 'blur' }
+    { required: true, message: MESSAGES.titleRequired, trigger: 'blur' },
+    { min: PRODUCT_RULES.TITLE_MIN, max: PRODUCT_RULES.TITLE_MAX, message: MESSAGES.titleLength, trigger: 'blur' }
   ],
-  categoryId: [{ required: true, message: '请选择商品分类', trigger: 'change' }],
+  categoryId: [{ required: true, message: MESSAGES.categoryRequired, trigger: 'change' }],
   price: [
-    { required: true, message: '请输入售价', trigger: 'blur' },
+    { required: true, message: MESSAGES.priceRequired, trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
-        if (value === null || value === undefined || value === '') return callback(new Error('请输入售价'))
-        if (Number(value) <= 0) return callback(new Error('售价必须大于 0'))
-        if (!/^\d{1,8}(\.\d{1,2})?$/.test(String(value))) return callback(new Error('售价最多 8 位整数、2 位小数'))
+        // 复用纯函数规则模块：页面提示与单元测试断言来自同一份规则，避免两处漂移
+        const { errors } = validateProductForm({ title: '占位标题', categoryId: 1, price: value })
+        if (errors.price) return callback(new Error(errors.price))
         callback()
       },
       trigger: 'blur'
     }
   ],
   conditionLevel: [{ required: true, message: '请选择成色', trigger: 'change' }],
-  description: [{ max: 2000, message: '商品描述不能超过 2000 个字符', trigger: 'blur' }]
+  description: [{ max: PRODUCT_RULES.DESC_MAX, message: MESSAGES.descTooLong, trigger: 'blur' }]
 }
 
 /** 分类下拉：一级分类分组 */
