@@ -92,6 +92,27 @@ BAD_TXT = TMP / 'not-image.txt'
 BIG_PNG = TMP / 'big.png'
 BAD_TXT.write_text('这不是图片，是一段纯文本，用于测试格式校验。', encoding='utf-8')
 
+# 夹具：超大 PNG（>5MB，用于验证"文件过大"提示）。
+# 原先该文件依赖 %TEMP% 里的历史遗留文件，缺失时 4.3 用例直接抛 FileNotFoundError
+# （表现为"执行异常"而不是"回归失败"，容易误判）。改为随用随建：
+# 用 zlib level 0（几乎不压缩）保证体积足够大，且只用标准库、不依赖 Pillow。
+if not BIG_PNG.exists() or BIG_PNG.stat().st_size < 6 * 1024 * 1024:
+    def _write_big_png(path, side=2400):
+        import struct
+        import zlib
+        raw = b''.join(b'\x00' + os.urandom(side * 3) for _ in range(side))
+
+        def _chunk(tag, data):
+            return (struct.pack('>I', len(data)) + tag + data
+                    + struct.pack('>I', zlib.crc32(tag + data) & 0xffffffff))
+
+        path.write_bytes(b'\x89PNG\r\n\x1a\n'
+                         + _chunk(b'IHDR', struct.pack('>IIBBBBB', side, side, 8, 2, 0, 0, 0))
+                         + _chunk(b'IDAT', zlib.compress(raw, 0))
+                         + _chunk(b'IEND', b''))
+
+    _write_big_png(BIG_PNG)
+
 TAG = uuid.uuid4().hex[:5]
 A_USER, B_USER = f'e2ea{TAG}', f'e2eb{TAG}'
 A_PASS = B_PASS = 'abc12345'

@@ -48,6 +48,19 @@ public class ProductException extends BusinessException {
                 ProductResultCode.PARAM_ILLEGAL.getMessage() + "：" + detail);
     }
 
+    /**
+     * 内容机审拒绝（v0.17 内容治理第一层）
+     *
+     * <p>附带命中的具体原因，用户据此知道要修改哪里。</p>
+     */
+    public static ProductException contentRejected(String detail) {
+        String msg = ProductResultCode.CONTENT_REJECTED.getMessage();
+        if (detail != null && !detail.isBlank()) {
+            msg = msg + "：" + detail;
+        }
+        return new ProductException(ProductResultCode.CONTENT_REJECTED.getCode(), msg);
+    }
+
     /** 上传文件为空 */
     public static ProductException fileEmpty() {
         return new ProductException(ProductResultCode.FILE_EMPTY);

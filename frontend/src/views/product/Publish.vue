@@ -155,7 +155,13 @@ async function handleSubmit() {
       tradePlace: form.tradePlace,
       imageUrls: uploadedUrls.value
     })
-    ElMessage.success('发布成功！')
+    // v0.17 内容机审：命中风险规则（如联系方式引流）的商品会进入「待审核」，
+    // 需管理后台人工复核通过后才展示 —— 这里给用户明确反馈，避免"发布成功却搜不到"的困惑
+    if (res.data && res.data.status === 0) {
+      ElMessage.success('已提交，平台审核通过后即可展示')
+    } else {
+      ElMessage.success('发布成功！')
+    }
     router.push(`/product/${res.data.id}`)
   } catch (e) {
     /* 错误提示由 axios 拦截器统一处理 */

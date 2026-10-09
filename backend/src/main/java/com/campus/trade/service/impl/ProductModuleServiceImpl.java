@@ -74,6 +74,9 @@ public class ProductModuleServiceImpl implements ProductModuleService {
     /** v0.13：发布审核开关 */
     private final com.campus.trade.config.AuditProperties auditProperties;
 
+    /** v0.17 内容机审（内容治理第一层）：发布时判定「放行 / 转人工复核 / 拒绝」 */
+    private final com.campus.trade.common.moderation.ContentModerator contentModerator;
+
     /* ==================== 1. 发布商品 ==================== */
 
     @Override
@@ -98,9 +101,24 @@ public class ProductModuleServiceImpl implements ProductModuleService {
         product.setConditionLevel(dto.getConditionLevel());
         product.setCampus(dto.getCampus());
         product.setTradePlace(dto.getTradePlace());
-        // v0.13：发布审核开关。campus.audit.enabled=true 时新商品进入「待审核」，
-        // 由管理后台审核通过后才上架（默认 false = 沿用 v0.05 以来"发布即上架"的行为）
-        boolean auditRequired = auditProperties.isEnabled();
+        // v0.17 内容治理第一层：发布时先做机审
+        //   · 命中明确违禁（代写、办证、管制刀具、赌博色情等）→ 直接拒绝发布
+        //   · 命中可疑（联系方式引流、价格异常）→ 转「待审核」，由管理后台人工复核（第二层）
+        //   · 未命中 → 直接上架，保证校园场景下的流通效率
+        // 说明：原有的全局开关 campus.audit.enabled 保留 —— 开启后所有商品都需人工审核，
+        //       默认关闭。机审详情会写日志，便于统计漏报与误报。
+        com.campus.trade.common.moderation.ModerationResult moderation = contentModerator.moderate(
+                dto.getTitle().trim(), dto.getDescription(), dto.getCategoryId(), dto.getPrice());
+        if (moderation.isReject()) {
+            log.info("[商品发布-机审拒绝] sellerId={} title={} 命中={}",
+                    sellerId, dto.getTitle(), moderation.getHits());
+            throw ProductException.contentRejected(moderation.reasonText());
+        }
+        if (moderation.isReview()) {
+            log.info("[商品发布-转人工复核] sellerId={} title={} 命中={}",
+                    sellerId, dto.getTitle(), moderation.getHits());
+        }
+        boolean auditRequired = auditProperties.isEnabled() || moderation.isReview();
         product.setStatus(auditRequired ? STATUS_PENDING : STATUS_ON_SALE);
         product.setViewCount(0);
         product.setFavoriteCount(0);

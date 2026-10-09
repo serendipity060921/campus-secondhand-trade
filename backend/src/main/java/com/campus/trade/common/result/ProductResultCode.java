@@ -38,7 +38,10 @@ public enum ProductResultCode {
     FILE_UPLOAD_ERROR(3008, "图片上传失败，请稍后重试"),
 
     /** 图片数量超出限制 */
-    IMAGE_COUNT_EXCEEDED(3009, "图片数量超出限制（最多 9 张）");
+    IMAGE_COUNT_EXCEEDED(3009, "图片数量超出限制（最多 9 张）"),
+
+    /** 内容机审拒绝（v0.17 内容治理第一层；message 会拼接具体命中原因） */
+    CONTENT_REJECTED(3010, "内容不符合平台规范");
 
     private final Integer code;
     private final String message;

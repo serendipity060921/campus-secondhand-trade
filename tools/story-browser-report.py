@@ -208,6 +208,24 @@ def us_goods_01(browser):
     ok = ok and pid > 0
     notes.append(f'AC1 真实发布成功 → 跳转详情页 /product/{pid}（标题 {P_TITLE}）')
     shots.append(shot(page, 'US-GOODS-01-2-发布成功进入详情'))
+
+    # ── v0.17 内容机审（内容治理第一层）：违规内容应在发布时被拦截 ──
+    page.goto(f'{BASE}/product/publish', wait_until='domcontentloaded')
+    time.sleep(1.5)
+    page.get_by_placeholder('例如：《数据结构》教材 九成新').fill(f'E2E违规验证-{TAG}-专业代写论文包过')
+    page.locator('.el-select').first.click()
+    page.locator('.el-select-dropdown__item:visible').first.click()
+    page.locator('.el-input-number input').first.fill('100.00')
+    page.locator('.el-radio-button').nth(1).click()
+    page.get_by_placeholder('例如：东校区', exact=True).fill('东校区')
+    page.get_by_placeholder('例如：东校区图书馆门口', exact=True).fill('东校区图书馆门口')
+    page.get_by_role('button', name='立即发布').click()
+    time.sleep(1.5)
+    rejected = ('不符合平台规范' in body(page)) or ('代写' in body(page))
+    ok = ok and rejected
+    notes.append('AC（v0.17 内容机审）发布含「代写 / 包过」的违规商品 → '
+                 + ('被拒绝并给出具体原因 ✓' if rejected else '未被拦截 ✗'))
+    shots.append(shot(page, 'US-GOODS-01-4-机审拦截违规商品'))
     ctx.close()
     return ok, notes, shots, len(errs), pid
 
