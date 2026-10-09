@@ -293,13 +293,21 @@ def us_fav_01(browser, pid):
     cancel = page.get_by_role('button', name='取消收藏')
     if cancel.count() > 0:
         cancel.first.click()
+        time.sleep(1.2)
+        # ★ 取消收藏会弹出确认框（Element Plus MessageBox），必须点「确定」才真正生效。
+        #   此前脚本点完按钮就刷新，没走确认这一步，于是得到"取消后仍存在"的结论，
+        #   把正常功能误报成了未通过（用户手工验证：点收藏、取消收藏都正常）。
+        #   —— 教训：断言前要确认交互链路完整（弹窗、二次确认、异步刷新都算链路的一部分）。
+        confirm = page.locator('.el-message-box__btns .el-button--primary')
+        if confirm.count() > 0:
+            confirm.first.click()
         time.sleep(1.5)
-        # 收藏列表不会在取消后自动移除该项，需要重新加载页面再核对（真实用户也是刷新后才确信）
+        # 收藏列表不会在取消后自动移除该项，重新加载页面再核对（真实用户也是刷新后才确信）
         page.reload(wait_until='domcontentloaded')
         time.sleep(2)
         gone = P_TITLE not in body(page)
         ok = ok and gone
-        notes.append(f'AC2 取消收藏 → 刷新收藏页后该商品{"已移除 ✓" if gone else "仍存在 ✗"}')
+        notes.append(f'AC2 取消收藏（含确认弹窗）→ 刷新收藏页后该商品{"已移除 ✓" if gone else "仍存在 ✗"}')
         shots.append(shot(page, 'US-FAV-01-3-取消收藏'))
     else:
         notes.append('AC2 未找到「取消收藏」按钮 ✗')

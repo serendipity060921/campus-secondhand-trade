@@ -20,8 +20,11 @@ param(
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
 
-$Root        = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)   # 项目根目录
-$DeployDir   = $PSScriptRoot
+# 目录定位兜底：$PSScriptRoot 在个别调用方式下可能为空（例如被其他宿主加载、
+# 或以 -Command 方式间接调用），此时脚本会在 Join-Path 处直接崩掉。
+# 这里退回到 $MyInvocation.MyCommand.Path，保证任何调用方式都能正确定位自身目录。
+$DeployDir   = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
+$Root        = Split-Path -Parent (Split-Path -Parent $DeployDir)   # 项目根目录
 $BackendDir  = Join-Path $Root 'backend'
 $DbDocDir    = Join-Path $Root 'docs'
 $LogDir      = Join-Path $DeployDir 'logs'
@@ -168,7 +171,19 @@ if (-not $SkipNginx) {
             Write-Warn2 "$WebPort 端口已在监听，执行 reload"
             & $nginxExe -p $NginxHome -s reload
         } else {
-            Start-Process -FilePath $nginxExe -ArgumentList @('-p', $NginxHome) -WindowStyle Hidden
+            # 注意：必须重定向 stdout/stderr。
+            # 否则 nginx 会继承调用方（终端/CI/脚本宿主）的标准输出句柄，
+            # 表现为"脚本明明已经跑完，调用方却一直等不到管道结束"——
+            # 之前就踩过这个坑：在外部工具里执行本脚本会一直挂着不返回。
+            # 这里用 splatting 传参，避免反引号续行受"行尾空格"影响而语法出错。
+            $nginxStartArgs = @{
+                FilePath               = $nginxExe
+                ArgumentList           = @('-p', $NginxHome)
+                RedirectStandardOutput = (Join-Path $LogDir 'nginx-console.log')
+                RedirectStandardError  = (Join-Path $LogDir 'nginx-error.log')
+                WindowStyle            = 'Hidden'
+            }
+            Start-Process @nginxStartArgs
             Start-Sleep -Seconds 2
         }
         if (Test-Port '127.0.0.1' $WebPort) { Write-Ok "Nginx 已就绪：http://localhost:$WebPort" }
