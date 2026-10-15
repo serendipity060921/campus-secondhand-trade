@@ -177,7 +177,11 @@
                         </goals>
                     </execution>
                     <!-- 覆盖率棘轮：与设计令牌/状态检查同一策略 —— 只许上升，不许回退。
-                         基线值见 docs/测试覆盖率说明.md，每补一块测试就上调一次。 -->
+                         基线记录见 docs/测试覆盖率说明.md：
+                           2026-10-09  3.38%（引入 JaCoCo，当时仅内容机审 1 个测试类）
+                           2026-10-15  8.23%（补「错误码枚举不变量」+「业务异常体系」两组测试）
+                         阈值取 7%（略低于实测 8.23%）→ 给日常小改动留余量；
+                         每补完一块测试就把这里的 minimum 上调一次。 -->
                     <execution>
                         <id>check-ratchet</id>
                         <phase>test</phase>
@@ -192,7 +196,7 @@
                                         <limit>
                                             <counter>INSTRUCTION</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.01</minimum>
+                                            <minimum>0.07</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
