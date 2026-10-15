@@ -1,0 +1,20 @@
+{
+ "mode": "write",
+ "product_id": 1,
+ "concurrency": 10,
+ "duration": 11.95,
+ "cycles": 6887,
+ "cycles_per_second": 576.1,
+ "avg_ms": 17.32,
+ "p95_ms": 33.93,
+ "max_ms": 369.28,
+ "errors": 0,
+ "ok_responses": 1,
+ "other_codes": [
+  429,
+  4001
+ ],
+ "db_questions_delta": 369,
+ "db_qps": 30.9,
+ "generated_at": "2026-10-15 22:46:09"
+}
