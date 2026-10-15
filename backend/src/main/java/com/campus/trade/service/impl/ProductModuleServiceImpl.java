@@ -106,17 +106,21 @@ public class ProductModuleServiceImpl implements ProductModuleService {
         //   · 命中可疑（联系方式引流、价格异常）→ 转「待审核」，由管理后台人工复核（第二层）
         //   · 未命中 → 直接上架，保证校园场景下的流通效率
         // 说明：原有的全局开关 campus.audit.enabled 保留 —— 开启后所有商品都需人工审核，
-        //       默认关闭。机审详情会写日志，便于统计漏报与误报。
+        //       默认关闭。
+        // ★ 三种结果都写同格式日志（[机审] action=...），供 tools/moderation-stats.py 统计
+        //   放行/转审/拒绝的比例与命中词分布 —— 这是"机审效果"从感觉变成数字的依据。
         com.campus.trade.common.moderation.ModerationResult moderation = contentModerator.moderate(
                 dto.getTitle().trim(), dto.getDescription(), dto.getCategoryId(), dto.getPrice());
         if (moderation.isReject()) {
-            log.info("[商品发布-机审拒绝] sellerId={} title={} 命中={}",
-                    sellerId, dto.getTitle(), moderation.getHits());
+            log.info("[机审] action=REJECT sellerId={} title={} hits={} reason={}",
+                    sellerId, dto.getTitle(), moderation.getHits(), moderation.reasonText());
             throw ProductException.contentRejected(moderation.reasonText());
         }
         if (moderation.isReview()) {
-            log.info("[商品发布-转人工复核] sellerId={} title={} 命中={}",
+            log.info("[机审] action=REVIEW sellerId={} title={} hits={}",
                     sellerId, dto.getTitle(), moderation.getHits());
+        } else {
+            log.info("[机审] action=PASS sellerId={} title={}", sellerId, dto.getTitle());
         }
         boolean auditRequired = auditProperties.isEnabled() || moderation.isReview();
         product.setStatus(auditRequired ? STATUS_PENDING : STATUS_ON_SALE);

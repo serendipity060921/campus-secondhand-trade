@@ -39,6 +39,18 @@ jobs:
       - name: 状态与可达性检查（阈值只许下降）
         run: python tools/check-states.py --max-missing 0 --max-mouse-only 0 --max-spinner 5
 
+      # 棘轮三：后端代码卫生（System.out 直接打印 / printStackTrace / 空 catch /
+      # 硬编码口令 / SELECT * / 通配符 import / TODO）。发现数只许下降。
+      - name: 后端代码卫生检查（棘轮：发现数只许下降）
+        run: python tools/check-backend.py --label ci
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-hygiene
+          path: .impeccable/review/ci/backend-hygiene.json
+          if-no-files-found: ignore
+
       - name: 输出令牌纪律报告
         if: always()
         run: python tools/check-tokens.py --label ci

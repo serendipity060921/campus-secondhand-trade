@@ -122,13 +122,19 @@ logging:
     com.campus.trade: info
 
 # =============================================================================
-# 健康检查端点（供容器/负载均衡探活使用）
+# 运维监控与健康检查（v0.17）
+#
+# ★ 暴露面（安全边界）：只暴露 health 与 metrics 两个端点。
+#   · 绝不暴露 env / beans / heapdump / threaddump / shutdown（会泄露配置与凭据）
+#   · 端口与绑定地址在 application.yml 里统一设置：8090 且仅 127.0.0.1
+#     —— 局域网与外网均不可达，Nginx 也不转发
+#   · 对外探针仍用项目自有的 /api/health（字段经过挑选），此处 health 细节不对外
 # =============================================================================
 management:
   endpoints:
     web:
       exposure:
-        include: health
+        include: health,metrics
   endpoint:
     health:
       show-details: never

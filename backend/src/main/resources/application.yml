@@ -133,3 +133,26 @@ campus:
   audit:
     enabled: false
     allow-resubmit: true
+
+# ===========================================================================
+# 运维监控（v0.17 · Spring Boot Actuator）
+#
+# ★ 安全边界（答辩可讲）：
+#   1) 只暴露 health / info / metrics 三个端点；
+#      绝不暴露 env、beans、heapdump、threaddump、shutdown 等敏感端点。
+#   2) 独立端口 8090，且只绑定 127.0.0.1 —— 局域网与外网都访问不到，Nginx 也不转发。
+#   3) 对外的探针仍用项目自有的 /api/health（返回字段是精心挑选的，
+#      Actuator 的 health 细节不对外暴露）。
+#   4) 因此"监控能力"与"对外攻击面"是分开的：能力给运维，攻击面为零。
+# ===========================================================================
+management:
+  server:
+    port: 8090
+    address: 127.0.0.1
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

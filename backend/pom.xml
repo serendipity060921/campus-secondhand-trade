@@ -108,6 +108,14 @@
         </dependency>
         <!-- ======================================================== -->
 
+        <!-- 运维监控（v0.17）：Actuator —— 暴露 JVM/HTTP/缓存等运行指标。
+             安全边界见 application.yml：只暴露 health/info/metrics，
+             且仅绑定 127.0.0.1:8090（局域网与外网均不可达）。 -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- 测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
