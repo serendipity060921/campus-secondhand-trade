@@ -77,6 +77,13 @@ public class ProductModuleServiceImpl implements ProductModuleService {
     /** v0.17 内容机审（内容治理第一层）：发布时判定「放行 / 转人工复核 / 拒绝」 */
     private final com.campus.trade.common.moderation.ContentModerator contentModerator;
 
+    /**
+     * v0.18 / C3：机审结论落库。
+     * 单独一个 Bean + 独立事务（REQUIRES_NEW）—— 「拒绝」分支会抛异常回滚发布事务，
+     * 若同事务则日志一起被回滚，出现"拒了但查不到"，统计口径失真。
+     */
+    private final com.campus.trade.service.ModerationLogService moderationLogService;
+
     /* ==================== 1. 发布商品 ==================== */
 
     @Override
@@ -109,20 +116,28 @@ public class ProductModuleServiceImpl implements ProductModuleService {
         //       默认关闭。
         // ★ 三种结果都写同格式日志（[机审] action=...），供 tools/moderation-stats.py 统计
         //   放行/转审/拒绝的比例与命中词分布 —— 这是"机审效果"从感觉变成数字的依据。
+        // ★ v0.18 / C3：同时把结论**落库**到 moderation_log（可查、可聚合、可出趋势）；
+        //   日志与落库双写是有意的冗余 —— 日志用于实时排查，库表用于统计与留痕。
+        //   注意：记录发生在商品落库之前，因此 product_id 暂为空（title+seller+时间足以追溯）。
         com.campus.trade.common.moderation.ModerationResult moderation = contentModerator.moderate(
                 dto.getTitle().trim(), dto.getDescription(), dto.getCategoryId(), dto.getPrice());
         if (moderation.isReject()) {
             log.info("[机审] action=REJECT sellerId={} title={} hits={} reason={}",
                     sellerId, dto.getTitle(), moderation.getHits(), moderation.reasonText());
+            // 先落库（独立事务，立即提交），再抛异常回滚发布 —— 保证"拒了也有记录"
+            moderationLogService.record(sellerId, null, dto.getTitle().trim(), moderation, false);
             throw ProductException.contentRejected(moderation.reasonText());
         }
-        if (moderation.isReview()) {
+        boolean review = moderation.isReview();
+        if (review) {
             log.info("[机审] action=REVIEW sellerId={} title={} hits={}",
                     sellerId, dto.getTitle(), moderation.getHits());
         } else {
             log.info("[机审] action=PASS sellerId={} title={}", sellerId, dto.getTitle());
         }
-        boolean auditRequired = auditProperties.isEnabled() || moderation.isReview();
+        boolean auditRequired = auditProperties.isEnabled() || review;
+        // 放行与转审都要留档：没有放行数就算不出放行率（分母）
+        moderationLogService.record(sellerId, null, dto.getTitle().trim(), moderation, auditRequired);
         product.setStatus(auditRequired ? STATUS_PENDING : STATUS_ON_SALE);
         product.setViewCount(0);
         product.setFavoriteCount(0);
