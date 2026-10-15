@@ -130,6 +130,69 @@
                     </excludes>
                 </configuration>
             </plugin>
+
+            <!-- ============================================================
+                 测试覆盖率（v0.17 引入）
+                 用途：让"测试做得怎么样"从感觉变成数字 —— 测试方向毕设的核心指标。
+                 执行：./mvnw test         → 自动生成 target/site/jacoco/index.html
+                       ./mvnw test jacoco:report
+                 说明：覆盖率阈值采用"只许上升"的棘轮策略（见 CI），
+                       当前基线见 docs/测试覆盖率说明.md，清理完一个模块就上调一次。
+                 ============================================================ -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.11</version>
+                <configuration>
+                    <!-- 只度量"逻辑代码"：实体/DTO/VO/配置与启动类不计入分母。
+                         否则大量 getter/setter 与常量类会稀释真实覆盖率，指标就失去意义。 -->
+                    <excludes>
+                        <exclude>**/entity/**</exclude>
+                        <exclude>**/dto/**</exclude>
+                        <exclude>**/vo/**</exclude>
+                        <exclude>**/config/**</exclude>
+                        <exclude>**/*Application.class</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <!-- 覆盖率棘轮：与设计令牌/状态检查同一策略 —— 只许上升，不许回退。
+                         基线值见 docs/测试覆盖率说明.md，每补一块测试就上调一次。 -->
+                    <execution>
+                        <id>check-ratchet</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.01</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>

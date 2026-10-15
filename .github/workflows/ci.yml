@@ -106,5 +106,15 @@ jobs:
 
       # v0.17 起项目已建立后端单元测试（内容机审 ContentModeratorTest 等 15 条），
       # 因此这里不再跳过测试：package 会先执行 test，测试失败即 CI 失败。
+      # 同时 jacoco 插件会生成覆盖率报告，并执行"覆盖率棘轮"检查（只许上升）。
       - name: 单元测试 + 打包（使用仓库自带的 Maven Wrapper，不依赖 runner 预装版本）
         run: ./mvnw -B package
+
+      # 覆盖率报告（target/site/jacoco）：CI 里虽看不到 HTML，但可作为产物下载查看
+      - name: 上传覆盖率报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-coverage
+          path: backend/target/site/jacoco/
+          if-no-files-found: ignore
