@@ -52,3 +52,6 @@ deploy/windows/uploads/
 # Impeccable 构建产物：plate 派生自 frontend/public/demo-images/*.png（见 docs/ui-comps/README.md）
 assets/plates/
 __pycache__/
+
+# 演示数据重置时的自动备份（本地留档，不入库）
+db/demo-data/backup-*.sql
