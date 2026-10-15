@@ -1,0 +1,330 @@
+{
+ "base": "http://127.0.0.1:8081",
+ "passed": 46,
+ "total": 46,
+ "results": [
+  {
+   "id": "S1",
+   "group": "SQL注入",
+   "name": "登录注入「经典 OR 永真绕过」不能拿到 token",
+   "ok": true,
+   "detail": "code=2002"
+  },
+  {
+   "id": "S2",
+   "group": "SQL注入",
+   "name": "登录注入「注释截断密码校验」不能拿到 token",
+   "ok": true,
+   "detail": "code=2002"
+  },
+  {
+   "id": "S3",
+   "group": "SQL注入",
+   "name": "登录注入「井号注释绕过」不能拿到 token",
+   "ok": true,
+   "detail": "code=2002"
+  },
+  {
+   "id": "S4",
+   "group": "SQL注入",
+   "name": "登录注入「联合查询」不能拿到 token",
+   "ok": true,
+   "detail": "code=2002"
+  },
+  {
+   "id": "S5",
+   "group": "SQL注入",
+   "name": "搜索注入 OR 1=1 不返回全部商品",
+   "ok": true,
+   "detail": "注入命中 0 条 / 全部 13 条"
+  },
+  {
+   "id": "S6",
+   "group": "SQL注入",
+   "name": "联合查询不泄露 user 表（无密码哈希/用户名字段）",
+   "ok": true,
+   "detail": "响应中未出现密码哈希"
+  },
+  {
+   "id": "S7",
+   "group": "SQL注入",
+   "name": "时间盲注 SLEEP(3) 未生效（说明用了参数化查询）",
+   "ok": true,
+   "detail": "响应耗时 12ms"
+  },
+  {
+   "id": "S8",
+   "group": "SQL注入",
+   "name": "数字型参数传入注入串返回 400（类型校验生效）",
+   "ok": true,
+   "detail": "code=400"
+  },
+  {
+   "id": "S9",
+   "group": "SQL注入",
+   "name": "路径参数注入被拒（400/404，不执行 SQL）",
+   "ok": true,
+   "detail": "code=400"
+  },
+  {
+   "id": "S10",
+   "group": "SQL注入",
+   "name": "注入尝试后商品表仍然可查（未被破坏）",
+   "ok": true,
+   "detail": "注入后商品总数 13"
+  },
+  {
+   "id": "S11",
+   "group": "XSS",
+   "name": "接口一律返回 application/json（浏览器不会当 HTML 执行）",
+   "ok": true,
+   "detail": "商品列表:application/json / 商品详情:application/json / 分类:application/json / 用户信息:application/json"
+  },
+  {
+   "id": "S12",
+   "group": "XSS",
+   "name": "脚本载荷请求返回 JSON 而非 HTML",
+   "ok": true,
+   "detail": "code=200 content-type=application/json"
+  },
+  {
+   "id": "S13",
+   "group": "XSS",
+   "name": "登录名脚本载荷被正常拒绝且响应仍为 JSON",
+   "ok": true,
+   "detail": "code=2002"
+  },
+  {
+   "id": "S14",
+   "group": "XSS",
+   "name": "记录后端转义策略（原样回显 / 已转义 均属可接受，取决于前端是否转义）",
+   "ok": true,
+   "detail": "未回显"
+  },
+  {
+   "id": "S15",
+   "group": "认证",
+   "name": "无 token 访问 /api/order/buyList 被拒（401）",
+   "ok": true,
+   "detail": "code=401"
+  },
+  {
+   "id": "S16",
+   "group": "认证",
+   "name": "无 token 访问 /api/user/info 被拒（401）",
+   "ok": true,
+   "detail": "code=401"
+  },
+  {
+   "id": "S17",
+   "group": "认证",
+   "name": "无 token 访问 /api/favorite/list 被拒（401）",
+   "ok": true,
+   "detail": "code=401"
+  },
+  {
+   "id": "S18",
+   "group": "JWT",
+   "name": "篡改 payload（改 userId 保留签名）被拒（401）",
+   "ok": true,
+   "detail": "code=401"
+  },
+  {
+   "id": "S19",
+   "group": "JWT",
+   "name": "alg=none 攻击被拒（401，不接受无签名 token）",
+   "ok": true,
+   "detail": "code=401"
+  },
+  {
+   "id": "S20",
+   "group": "JWT",
+   "name": "随机字符串 的 token 被拒（401）",
+   "ok": true,
+   "detail": "code=401"
+  },
+  {
+   "id": "S21",
+   "group": "JWT",
+   "name": "结构不合法 的 token 被拒（401）",
+   "ok": true,
+   "detail": "code=401"
+  },
+  {
+   "id": "S22",
+   "group": "JWT",
+   "name": "签名被改 的 token 被拒（401）",
+   "ok": true,
+   "detail": "code=401"
+  },
+  {
+   "id": "S23",
+   "group": "JWT",
+   "name": "空 token 的 token 被拒（401）",
+   "ok": true,
+   "detail": "code=401"
+  },
+  {
+   "id": "S24",
+   "group": "越权",
+   "name": "横向越权：A 查看 B 的订单 4 被拒（6004）",
+   "ok": true,
+   "detail": "code=6004"
+  },
+  {
+   "id": "S25",
+   "group": "越权",
+   "name": "对照：B 查看自己的订单 4 正常（200）",
+   "ok": true,
+   "detail": "code=200"
+  },
+  {
+   "id": "S26",
+   "group": "越权",
+   "name": "纵向越权：普通用户访问管理端仪表盘被拒（403）",
+   "ok": true,
+   "detail": "code=403"
+  },
+  {
+   "id": "S27",
+   "group": "越权",
+   "name": "纵向越权：普通用户访问管理端用户列表被拒（403）",
+   "ok": true,
+   "detail": "code=403"
+  },
+  {
+   "id": "S28",
+   "group": "越权",
+   "name": "纵向越权：普通用户访问管理端操作日志被拒（403）",
+   "ok": true,
+   "detail": "code=403"
+  },
+  {
+   "id": "S29",
+   "group": "越权",
+   "name": "对照：管理员访问管理端正常（200）",
+   "ok": true,
+   "detail": "code=200"
+  },
+  {
+   "id": "S30",
+   "group": "越权",
+   "name": "横向越权：A 下架 B 的商品 261 被拒",
+   "ok": true,
+   "detail": "code=3002"
+  },
+  {
+   "id": "S31",
+   "group": "信息泄露",
+   "name": "登录响应不含密码/哈希字段",
+   "ok": true,
+   "detail": "仅返回 token 与用户基本信息"
+  },
+  {
+   "id": "S32",
+   "group": "信息泄露",
+   "name": "用户信息接口不含密码/哈希字段",
+   "ok": true,
+   "detail": ""
+  },
+  {
+   "id": "S33",
+   "group": "信息泄露",
+   "name": "错误响应不暴露堆栈/框架内部信息",
+   "ok": true,
+   "detail": "仅返回可读提示"
+  },
+  {
+   "id": "S34",
+   "group": "信息泄露",
+   "name": "经 Nginx 访问 /actuator/env 不泄露 actuator 数据（落到前端 SPA 属正常）",
+   "ok": true,
+   "detail": "http=200 泄漏=否"
+  },
+  {
+   "id": "S35",
+   "group": "信息泄露",
+   "name": "经 Nginx 访问 /actuator/beans 不泄露 actuator 数据（落到前端 SPA 属正常）",
+   "ok": true,
+   "detail": "http=200 泄漏=否"
+  },
+  {
+   "id": "S36",
+   "group": "信息泄露",
+   "name": "经 Nginx 访问 /actuator/heapdump 不泄露 actuator 数据（落到前端 SPA 属正常）",
+   "ok": true,
+   "detail": "http=200 泄漏=否"
+  },
+  {
+   "id": "S34b",
+   "group": "信息泄露",
+   "name": "管理端口 /actuator/env 未暴露（404）",
+   "ok": true,
+   "detail": "code=404 http=200"
+  },
+  {
+   "id": "S35b",
+   "group": "信息泄露",
+   "name": "管理端口 /actuator/beans 未暴露（404）",
+   "ok": true,
+   "detail": "code=404 http=200"
+  },
+  {
+   "id": "S36b",
+   "group": "信息泄露",
+   "name": "管理端口 /actuator/heapdump 未暴露（404）",
+   "ok": true,
+   "detail": "code=404 http=200"
+  },
+  {
+   "id": "S36c",
+   "group": "信息泄露",
+   "name": "管理端口 /actuator/shutdown 未暴露（404）",
+   "ok": true,
+   "detail": "code=404 http=200"
+  },
+  {
+   "id": "S37",
+   "group": "信息泄露",
+   "name": "商品详情不泄露卖家手机号/邮箱",
+   "ok": true,
+   "detail": "手机号=False 邮箱=False"
+  },
+  {
+   "id": "S38",
+   "group": "健壮性",
+   "name": "超长字段（50KB 标题）返回 400 而非 500",
+   "ok": true,
+   "detail": "code=400"
+  },
+  {
+   "id": "S39",
+   "group": "健壮性",
+   "name": "路径遍历拿不到配置文件（不含 spring:/datasource）",
+   "ok": true,
+   "detail": "code=None"
+  },
+  {
+   "id": "S40",
+   "group": "健壮性",
+   "name": "非法 JSON 返回 400（不抛 500，也不暴露解析器信息）",
+   "ok": true,
+   "detail": "code=400"
+  },
+  {
+   "id": "S41",
+   "group": "健壮性",
+   "name": "错误的 Content-Type 被拒（400/415），不静默成功",
+   "ok": true,
+   "detail": "code=400"
+  },
+  {
+   "id": "S42",
+   "group": "健壮性",
+   "name": "负数分页参数被容忍（不抛 500）",
+   "ok": true,
+   "detail": "code=400"
+  }
+ ],
+ "generated_at": "2026-10-15 22:50:50"
+}

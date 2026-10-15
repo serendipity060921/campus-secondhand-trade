@@ -187,6 +187,28 @@ class GlobalExceptionHandlerTest {
             assertEquals(404, r.getCode());
             assertTrue(r.getMessage().contains("/api/not-exist"));
         }
+
+        /**
+         * 安全测试 S41 发现的缺口：客户端用 form-urlencoded 调 JSON 接口时，
+         * 此前该异常没有被专门处理，会落到兜底分支返回 500（看起来像服务端故障）。
+         */
+        @Test
+        @DisplayName("请求体类型不受支持 → 400 参数错误（而不是兜底 500）")
+        void mediaTypeNotSupported() {
+            org.springframework.web.HttpMediaTypeNotSupportedException e =
+                    new org.springframework.web.HttpMediaTypeNotSupportedException(
+                            org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED,
+                            java.util.List.of());
+
+            Result<Void> r = handler.handleMediaTypeNotSupported(e);
+
+            assertEquals(ResultCode.PARAM_ERROR.getCode(), r.getCode());
+            assertEquals(400, r.getCode());
+            assertTrue(r.getMessage().contains("application/json"),
+                    "提示应告诉调用方正确的类型：" + r.getMessage());
+            assertNull(r.getData());
+            assertNotNull(r.getTimestamp());
+        }
     }
 
     @Nested

@@ -92,6 +92,22 @@ public class GlobalExceptionHandler {
         return Result.error(ResultCode.DATA_ALREADY_EXIST.getCode(), "数据已存在（违反唯一约束）");
     }
 
+    /**
+     * 请求体类型不受支持（例如本接口要 JSON，客户端却发 form-urlencoded）。
+     *
+     * <p>这条是<b>安全测试 S41 发现并补上的</b>：此前该异常没有被专门处理，
+     * 会落到最后的兜底分支返回 500，看起来像"服务端故障"。
+     * 实际上这是客户端用法问题，应明确告诉调用方要发 JSON。
+     * 这里沿用统一响应的 400 参数错误码，避免新增错误码、扩大前端分支。</p>
+     */
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+    public Result<Void> handleMediaTypeNotSupported(
+            org.springframework.web.HttpMediaTypeNotSupportedException e) {
+        log.warn("[请求体类型不支持] contentType={}", e.getContentType());
+        return Result.error(ResultCode.PARAM_ERROR.getCode(),
+                "请求体类型不受支持，请使用 application/json");
+    }
+
     /** 兜底：未预期的异常 */
     @ExceptionHandler(Exception.class)
     public Result<Void> handleException(Exception e, HttpServletRequest request) {
