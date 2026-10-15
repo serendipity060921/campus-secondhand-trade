@@ -3,8 +3,8 @@ name: CI
 # 说明：
 #   本工作流只做「不需要数据库、Redis 与浏览器」的检查，因此在 GitHub 托管机上稳定可跑：
 #     1) 设计令牌纪律  —— 组件层不得出现裸色值，发现数只许下降不许上升（棘轮）
-#     2) 前端构建      —— pnpm 冻结锁文件安装 + Vite 构建
-#     3) 后端编译      —— Maven 打包（跳过测试，因为单测尚未建立）
+#     2) 前端纯函数单测 —— catalogue（索书号规则）+ product-rules（发布校验规则），两个都必须跑
+#     3) 后端单元测试 + 打包 —— v0.17 起已建立后端单测（内容机审等），不再跳过测试
 #   需要真实环境的端到端用例（tests/e2e、tests/api）不在此运行，它们在本地对
 #   已部署的实例执行（见 README 的测试章节）。
 
@@ -49,8 +49,11 @@ jobs:
           # 早期写 20 会导致 pnpm 安装/运行失败（本地为 Node 24 + pnpm 11.7.0，已实测通过）。
           node-version: 24
 
-      - name: 纯函数单元验证（索书号编号规则）
-        run: node tests/unit/catalogue.test.mjs
+      # 前端纯函数单测：两个文件都必须跑 —— 只跑 catalogue 会让 product-rules 的改动绕过 CI。
+      - name: 纯函数单元验证（索书号规则 + 商品发布校验规则）
+        run: |
+          node tests/unit/catalogue.test.mjs
+          node tests/unit/product-rules.test.mjs
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -101,5 +104,7 @@ jobs:
           java-version: 17
           cache: maven
 
-      - name: 打包（跳过测试；使用仓库自带的 Maven Wrapper，不依赖 runner 预装版本）
-        run: ./mvnw -B -DskipTests package
+      # v0.17 起项目已建立后端单元测试（内容机审 ContentModeratorTest 等 15 条），
+      # 因此这里不再跳过测试：package 会先执行 test，测试失败即 CI 失败。
+      - name: 单元测试 + 打包（使用仓库自带的 Maven Wrapper，不依赖 runner 预装版本）
+        run: ./mvnw -B package
