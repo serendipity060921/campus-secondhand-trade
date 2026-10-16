@@ -205,7 +205,8 @@
                            2026-10-16 41.55%（★ 口径调整：lombok.config 排除 Lombok 生成方法，只统计手写逻辑；并修掉 PageResult 记录为 null 的缺陷）
                            2026-10-16 45.21%（第3批⑪ 接口层补测：8 个测试类覆盖全部 16 个控制器，controller 包 15.49% → 88.48%）
                            2026-10-16 48.40%（第3批⑫ 服务层起步：FileServiceImpl 上传四道校验 16 条 + FavoriteModuleServiceImpl 七条业务规则 15 条）
-                         阈值取 47%（略低于实测 48.40%）→ 给日常小改动留余量；
+                           2026-10-16 62.88%（★ 第3批⑫ 推荐服务：RecommendServiceImpl 21 条覆盖缓存/降级链/排除集合/三路融合/热门榜兜底/相似商品，单类 +14.5 个百分点）
+                         阈值取 61%（略低于实测 62.88%）→ 给日常小改动留余量；
                          每补完一块测试就把这里的 minimum 上调一次。 -->
                     <execution>
                         <id>check-ratchet</id>
@@ -221,7 +222,7 @@
                                         <limit>
                                             <counter>INSTRUCTION</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.47</minimum>
+                                            <minimum>0.61</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
