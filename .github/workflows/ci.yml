@@ -56,7 +56,7 @@ jobs:
         if: always()
         run: python tools/check-tokens.py --label ci
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           # 必须与仓库实际使用的 Node 版本对齐：pnpm 11 要求 Node >= 22，
           # 早期写 20 会导致 pnpm 安装/运行失败（本地为 Node 24 + pnpm 11.7.0，已实测通过）。
@@ -87,7 +87,7 @@ jobs:
       # 顺序很重要：先装 Node，再装 pnpm。
       # 反过来的话，pnpm/action-setup 会在 runner 默认的旧 Node 上安装 pnpm 11 并自检失败。
       # 因此这里不使用 setup-node 的 pnpm 缓存（缓存要求 pnpm 已存在）。
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           # pnpm 11 要求 Node >= 22；本地验证环境为 Node 24 + pnpm 11.7.0。
           node-version: 24
