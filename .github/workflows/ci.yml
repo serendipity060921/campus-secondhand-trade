@@ -92,7 +92,7 @@ jobs:
           # pnpm 11 要求 Node >= 22；本地验证环境为 Node 24 + pnpm 11.7.0。
           node-version: 24
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11
 
