@@ -33,6 +33,19 @@ spring:
       max-file-size: 5MB
       max-request-size: 20MB
 
+# 接口文档（v0.18 / 收尾⑨-1）：在线文档 /swagger-ui.html，JSON 描述 /v3/api-docs
+# 登录拦截器只作用于 /api/**，因此文档路径无需额外放行；
+# 生产环境若不希望暴露接口文档，把两个 enabled 置 false 即可。
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    tags-sorter: alpha
+    operations-sorter: alpha
+
 mybatis-plus:
   # Mapper XML 位置（复杂的多表 SQL 写这里，简单单表 CRUD 用注解/内置方法）
   mapper-locations: classpath*:/mapper/**/*.xml

@@ -116,6 +116,16 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- v0.18：接口文档（OpenAPI 3 / Swagger UI）。2.x 版本线对应 Spring Boot 3.2.x。
+             说明：登录拦截器只作用于 /api/**，因此 /v3/api-docs 与 /swagger-ui/** 无需额外放行；
+             若生产环境不希望暴露接口文档，可在 application-prod.yml 设
+             springdoc.api-docs.enabled=false 与 springdoc.swagger-ui.enabled=false。 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+
         <!-- 测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
