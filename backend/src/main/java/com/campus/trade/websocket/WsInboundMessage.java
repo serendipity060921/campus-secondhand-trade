@@ -26,7 +26,14 @@ public class WsInboundMessage {
     private List<Long> messageIds;
     private List<Long> userIds;
 
-    /** 解析失败返回 null（调用方回复 error 帧） */
+    /**
+     * 解析前端发来的帧。
+     *
+     * <p><b>对外承诺的语义</b>：<b>绝不抛异常</b>。JSON 语法错误时返回 {@code null}；
+     * 而空串等会被 Jackson 解析成 MissingNode 的情况，会返回一个<b>字段全为 null</b> 的对象。
+     * 调用方只需判断「{@code null} 或 {@code type} 为空」→ 回 error 帧并保留连接
+     * （见 {@code ChatWebSocketHandler#handleTextMessage}）。</p>
+     */
     public static WsInboundMessage parse(String payload, ObjectMapper objectMapper) {
         try {
             JsonNode node = objectMapper.readTree(payload);

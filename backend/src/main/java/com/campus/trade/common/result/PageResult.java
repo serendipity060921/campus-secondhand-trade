@@ -45,7 +45,13 @@ public class PageResult<T> implements Serializable {
 
     /** 由 MyBatis-Plus 的分页对象转换 */
     public static <T> PageResult<T> of(IPage<T> page) {
-        return new PageResult<>(page.getTotal(), page.getPages(), page.getCurrent(), page.getSize(), page.getRecords());
+        // ★ v0.18 修复（BUG-019）：records 必须兜底为空集合。
+        //   原先直接透传 page.getRecords()，一旦底层返回 null，
+        //   响应里就会出现 "records": null —— 前端对列表做 .map / .length 会直接崩。
+        //   这个问题是被"统一响应结构"的单测发现的（ResultAndPageResultTest#ofNullRecords）。
+        java.util.List<T> records = page.getRecords() == null
+                ? Collections.emptyList() : page.getRecords();
+        return new PageResult<>(page.getTotal(), page.getPages(), page.getCurrent(), page.getSize(), records);
     }
 
     /** 空分页 */
