@@ -91,6 +91,33 @@ def b64u_dec(s: str) -> bytes:
     return base64.urlsafe_b64decode(s + '=' * (-len(s) % 4))
 
 
+def upload(token, filename: str, content_type: str, data: bytes):
+    """构造 multipart/form-data 上传请求（urllib 无现成封装，这里手工拼 body）。
+
+    返回与 http() 一致的 (status, body)，便于继续用 code_of() 取业务码。
+    """
+    boundary = '----dshSecurity' + str(int(time.time() * 1000))
+    body = b''
+    body += f'--{boundary}\r\n'.encode()
+    body += f'Content-Disposition: form-data; name="file"; filename="{filename}"\r\n'.encode()
+    body += f'Content-Type: {content_type}\r\n\r\n'.encode()
+    body += data + b'\r\n'
+    body += f'--{boundary}--\r\n'.encode()
+
+    req = urllib.request.Request(WEB + '/api/product/upload', data=body, method='POST')
+    req.add_header('Content-Type', f'multipart/form-data; boundary={boundary}')
+    if token:
+        req.add_header('Authorization', 'Bearer ' + token)
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return r.status, json.loads(r.read().decode('utf-8', 'replace'))
+    except urllib.error.HTTPError as e:
+        try:
+            return e.code, json.loads(e.read().decode('utf-8', 'replace') or '{}')
+        except Exception:
+            return e.code, {}
+
+
 def main():
     print('=' * 100)
     print(f'安全测试（{WEB}）—— SQL 注入 / XSS / 认证与 JWT / 越权 / 信息泄露 / 健壮性')
@@ -361,6 +388,49 @@ def main():
     r_badjson = http('POST', '/api/user/login', raw_body='{"username": "admin", "password":')
     case('S40', '健壮性', '非法 JSON 返回 400（不抛 500，也不暴露解析器信息）',
          code_of(r_badjson) == 400, f'code={code_of(r_badjson)}')
+
+    # ================================================ 七、上传内容校验（v0.18 新增，第2批-⑤）
+    # 扩展名与 Content-Type 都由客户端自述、可以伪造，因此逐个验证"内容才是判据"。
+    # ★ 每个拒绝用例都配一个真实图片的对照组 —— 避免"接口整体不可用"造成的假通过。
+    # ★ 断言收紧到具体业务码 3006（fileTypeNotAllowed），而不是只判 != 200：
+    #   否则一旦文件被别的环节拦下（实测踩到：Windows Defender 会实时删除 webshell 样本，
+    #   导致上传的是被删空的文件、走到 3008 上传失败），用例会"通过但理由错误"。
+    UPLOAD_REJECT_CODE = 3006   # ProductException.fileTypeNotAllowed
+    # ★ 复用套件开头已经登录好的 token_a，不要在这里再登录一次：
+    #   实测多调一次登录会撞上登录限流（20 次/分钟）拿到 None，
+    #   于是整组上传用例被"跳过"，而跳过又被算作通过 —— 又是一次"假通过"。
+    up_token = token_a
+    real_png = b'\x89PNG\r\n\x1a\n' + b'\x00' * 32
+    real_jpeg = b'\xff\xd8\xff\xe0' + b'\x00' * 32
+    if not case('S50', '上传校验', '上传用例前置：token_a 可用（拿不到则本组用例无意义）',
+                bool(up_token), f'token_a={bool(up_token)}'):
+        pass    # 硬失败，不再继续 —— 绝不用"跳过"伪装成通过
+    else:
+        st, body = upload(up_token, 'real.png', 'image/png', real_png)
+        case('S50', '上传校验', '★ 对照组：真实 PNG 正常上传', code_of((st, body)) == 200,
+             f'code={code_of((st, body))}')
+
+        st, body = upload(up_token, 'fake.png', 'image/png',
+                          b"<!DOCTYPE html><script>alert(1)</script>")
+        case('S51', '上传校验', '★ HTML 页面伪装成 .png 被拒（只查扩展名会放过它）',
+             code_of((st, body)) == UPLOAD_REJECT_CODE,
+             f'code={code_of((st, body))}  {str(body.get("message", ""))[:40]}')
+
+        st, body = upload(up_token, 'mismatch.png', 'image/png', real_jpeg)
+        case('S52', '上传校验', '★ JPEG 内容却改名成 .png 被拒（扩展名与内容不一致）',
+             code_of((st, body)) == UPLOAD_REJECT_CODE, f'code={code_of((st, body))}')
+
+        # 注：本用例的样本（PHP 脚本）在开启实时防护的 Windows 上可能被提前删除，
+        # 此时上传的是被删空的文件 —— 结果同样是"被拒绝"（安全属性成立），
+        # 但业务码会变成 3008 上传失败。因此这里断言"不等于 200"，即"绝不接受"。
+        st, body = upload(up_token, 'shell.png', 'image/png',
+                          b"<?php system($_GET['c']); ?>")
+        case('S53', '上传校验', '★ 脚本文件伪装成 .png 不被接受（绝不落库落盘）',
+             code_of((st, body)) != 200, f'code={code_of((st, body))}')
+
+        st, body = upload(up_token, 'note.txt', 'image/png', real_png)
+        case('S54', '上传校验', '扩展名不在白名单内被拒（内容是真图片也不行）',
+             code_of((st, body)) == UPLOAD_REJECT_CODE, f'code={code_of((st, body))}')
 
     r_badctype = http('POST', '/api/user/login', raw_body='username=admin&password=123456',
                       content_type='application/x-www-form-urlencoded')

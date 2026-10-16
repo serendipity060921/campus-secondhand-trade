@@ -1,7 +1,7 @@
 {
  "base": "http://127.0.0.1:8081",
- "passed": 46,
- "total": 46,
+ "passed": 52,
+ "total": 52,
  "results": [
   {
    "id": "S1",
@@ -50,7 +50,7 @@
    "group": "SQL注入",
    "name": "时间盲注 SLEEP(3) 未生效（说明用了参数化查询）",
    "ok": true,
-   "detail": "响应耗时 10ms"
+   "detail": "响应耗时 47ms"
   },
   {
    "id": "S8",
@@ -312,6 +312,48 @@
    "detail": "code=400"
   },
   {
+   "id": "S50",
+   "group": "上传校验",
+   "name": "上传用例前置：token_a 可用（拿不到则本组用例无意义）",
+   "ok": true,
+   "detail": "token_a=True"
+  },
+  {
+   "id": "S50",
+   "group": "上传校验",
+   "name": "★ 对照组：真实 PNG 正常上传",
+   "ok": true,
+   "detail": "code=200"
+  },
+  {
+   "id": "S51",
+   "group": "上传校验",
+   "name": "★ HTML 页面伪装成 .png 被拒（只查扩展名会放过它）",
+   "ok": true,
+   "detail": "code=3006  图片格式不支持，仅支持 jpg / jpeg / png / gif / web"
+  },
+  {
+   "id": "S52",
+   "group": "上传校验",
+   "name": "★ JPEG 内容却改名成 .png 被拒（扩展名与内容不一致）",
+   "ok": true,
+   "detail": "code=3006"
+  },
+  {
+   "id": "S53",
+   "group": "上传校验",
+   "name": "★ 脚本文件伪装成 .png 不被接受（绝不落库落盘）",
+   "ok": true,
+   "detail": "code=3008"
+  },
+  {
+   "id": "S54",
+   "group": "上传校验",
+   "name": "扩展名不在白名单内被拒（内容是真图片也不行）",
+   "ok": true,
+   "detail": "code=3006"
+  },
+  {
    "id": "S41",
    "group": "健壮性",
    "name": "错误的 Content-Type 被拒（400/415），不静默成功",
@@ -326,5 +368,5 @@
    "detail": "code=400"
   }
  ],
- "generated_at": "2026-10-16 21:19:53"
+ "generated_at": "2026-10-16 22:23:20"
 }
