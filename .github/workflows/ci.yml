@@ -45,6 +45,20 @@ jobs:
       - name: 后端代码卫生检查（棘轮：发现数只许下降）
         run: python tools/check-backend.py --label ci
 
+      # 棘轮四：写接口限流覆盖（v0.18 接入）—— 所有 POST/PUT/DELETE 接口要么带 @RateLimit，
+      # 要么在脚本白名单里写明"为什么不加限流"。阈值锁死为 0：不允许存在"漏加限流"的写接口。
+      # 该检查在本地抓到一个真实缺陷：/api/auth/login 是 /api/user/login 的别名接口，
+      # 却没带限流注解 —— 等于给暴力破解留了一条绕行通道（已修复，见 docs/缺陷跟踪表.md）。
+      - name: 写接口限流覆盖检查（未限流且无理由的必须为 0）
+        run: python tools/check-ratelimit.py --max-missing 0 --json --label ci
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ratelimit-report
+          path: .impeccable/review/ci/ratelimit-ci.json
+          if-no-files-found: ignore
+
       - uses: actions/upload-artifact@v4
         if: always()
         with:

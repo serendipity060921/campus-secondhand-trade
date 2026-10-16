@@ -1,5 +1,6 @@
 package com.campus.trade.controller;
 
+import com.campus.trade.common.annotation.RateLimit;
 import com.campus.trade.common.result.Result;
 import com.campus.trade.dto.LoginDTO;
 import com.campus.trade.service.AuthService;
@@ -30,8 +31,15 @@ public class AuthController {
 
     private final AuthService authService;
 
-    /** 登录（等价于 POST /api/user/login） */
+    /**
+     * 登录（等价于 POST /api/user/login）。
+     *
+     * <p>★ 必须与 {@code /api/user/login} 保持**完全相同的限流参数**：
+     * 这是别名接口，少一个守卫就等于给暴力破解留了一条绕行通道 ——
+     * 本项目的限流覆盖检查脚本（tools/check-ratelimit.py）正是这样发现该问题的。</p>
+     */
     @PostMapping("/login")
+    @RateLimit(key = "login", limit = 20, window = 60, message = "登录尝试过于频繁")
     public Result<LoginVO> login(@Valid @RequestBody LoginDTO dto) {
         return Result.success("登录成功", authService.login(dto));
     }

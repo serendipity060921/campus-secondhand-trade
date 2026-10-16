@@ -140,9 +140,11 @@ public class ProductModuleController {
         return Result.success(productModuleService.detail(id));
     }
 
-    /** 上架 / 下架：必须登录，且只能操作自己发布的商品 */
+    /** 上架 / 下架：必须登录，且只能操作自己发布的商品（限流：防止刷上下架扰动列表） */
     @LoginRequired
     @PutMapping("/status")
+    @RateLimit(key = "product-status", limit = 20, window = 300, dimension = RateLimit.Dimension.USER,
+            message = "上下架操作过于频繁")
     public Result<Void> changeStatus(@Valid @RequestBody ProductStatusDTO dto) {
         productModuleService.changeStatus(dto.getProductId(), dto.getStatus(), UserContext.getUserId());
         return Result.success(dto.getStatus() == 1 ? "上架成功" : "下架成功", null);

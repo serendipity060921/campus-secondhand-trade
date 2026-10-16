@@ -1,6 +1,7 @@
 package com.campus.trade.controller;
 
 import com.campus.trade.common.annotation.LoginRequired;
+import com.campus.trade.common.annotation.RateLimit;
 import com.campus.trade.common.context.UserContext;
 import com.campus.trade.common.result.Result;
 import com.campus.trade.dto.UserUpdateDTO;
@@ -47,9 +48,11 @@ public class UserProfileController {
         return Result.success(profileService.getProfile(UserContext.getUserId()));
     }
 
-    /** 修改个人资料：用户ID 取自 Token，前端不能改别人 */
+    /** 修改个人资料：用户ID 取自 Token，前端不能改别人（限流：防止刷写库） */
     @LoginRequired
     @PutMapping("/update")
+    @RateLimit(key = "profile-update", limit = 10, window = 300, dimension = RateLimit.Dimension.USER,
+            message = "修改资料过于频繁，请稍后再试")
     public Result<UserProfileVO> update(@Valid @RequestBody UserUpdateDTO dto) {
         UserProfileVO vo = profileService.updateProfile(dto, UserContext.getUserId());
         return Result.success("资料已更新", vo);

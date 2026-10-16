@@ -118,6 +118,8 @@ public class MessageController {
     /** 标记消息已读，返回实际更新条数 */
     @LoginRequired
     @PutMapping("/read")
+    @RateLimit(key = "read-msg", limit = 60, window = 60, dimension = RateLimit.Dimension.USER,
+            message = "操作过于频繁，请稍后再试")
     public Result<Integer> read(@RequestBody MessageReadDTO dto) {
         int rows = messageModuleService.markRead(dto, UserContext.getUserId());
         return Result.success("已标记 " + rows + " 条消息为已读", rows);

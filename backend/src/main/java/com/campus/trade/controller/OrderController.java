@@ -1,6 +1,7 @@
 package com.campus.trade.controller;
 
 import com.campus.trade.common.annotation.LoginRequired;
+import com.campus.trade.common.annotation.RateLimit;
 import com.campus.trade.common.context.UserContext;
 import com.campus.trade.common.exception.OrderException;
 import com.campus.trade.common.result.PageResult;
@@ -46,17 +47,21 @@ public class OrderController {
 
     private final OrderModuleService orderModuleService;
 
-    /** 创建订单 */
+    /** 创建订单（限流：防止脚本刷单占用商品） */
     @LoginRequired
     @PostMapping("/create")
+    @RateLimit(key = "order-create", limit = 10, window = 300, dimension = RateLimit.Dimension.USER,
+            message = "下单过于频繁，请稍后再试")
     public Result<OrderDetailVO> create(@Valid @RequestBody OrderCreateDTO dto) {
         OrderDetailVO vo = orderModuleService.create(dto, UserContext.getUserId());
         return Result.success("下单成功，请与卖家约定面交时间地点", vo);
     }
 
-    /** 修改订单状态：已完成 / 已取消 */
+    /** 修改订单状态：已完成 / 已取消（限流：防止反复取消-下单刷状态） */
     @LoginRequired
     @PutMapping("/status")
+    @RateLimit(key = "order-status", limit = 20, window = 300, dimension = RateLimit.Dimension.USER,
+            message = "订单操作过于频繁，请稍后再试")
     public Result<OrderDetailVO> changeStatus(@Valid @RequestBody OrderStatusDTO dto) {
         OrderDetailVO vo = orderModuleService.changeStatus(dto, UserContext.getUserId());
         boolean finished = vo.getStatus() != null && vo.getStatus() == 3;
