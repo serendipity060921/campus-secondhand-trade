@@ -5,6 +5,7 @@ name: CI
 #     1) 设计令牌纪律  —— 组件层不得出现裸色值，发现数只许下降不许上升（棘轮）
 #     2) 前端纯函数单测 —— catalogue（索书号规则）+ product-rules（发布校验规则），两个都必须跑
 #     3) 后端单元测试 + 打包 —— v0.17 起已建立后端单测（内容机审等），不再跳过测试
+#     4) 前端覆盖率（c8）+ 依赖漏洞审计（critical 级别阻断）—— v0.18 接入
 #   需要真实环境的端到端用例（tests/e2e、tests/api）不在此运行，它们在本地对
 #   已部署的实例执行（见 README 的测试章节）。
 
@@ -100,6 +101,32 @@ jobs:
 
       - name: 构建
         run: pnpm build
+
+      # 前端覆盖率（v0.18 引入 c8）：统计被单测直接引用的纯函数模块。
+      # 口径见 docs/测试覆盖率说明.md 第八节 —— 只含 utils 层，
+      # 组件与页面的渲染交互由端到端测试覆盖，不纳入行覆盖率统计。
+      - name: 前端覆盖率（c8，纯函数模块）
+        run: pnpm test:coverage
+
+      # 依赖漏洞审计（v0.18 接入）：
+      #   阻断级别取 critical —— 当前仓库有 1 个 high + 3 个 moderate，全部集中在
+      #   vite / esbuild 这类**构建期依赖**（不会进入生产产物），已在
+      #   docs/安全测试报告.md 中记录并给出升级路径，因此不阻断日常提交；
+      #   但一旦出现 critical 级别漏洞，CI 必须失败。
+      - name: 依赖漏洞审计（critical 级别阻断）
+        run: pnpm audit --audit-level=critical
+
+      # 完整审计报告留档（非阻断），便于在 Actions 产物里查看中低危明细
+      - name: 导出依赖审计报告
+        if: always()
+        run: pnpm audit --json > audit-report.json || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-audit
+          path: frontend/audit-report.json
+          if-no-files-found: ignore
 
   backend:
     name: 后端编译
