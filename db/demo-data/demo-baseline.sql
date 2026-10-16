@@ -1,12 +1,12 @@
 -- 演示数据基线快照
--- 生成时间：2026-10-15 20:28:04
+-- 生成时间：2026-10-16 20:57:49
 -- 用途：python tools/seed-demo-data.py --reset
--- 说明：已排除 e2e 夹具；额外排除 user [390]、product [495]、message 300-305
+-- 说明：已排除 e2e 夹具
 
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS=0;
 
--- admin_log（25 行，过滤：`admin_id` NOT IN (390)）
+-- admin_log（25 行）
 INSERT INTO `admin_log` (`id`, `admin_id`, `admin_name`, `action`, `target_type`, `target_id`, `detail`, `ip`, `create_time`, `deleted`) VALUES (34,1,'admin','AUDIT_PRODUCT','PRODUCT',261,'审核通过：【待审核演示】某品牌电子烟（替烟）；意见：资料完整，审核通过','127.0.0.1','2026-10-04 17:02:54',0);
 INSERT INTO `admin_log` (`id`, `admin_id`, `admin_name`, `action`, `target_type`, `target_id`, `detail`, `ip`, `create_time`, `deleted`) VALUES (35,1,'admin','AUDIT_PRODUCT','PRODUCT',262,'审核驳回：【待审核演示】英语四级真题册（含答案）；意见：涉嫌违禁物品，请勿发布','127.0.0.1','2026-10-04 17:02:54',0);
 INSERT INTO `admin_log` (`id`, `admin_id`, `admin_name`, `action`, `target_type`, `target_id`, `detail`, `ip`, `create_time`, `deleted`) VALUES (36,1,'admin','OFFLINE_PRODUCT','PRODUCT',261,'强制下架：【待审核演示】某品牌电子烟（替烟）；原因：测试强制下架（自动化用例）','127.0.0.1','2026-10-04 17:02:55',0);
@@ -33,12 +33,12 @@ INSERT INTO `admin_log` (`id`, `admin_id`, `admin_name`, `action`, `target_type`
 INSERT INTO `admin_log` (`id`, `admin_id`, `admin_name`, `action`, `target_type`, `target_id`, `detail`, `ip`, `create_time`, `deleted`) VALUES (59,1,'admin','AUDIT_PRODUCT','PRODUCT',486,'审核通过：E2E审核演示商品-c3770；意见：资料完整，审核通过','127.0.0.1','2026-10-06 21:10:01',0);
 INSERT INTO `admin_log` (`id`, `admin_id`, `admin_name`, `action`, `target_type`, `target_id`, `detail`, `ip`, `create_time`, `deleted`) VALUES (60,1,'admin','AUDIT_PRODUCT','PRODUCT',494,'审核通过：E2E审核演示商品-08f5b；意见：资料完整，审核通过','127.0.0.1','2026-10-06 21:20:41',0);
 
--- report（3 行，过滤：`reporter_id` NOT IN (390)）
+-- report（3 行）
 INSERT INTO `report` (`id`, `reporter_id`, `target_type`, `target_id`, `reason_type`, `content`, `image_url`, `status`, `handle_admin_id`, `handle_result`, `handle_time`, `create_time`, `update_time`, `deleted`) VALUES (1,5,1,261,2,'【演示】疑似违禁物品，请管理员核实',NULL,0,NULL,NULL,NULL,'2026-10-03 23:35:02','2026-10-03 23:35:02',0);
 INSERT INTO `report` (`id`, `reporter_id`, `target_type`, `target_id`, `reason_type`, `content`, `image_url`, `status`, `handle_admin_id`, `handle_result`, `handle_time`, `create_time`, `update_time`, `deleted`) VALUES (2,6,2,7,3,'【演示】该用户多次发送骚扰私信',NULL,0,NULL,NULL,NULL,'2026-10-03 23:35:02','2026-10-03 23:35:02',0);
 INSERT INTO `report` (`id`, `reporter_id`, `target_type`, `target_id`, `reason_type`, `content`, `image_url`, `status`, `handle_admin_id`, `handle_result`, `handle_time`, `create_time`, `update_time`, `deleted`) VALUES (3,7,1,5,1,'【演示】商品描述与实物不符',NULL,1,1,'已联系卖家补充描述并重新上传实拍图','2026-10-03 23:35:02','2026-10-01 23:35:02','2026-10-03 23:35:02',0);
 
--- user_behavior（24 行，过滤：`product_id` NOT IN (495) AND `user_id` NOT IN (390)）
+-- user_behavior（24 行）
 INSERT INTO `user_behavior` (`id`, `user_id`, `product_id`, `behavior_type`, `category_id`, `weight`, `behavior_count`, `create_time`, `update_time`, `deleted`) VALUES (2,5,2,2,13,3.00,1,'2026-10-02 20:13:17','2026-10-02 20:13:17',0);
 INSERT INTO `user_behavior` (`id`, `user_id`, `product_id`, `behavior_type`, `category_id`, `weight`, `behavior_count`, `create_time`, `update_time`, `deleted`) VALUES (3,5,3,2,14,3.00,1,'2026-10-02 20:13:18','2026-10-02 20:13:18',0);
 INSERT INTO `user_behavior` (`id`, `user_id`, `product_id`, `behavior_type`, `category_id`, `weight`, `behavior_count`, `create_time`, `update_time`, `deleted`) VALUES (4,5,8,2,17,3.00,1,'2026-10-02 20:14:24','2026-10-02 20:14:24',0);
@@ -64,7 +64,7 @@ INSERT INTO `user_behavior` (`id`, `user_id`, `product_id`, `behavior_type`, `ca
 INSERT INTO `user_behavior` (`id`, `user_id`, `product_id`, `behavior_type`, `category_id`, `weight`, `behavior_count`, `create_time`, `update_time`, `deleted`) VALUES (1715,6,263,1,8,1.00,2,'2026-10-09 15:42:44','2026-10-09 17:35:27',0);
 INSERT INTO `user_behavior` (`id`, `user_id`, `product_id`, `behavior_type`, `category_id`, `weight`, `behavior_count`, `create_time`, `update_time`, `deleted`) VALUES (1716,6,263,2,8,3.00,1,'2026-10-09 15:42:46','2026-10-09 15:42:46',0);
 
--- product_image（10 行，过滤：`product_id` NOT IN (495)）
+-- product_image（10 行）
 INSERT INTO `product_image` (`id`, `product_id`, `url`, `sort_order`, `create_time`, `update_time`, `deleted`) VALUES (1,1,'/upload/2026/10/2afe0cb3839e47af893eace7ce85b3a8.png',0,'2026-10-02 19:43:16','2026-10-02 19:43:16',0);
 INSERT INTO `product_image` (`id`, `product_id`, `url`, `sort_order`, `create_time`, `update_time`, `deleted`) VALUES (2,4,'/upload/2026/10/cc5556bfb7934b6d8633b604d67f8f13.png',0,'2026-10-02 19:44:05','2026-10-02 19:44:05',0);
 INSERT INTO `product_image` (`id`, `product_id`, `url`, `sort_order`, `create_time`, `update_time`, `deleted`) VALUES (3,4,'/upload/2026/10/5722cd23138146fa9a6a67c14c1dee17.png',1,'2026-10-02 19:44:05','2026-10-02 19:44:05',0);
@@ -76,19 +76,19 @@ INSERT INTO `product_image` (`id`, `product_id`, `url`, `sort_order`, `create_ti
 INSERT INTO `product_image` (`id`, `product_id`, `url`, `sort_order`, `create_time`, `update_time`, `deleted`) VALUES (9,12,'/demo-images/dorm.png',0,'2026-10-02 19:50:31','2026-10-02 19:50:31',0);
 INSERT INTO `product_image` (`id`, `product_id`, `url`, `sort_order`, `create_time`, `update_time`, `deleted`) VALUES (10,12,'/demo-images/daily.png',1,'2026-10-02 19:50:31','2026-10-02 19:50:31',0);
 
--- favorite（4 行，过滤：`product_id` NOT IN (495) AND `user_id` NOT IN (390)）
+-- favorite（4 行）
 INSERT INTO `favorite` (`id`, `user_id`, `product_id`, `create_time`, `update_time`, `deleted`) VALUES (5,5,2,'2026-10-02 20:13:17','2026-10-02 20:13:17',0);
 INSERT INTO `favorite` (`id`, `user_id`, `product_id`, `create_time`, `update_time`, `deleted`) VALUES (6,5,3,'2026-10-02 20:13:18','2026-10-02 20:13:18',0);
 INSERT INTO `favorite` (`id`, `user_id`, `product_id`, `create_time`, `update_time`, `deleted`) VALUES (7,5,8,'2026-10-02 20:14:24','2026-10-02 20:14:24',0);
 INSERT INTO `favorite` (`id`, `user_id`, `product_id`, `create_time`, `update_time`, `deleted`) VALUES (65,1,6,'2026-10-03 23:42:54','2026-10-03 23:42:54',0);
 
--- orders（4 行，过滤：`buyer_id` NOT IN (390) AND `product_id` NOT IN (495) AND `seller_id` NOT IN (390)）
+-- orders（4 行）
 INSERT INTO `orders` (`id`, `order_no`, `product_id`, `buyer_id`, `seller_id`, `product_title`, `product_image`, `amount`, `status`, `delivery_type`, `trade_place`, `receiver_name`, `receiver_phone`, `receiver_address`, `pay_type`, `pay_time`, `deliver_time`, `finish_time`, `cancel_time`, `cancel_reason`, `buyer_remark`, `create_time`, `update_time`, `deleted`) VALUES (1,'202610022039388528',8,5,1,'罗技 K380 蓝牙键盘','/demo-images/computer.png',129.00,3,1,'东校区图书馆门口',NULL,NULL,NULL,NULL,NULL,NULL,'2026-10-02 20:40:08',NULL,NULL,'明天下午三点方便吗','2026-10-02 20:39:39','2026-10-02 20:40:08',0);
 INSERT INTO `orders` (`id`, `order_no`, `product_id`, `buyer_id`, `seller_id`, `product_title`, `product_image`, `amount`, `status`, `delivery_type`, `trade_place`, `receiver_name`, `receiver_phone`, `receiver_address`, `pay_type`, `pay_time`, `deliver_time`, `finish_time`, `cancel_time`, `cancel_reason`, `buyer_remark`, `create_time`, `update_time`, `deleted`) VALUES (2,'202610022040080776',3,5,1,'笔记本散热支架（铝合金 六档可调）',NULL,42.00,4,1,'主校区南门',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2026-10-02 20:40:08','临时不想买了','测试取消流程','2026-10-02 20:40:08','2026-10-02 20:40:08',0);
 INSERT INTO `orders` (`id`, `order_no`, `product_id`, `buyer_id`, `seller_id`, `product_title`, `product_image`, `amount`, `status`, `delivery_type`, `trade_place`, `receiver_name`, `receiver_phone`, `receiver_address`, `pay_type`, `pay_time`, `deliver_time`, `finish_time`, `cancel_time`, `cancel_reason`, `buyer_remark`, `create_time`, `update_time`, `deleted`) VALUES (3,'202610022041390001',14,7,1,'全新文具套装（笔记本+中性笔）','/demo-images/default.png',9.90,4,1,'主校区教学楼下',NULL,NULL,NULL,NULL,NULL,NULL,NULL,'2026-10-02 20:41:39','演示：临时取消','（演示数据）我明天下午来取','2026-10-02 20:41:39','2026-10-02 20:41:39',0);
 INSERT INTO `orders` (`id`, `order_no`, `product_id`, `buyer_id`, `seller_id`, `product_title`, `product_image`, `amount`, `status`, `delivery_type`, `trade_place`, `receiver_name`, `receiver_phone`, `receiver_address`, `pay_type`, `pay_time`, `deliver_time`, `finish_time`, `cancel_time`, `cancel_reason`, `buyer_remark`, `create_time`, `update_time`, `deleted`) VALUES (4,'202610022041390002',14,7,1,'全新文具套装（笔记本+中性笔）','/demo-images/default.png',9.90,0,1,'主校区教学楼下',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'（演示数据）可以约今晚吗','2026-10-02 20:41:39','2026-10-02 20:41:39',0);
 
--- message（9 行，过滤：id NOT BETWEEN 300 AND 305）
+-- message（9 行）
 INSERT INTO `message` (`id`, `type`, `product_id`, `from_user_id`, `to_user_id`, `parent_id`, `content`, `is_read`, `read_time`, `create_time`, `update_time`, `deleted`) VALUES (1,2,8,5,1,0,'你好，罗技键盘还在吗？',1,'2026-10-02 20:27:56','2026-10-02 20:27:48','2026-10-02 20:27:55',0);
 INSERT INTO `message` (`id`, `type`, `product_id`, `from_user_id`, `to_user_id`, `parent_id`, `content`, `is_read`, `read_time`, `create_time`, `update_time`, `deleted`) VALUES (3,2,8,5,1,0,'好的，明天下午三点方便吗？',1,'2026-10-02 20:27:56','2026-10-02 20:27:48','2026-10-02 20:27:55',0);
 INSERT INTO `message` (`id`, `type`, `product_id`, `from_user_id`, `to_user_id`, `parent_id`, `content`, `is_read`, `read_time`, `create_time`, `update_time`, `deleted`) VALUES (4,2,NULL,5,1,0,'我在东校区3号宿舍楼下',1,'2026-10-02 20:27:56','2026-10-02 20:27:48','2026-10-02 20:27:55',0);
@@ -99,7 +99,7 @@ INSERT INTO `message` (`id`, `type`, `product_id`, `from_user_id`, `to_user_id`,
 INSERT INTO `message` (`id`, `type`, `product_id`, `from_user_id`, `to_user_id`, `parent_id`, `content`, `is_read`, `read_time`, `create_time`, `update_time`, `deleted`) VALUES (36,2,13,6,1,0,'你好，这件商品还在吗？',0,NULL,'2026-10-03 20:26:31','2026-10-03 20:26:31',0);
 INSERT INTO `message` (`id`, `type`, `product_id`, `from_user_id`, `to_user_id`, `parent_id`, `content`, `is_read`, `read_time`, `create_time`, `update_time`, `deleted`) VALUES (51,1,8,1,5,0,'在的，键盘还在，你什么时候方便面交？',1,'2026-10-02 20:27:48','2026-10-02 20:27:48','2026-10-04 00:38:53',0);
 
--- product（17 行，过滤：title NOT LIKE 'E2E%' AND id NOT IN (495)）
+-- product（17 行，过滤：title NOT LIKE 'E2E%'）
 INSERT INTO `product` (`id`, `title`, `description`, `category_id`, `seller_id`, `price`, `original_price`, `cover_image`, `condition_level`, `campus`, `trade_place`, `status`, `audit_remark`, `auditor_id`, `audit_time`, `view_count`, `favorite_count`, `shelf_time`, `sold_time`, `create_time`, `update_time`, `deleted`) VALUES (1,'九成新《数据结构（C语言版）》教材','考研复习用书，无笔记无划线，封面轻微磨损，可小刀。东校区图书馆门口面交。',10,5,15.00,45.00,'/upload/2026/10/2afe0cb3839e47af893eace7ce85b3a8.png',2,'东校区','东校区图书馆门口',1,NULL,NULL,NULL,6,0,'2026-10-02 19:43:09',NULL,'2026-10-02 19:43:09','2026-10-04 15:17:30',0);
 INSERT INTO `product` (`id`, `title`, `description`, `category_id`, `seller_id`, `price`, `original_price`, `cover_image`, `condition_level`, `campus`, `trade_place`, `status`, `audit_remark`, `auditor_id`, `audit_time`, `view_count`, `favorite_count`, `shelf_time`, `sold_time`, `create_time`, `update_time`, `deleted`) VALUES (2,'红米 Note 12 透明手机壳（全新未拆封）','买错型号了，全新未拆封，透明硅胶防摔壳。',13,1,15.00,39.00,NULL,1,'主校区',NULL,1,NULL,NULL,NULL,0,1,'2026-10-04 15:17:32',NULL,'2026-10-02 19:43:56','2026-10-04 15:17:32',0);
 INSERT INTO `product` (`id`, `title`, `description`, `category_id`, `seller_id`, `price`, `original_price`, `cover_image`, `condition_level`, `campus`, `trade_place`, `status`, `audit_remark`, `auditor_id`, `audit_time`, `view_count`, `favorite_count`, `shelf_time`, `sold_time`, `create_time`, `update_time`, `deleted`) VALUES (3,'笔记本散热支架（铝合金 六档可调）','六档高度可调，铝合金材质，适配 15.6 寸以下笔记本，成色很新。',14,1,42.00,89.00,NULL,1,'主校区',NULL,1,NULL,NULL,NULL,2,1,'2026-10-02 19:43:56',NULL,'2026-10-02 19:43:56','2026-10-03 22:15:23',0);
@@ -118,7 +118,7 @@ INSERT INTO `product` (`id`, `title`, `description`, `category_id`, `seller_id`,
 INSERT INTO `product` (`id`, `title`, `description`, `category_id`, `seller_id`, `price`, `original_price`, `cover_image`, `condition_level`, `campus`, `trade_place`, `status`, `audit_remark`, `auditor_id`, `audit_time`, `view_count`, `favorite_count`, `shelf_time`, `sold_time`, `create_time`, `update_time`, `deleted`) VALUES (262,'【待审核演示】英语四级真题册（含答案）','大三下考完了，转让给学弟学妹。',10,7,15.00,45.00,'/demo-images/textbook.png',2,'东校区','图书馆一楼',2,'涉嫌违禁物品，请勿发布',1,'2026-10-04 17:02:54',0,0,NULL,NULL,'2026-10-03 23:35:02','2026-10-04 17:02:54',0);
 INSERT INTO `product` (`id`, `title`, `description`, `category_id`, `seller_id`, `price`, `original_price`, `cover_image`, `condition_level`, `campus`, `trade_place`, `status`, `audit_remark`, `auditor_id`, `audit_time`, `view_count`, `favorite_count`, `shelf_time`, `sold_time`, `create_time`, `update_time`, `deleted`) VALUES (263,'【待审核演示】某网课账号（包月）','共享账号，价格可谈。',8,1,30.00,99.00,'/demo-images/default.png',1,'主校区','线上交易',1,'资料完整，审核通过',1,'2026-10-05 18:30:35',0,0,'2026-10-05 18:30:35',NULL,'2026-10-03 23:35:02','2026-10-09 15:42:46',0);
 
--- user（4 行，过滤：username NOT LIKE 'e2e%' AND id NOT IN (390)）
+-- user（4 行，过滤：username NOT LIKE 'e2e%'）
 INSERT INTO `user` (`id`, `username`, `password`, `nickname`, `real_name`, `student_no`, `phone`, `email`, `avatar`, `gender`, `school`, `campus`, `role`, `status`, `credit_score`, `last_login_time`, `create_time`, `update_time`, `deleted`) VALUES (1,'admin','$2a$10$m9CT3hBn7eugreIZxoFL6ORFB3uxN9sNJYcrGOOXB5POBdzZJ6K26','系统管理员','平台管理员',NULL,NULL,NULL,NULL,0,NULL,'主校区',1,1,123,'2026-10-09 15:46:06','2026-10-02 19:12:59','2026-10-09 15:46:06',0);
 INSERT INTO `user` (`id`, `username`, `password`, `nickname`, `real_name`, `student_no`, `phone`, `email`, `avatar`, `gender`, `school`, `campus`, `role`, `status`, `credit_score`, `last_login_time`, `create_time`, `update_time`, `deleted`) VALUES (5,'stu_test01','$2a$10$0BXFXkPg/V2ls9Y6/tUgAuJmkTWEr/H1pPBpx4GB1O1dTU71inHMy','测试同学01',NULL,NULL,NULL,'stu01@campus.edu','/upload/2026/10/77c8fa9f1ce04da890a3c7a778da0ab3.png',1,'示范大学','东校区A栋',0,1,101,'2026-10-09 15:46:02','2026-10-02 19:31:28','2026-10-09 15:46:02',0);
 INSERT INTO `user` (`id`, `username`, `password`, `nickname`, `real_name`, `student_no`, `phone`, `email`, `avatar`, `gender`, `school`, `campus`, `role`, `status`, `credit_score`, `last_login_time`, `create_time`, `update_time`, `deleted`) VALUES (6,'serendipity','$2a$10$e2CTcaVvQSnJ6Ns8sx9Wz.DQ9ZTTt0LY6JzjuALcZOZ5qetvLaKHK','薇尔莉特',NULL,NULL,NULL,NULL,NULL,0,NULL,NULL,0,1,100,'2026-10-09 15:42:38','2026-10-02 19:36:45','2026-10-09 15:42:38',0);

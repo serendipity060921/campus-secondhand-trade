@@ -55,3 +55,6 @@ __pycache__/
 
 # 演示数据重置时的自动备份（本地留档，不入库）
 db/demo-data/backup-*.sql
+
+# 生产数据库备份（体积大且含业务数据，不入库）
+db/backups/
