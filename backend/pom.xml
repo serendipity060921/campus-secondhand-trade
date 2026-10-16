@@ -203,7 +203,8 @@
                            2026-10-16 37.25%（第2批⑤ 图片内容识别：magic number 校验 22 条，含 HTML/PHP/EXE/ZIP 伪装与扩展名不一致）
                            2026-10-16 39.98%（第3批⑩ 补 JWT/黑名单/WS 信封与入站解析/统一响应/异常契约 68 条）
                            2026-10-16 41.55%（★ 口径调整：lombok.config 排除 Lombok 生成方法，只统计手写逻辑；并修掉 PageResult 记录为 null 的缺陷）
-                         阈值取 40%（略低于实测 41.55%）→ 给日常小改动留余量；
+                           2026-10-16 45.21%（第3批⑪ 接口层补测：8 个测试类覆盖全部 16 个控制器，controller 包 15.49% → 88.48%）
+                         阈值取 44%（略低于实测 45.21%）→ 给日常小改动留余量；
                          每补完一块测试就把这里的 minimum 上调一次。 -->
                     <execution>
                         <id>check-ratchet</id>
@@ -219,7 +220,7 @@
                                         <limit>
                                             <counter>INSTRUCTION</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.40</minimum>
+                                            <minimum>0.44</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
