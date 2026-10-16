@@ -1,0 +1,95 @@
+# Dependabot 配置（v0.18 / 收尾⑨-2 采用的方案）
+#
+# 为什么用 Dependabot 而不是本地跑 OWASP dependency-check：
+#   本地扫描需要 ① 申请 NVD API Key ② 处理 JDK 信任库的证书校验（本机开着 HTTPS 拦截），
+#   而 Dependabot 是 GitHub 原生能力 —— **零安装、零密钥、零证书问题**，
+#   数据来自 GitHub Advisory Database（同时覆盖 Maven 与 npm），
+#   且直接在仓库 Security 标签页给出告警，比本地报告更适合长期自动运行。
+#
+# 生效前提（只需一次点击）：
+#   仓库 → Settings → Code security（或 Advanced Security）→ 打开 **Dependabot alerts**。
+#   本文件负责"依赖版本更新 PR"，Dependabot alerts 负责"已知漏洞告警"，两者互补。
+#
+# 说明：后端 pom 与前端 package.json 都扫；github-actions 也一起纳入，
+#      避免 CI 里用的 Actions 版本长期停留在有漏洞的旧版本。
+
+version: 2
+updates:
+  # ---------------- 后端（Maven） ----------------
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - backend
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      # Spring 全家桶一起升，避免版本错配导致启动失败
+      spring:
+        patterns:
+          - "org.springframework*"
+      # 数据库与连接池
+      database:
+        patterns:
+          - "com.mysql*"
+          - "com.baomidou*"
+          - "org.apache.commons:commons-pool2"
+      # 认证与 JSON
+      auth-and-json:
+        patterns:
+          - "io.jsonwebtoken*"
+          - "com.fasterxml.jackson*"
+
+  # ---------------- 前端（npm / pnpm） ----------------
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Shanghai
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - frontend
+    commit-message:
+      prefix: "chore(deps)"
+    groups:
+      # 构建工具单独成组：vite/esbuild 的升级需要跑完整验证（见 docs/安全测试报告.md 的说明）
+      build-tools:
+        patterns:
+          - "vite"
+          - "@vitejs/*"
+          - "esbuild"
+      # 运行时框架与 UI 库
+      runtime:
+        patterns:
+          - "vue"
+          - "vue-router"
+          - "pinia"
+          - "element-plus"
+          - "axios"
+          - "echarts"
+    # 开发依赖的补丁级更新可以自动合并（可选，默认关闭；如需开启请配合 CI 通过后再合并）
+    ignore:
+      # 主版本跳跃不自动提 PR：vite 5 → 6 这类大版本需要人工排期验证
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+
+  # ---------------- GitHub Actions ----------------
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "chore(ci)"
