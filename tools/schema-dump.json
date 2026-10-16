@@ -304,6 +304,96 @@
     "逻辑删除：0未删除 1已删除"
    ]
   ],
+  "moderation_log": [
+   [
+    "id",
+    "bigint unsigned",
+    "NO",
+    "",
+    "PRI",
+    "机审记录ID，主键"
+   ],
+   [
+    "seller_id",
+    "bigint unsigned",
+    "NO",
+    "",
+    "MUL",
+    "发布者ID（外键 -> user.id）"
+   ],
+   [
+    "product_id",
+    "bigint unsigned",
+    "YES",
+    "",
+    "",
+    "商品ID：机审发生在商品落库之前，故当前恒为空，保留字段便于后续回填"
+   ],
+   [
+    "title",
+    "varchar(255)",
+    "YES",
+    "",
+    "",
+    "被审标题（超长截断保存）"
+   ],
+   [
+    "action",
+    "varchar(10)",
+    "NO",
+    "",
+    "MUL",
+    "机审结论：PASS 放行 / REVIEW 转人审 / REJECT 拒绝"
+   ],
+   [
+    "risk_rule",
+    "varchar(200)",
+    "YES",
+    "",
+    "",
+    "命中的规则编号，多条用逗号连接（如 R1-违禁词,R2-联系方式）"
+   ],
+   [
+    "hit_count",
+    "int",
+    "NO",
+    "0",
+    "",
+    "命中条数"
+   ],
+   [
+    "hits",
+    "varchar(1000)",
+    "YES",
+    "",
+    "",
+    "命中明细：rule|field|matched，多条用 ; 连接"
+   ],
+   [
+    "reason",
+    "varchar(500)",
+    "YES",
+    "",
+    "",
+    "给用户看的原因文本"
+   ],
+   [
+    "audit_required",
+    "tinyint",
+    "NO",
+    "0",
+    "",
+    "是否进入人工审核：0否 1是"
+   ],
+   [
+    "create_time",
+    "datetime",
+    "NO",
+    "CURRENT_TIMESTAMP",
+    "MUL",
+    "机审时间"
+   ]
+  ],
   "orders": [
    [
     "id",
@@ -1086,16 +1176,17 @@
   ]
  },
  "counts": {
-  "admin_log": "0",
+  "admin_log": "25",
   "category": "33",
   "favorite": "4",
   "message": "9",
+  "moderation_log": "20",
   "orders": "4",
   "product": "17",
   "product_image": "10",
   "report": "3",
   "user": "4",
-  "user_behavior": "16"
+  "user_behavior": "24"
  },
  "fks": [
   [
@@ -1131,6 +1222,12 @@
   [
    "message",
    "to_user_id",
+   "user",
+   "id"
+  ],
+  [
+   "moderation_log",
+   "seller_id",
    "user",
    "id"
   ],

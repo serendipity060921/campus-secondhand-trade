@@ -41,11 +41,16 @@ fks = sql("SELECT TABLE_NAME, COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COL
           "AND REFERENCED_TABLE_NAME IS NOT NULL ORDER BY TABLE_NAME, COLUMN_NAME")
 
 # 真实行数（比 information_schema 的估算准）
+# 注意：不是所有表都有 deleted 列 —— v0.18 的 moderation_log 是"只追加"的审计事实表，
+#      刻意不设逻辑删除。因此先试 deleted=0，失败则退回全表 COUNT(*)。
 for t in list(schema.keys()):
     try:
         table_counts[t] = sql(f"SELECT COUNT(*) FROM `{t}` WHERE deleted = 0")[0][0]
     except Exception:  # noqa: BLE001
-        pass
+        try:
+            table_counts[t] = sql(f"SELECT COUNT(*) FROM `{t}`")[0][0]
+        except Exception:  # noqa: BLE001
+            pass
 
 DUMP.write_text(json.dumps(dict(schema=schema, counts=table_counts, fks=fks),
                            ensure_ascii=False, indent=1), encoding='utf-8')
@@ -64,9 +69,13 @@ TABLE_INFO = {
                                 'target_type 区分举报的是商品还是用户，status 记录处理进度。'),
     'admin_log': ('管理员操作日志表（v0.13）', '管理端写操作的审计记录：审核商品、强制下架、'
                                              '启用/禁用用户、处理举报，可追溯到「谁在什么时候做了什么」。'),
+    'moderation_log': ('内容机审记录表（v0.18）', '机审结论的只追加审计记录：每次发布商品都记一条'
+                                                 '（放行 PASS / 转人工复核 REVIEW / 拒绝 REJECT），'
+                                                 '含命中规则与命中明细，用于统计放行率与趋势。'
+                                                 '★ 刻意不设 deleted 列 —— 审计留痕不应被业务删除。'),
 }
 ORDER = ['user', 'category', 'product', 'product_image', 'favorite', 'message', 'orders',
-         'user_behavior', 'report', 'admin_log']
+         'user_behavior', 'report', 'admin_log', 'moderation_log']
 
 L = []
 w = L.append
@@ -92,7 +101,7 @@ w('而「数据」里看到的真实账号才是**数据**。建表 SQL 决定�
 w('')
 w('---')
 w('')
-w('## 二、10 张表分别是干什么的')
+w(f'## 二、{len(ORDER)} 张表分别是干什么的')
 w('')
 w('| 表名 | 中文名 | 作用 | 当前行数 |')
 w('| --- | --- | --- | ---: |')
@@ -118,6 +127,8 @@ w('| `message.product_id` → `product.id` | 这条私信/留言是关于哪件�
 w('| `orders.product_id` → `product.id` | 这笔订单买的是哪件商品 |')
 w('| `orders.buyer_id` / `seller_id` → `user.id` | 订单的买家与卖家（同一张 user 表两个角色） |')
 w('| `user_behavior.user_id` / `product_id` | 行为记录挂在用户与商品上，是推荐算法的"用户-物品"交互矩阵来源 |')
+w('| `moderation_log.seller_id` → `user.id` | 每条机审记录挂在发布者上（外键 ON DELETE CASCADE）；'
+  '`product_id` 当前恒为空 —— 机审发生在商品落库之前，保留该字段便于后续回填 |')
 w('')
 w('> 一句话概括：**user 是中心**，商品由 user 发布、归属 category，图片/收藏/消息/订单/行为都挂在 product 或 user 上。')
 w('')
@@ -156,7 +167,10 @@ w('| `user_behavior.behavior_type` | 1 / 2 / 3 / 4 | 1 = 浏览（权重 1），
 w('| `report.target_type` | 1 / 2 | 1 = 举报商品，2 = 举报用户 |')
 w('| `report.reason_type` | 1 / 2 / 3 / 4 | 1 = 虚假信息，2 = 违禁物品，3 = 辱骂骚扰，4 = 其他 |')
 w('| `report.status` | 0 / 1 / 2 | 0 = 待处理，1 = 已处理，2 = 已忽略 |')
-w('| 所有表 `deleted` | 0 / 1 | 0 = 未删除，1 = 已逻辑删除（**逻辑删除**：数据还在，只是查询时自动过滤掉） |')
+w('| `moderation_log.action` | PASS / REVIEW / REJECT | 机审结论：PASS = 放行，REVIEW = 转人工复核，REJECT = 拒绝发布 |')
+w('| `moderation_log.audit_required` | 0 / 1 | 该商品最终是否需要人工审核（全局审核开关打开时，放行也可能需要） |')
+w('| 所有表 `deleted`（**moderation_log 除外**） | 0 / 1 | 0 = 未删除，1 = 已逻辑删除（**逻辑删除**：数据还在，只是查询时自动过滤掉）。'
+  'moderation_log 是只追加的审计事实表，刻意不设该列 |')
 w('')
 w('---')
 w('')
