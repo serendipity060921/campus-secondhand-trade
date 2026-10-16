@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 管理后台接口（v0.13）。
@@ -50,29 +52,34 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
 @LoginRequired(admin = true)
+@Tag(name = "管理后台", description = "看板、商品审核、强制下架、用户状态、举报处理；仅管理员可用")
 public class AdminController {
 
     private final AdminService adminService;
 
     /** 数据看板 */
+@Operation(summary = "管理看板（用户/商品/订单/举报统计与趋势）")
     @GetMapping("/dashboard")
     public Result<DashboardVO> dashboard() {
         return Result.success(adminService.dashboard());
     }
 
     /** 商品列表（含全部状态，可按状态/关键词/卖家筛选） */
+@Operation(summary = "商品列表（管理端，可按状态筛选待审核）")
     @GetMapping("/product/list")
     public Result<PageResult<AdminProductVO>> productList(@Valid AdminProductQueryDTO query) {
         return Result.success(adminService.productList(query));
     }
 
     /** 商品审核：approve=true 通过（上架），false 驳回（可填 remark 说明原因） */
+@Operation(summary = "商品审核：通过 / 驳回（写审计日志）")
     @PutMapping("/product/audit")
     public Result<AdminProductVO> audit(@Valid @RequestBody AuditProductDTO dto) {
         return Result.success("审核完成", adminService.auditProduct(dto, UserContext.getUserId()));
     }
 
     /** 强制下架（可操作他人商品，交易中/已售出不可下架） */
+@Operation(summary = "强制下架商品（写审计日志）")
     @PutMapping("/product/offline")
     public Result<AdminProductVO> offline(@RequestParam("productId") Long productId,
                                           @RequestParam(value = "reason", required = false) String reason) {
@@ -80,18 +87,21 @@ public class AdminController {
     }
 
     /** 用户列表 */
+@Operation(summary = "用户列表（管理端）")
     @GetMapping("/user/list")
     public Result<PageResult<AdminUserVO>> userList(@Valid AdminUserQueryDTO query) {
         return Result.success(adminService.userList(query));
     }
 
     /** 启用 / 禁用用户 */
+@Operation(summary = "启用 / 禁用用户（写审计日志）")
     @PutMapping("/user/status")
     public Result<AdminUserVO> changeUserStatus(@Valid @RequestBody UserStatusDTO dto) {
         return Result.success("操作成功", adminService.changeUserStatus(dto, UserContext.getUserId()));
     }
 
     /** 举报列表（status 为空查全部：0待处理 1已处理 2已忽略） */
+@Operation(summary = "举报列表（管理端）")
     @GetMapping("/report/list")
     public Result<PageResult<ReportVO>> reportList(@RequestParam(value = "status", required = false) Integer status,
                                                    @RequestParam(value = "page", defaultValue = "1") int page,
@@ -100,12 +110,14 @@ public class AdminController {
     }
 
     /** 处理举报（action：1 处理 / 2 忽略） */
+@Operation(summary = "处理举报（写审计日志）")
     @PutMapping("/report/handle")
     public Result<ReportVO> handleReport(@Valid @RequestBody ReportHandleDTO dto) {
         return Result.success("处理完成", adminService.handleReport(dto, UserContext.getUserId()));
     }
 
     /** 管理员操作日志 */
+@Operation(summary = "管理员操作日志（审计追溯）")
     @GetMapping("/log/list")
     public Result<PageResult<AdminLog>> logList(@RequestParam(value = "page", defaultValue = "1") int page,
                                                 @RequestParam(value = "size", defaultValue = "20") int size) {

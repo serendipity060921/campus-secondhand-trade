@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 举报接口（v0.13，面向普通用户）。
@@ -32,12 +34,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/report")
 @RequiredArgsConstructor
+@Tag(name = "举报", description = "提交举报与查看我的举报")
 public class ReportController {
 
     private final ReportModuleService reportModuleService;
 
     /** 提交举报：targetType 1商品 2用户；reasonType 1虚假信息 2违禁物品 3辱骂骚扰 4其他 */
     @LoginRequired
+@Operation(summary = "提交举报（商品或用户）")
     @PostMapping("/submit")
     @RateLimit(key = "report", limit = 10, window = 600, dimension = RateLimit.Dimension.USER,
             message = "举报提交过于频繁")
@@ -47,6 +51,7 @@ public class ReportController {
 
     /** 我的举报记录 */
     @LoginRequired
+@Operation(summary = "我的举报记录")
     @GetMapping("/mine")
     public Result<PageResult<ReportVO>> mine(@RequestParam(value = "page", defaultValue = "1") int page,
                                              @RequestParam(value = "size", defaultValue = "10") int size) {

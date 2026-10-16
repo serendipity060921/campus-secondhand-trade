@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 分类管理接口（v0.09，仅管理员）。
@@ -31,12 +33,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/category")
 @RequiredArgsConstructor
+@Tag(name = "分类管理（管理员）", description = "新增与修改分类，仅管理员可用")
 public class CategoryManageController {
 
     private final CategoryModuleService categoryModuleService;
 
     /** 新增分类（管理员） */
     @LoginRequired(admin = true)
+@Operation(summary = "新增分类（管理员）")
     @PostMapping("/add")
     public Result<CategoryVO> add(@Valid @RequestBody CategoryDTO dto) {
         return Result.success("分类新增成功", categoryModuleService.add(dto));
@@ -44,6 +48,7 @@ public class CategoryManageController {
 
     /** 修改分类（管理员） */
     @LoginRequired(admin = true)
+@Operation(summary = "修改分类（管理员）")
     @PutMapping("/update")
     public Result<CategoryVO> update(@Valid @RequestBody CategoryDTO dto) {
         return Result.success("分类修改成功", categoryModuleService.update(dto));

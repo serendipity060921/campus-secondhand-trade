@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 商品接口（v0.03 脚手架演示接口，演示 MyBatis-Plus 分页插件 + 统一分页响应）。
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/products")
 @RequiredArgsConstructor
+@Tag(name = "商品（脚手架示例）", description = "v0.03 遗留的演示接口，保留以保证既有调用可用")
 public class ProductController {
 
     /** 商品状态：在售 */
@@ -41,6 +44,7 @@ public class ProductController {
      * @param page 页码，从 1 开始
      * @param size 每页条数
      */
+@Operation(summary = "商品列表（脚手架示例接口）")
     @GetMapping
     public Result<PageResult<Product>> page(@RequestParam(defaultValue = "1") long page,
                                             @RequestParam(defaultValue = "10") long size) {
@@ -50,6 +54,7 @@ public class ProductController {
     }
 
     /** 商品详情（只返回在售商品，其余状态统一按"不存在"处理，避免泄漏） */
+@Operation(summary = "商品详情（脚手架示例接口）")
     @GetMapping("/{id}")
     public Result<Product> detail(@PathVariable("id") Long id) {
         Product product = productService.getOne(new LambdaQueryWrapper<Product>()

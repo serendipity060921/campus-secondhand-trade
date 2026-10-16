@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 分类接口（v0.05）。
@@ -26,6 +28,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/category")
 @RequiredArgsConstructor
+@Tag(name = "分类（模块）", description = "分类模块接口")
 public class CategoryModuleController {
 
     private final CategoryService categoryService;
@@ -37,6 +40,7 @@ public class CategoryModuleController {
      *
      * @param onlyTop true 时只返回一级分类（可选，默认返回全部）
      */
+@Operation(summary = "分类列表")
     @GetMapping("/list")
     public Result<List<CategoryVO>> list(@RequestParam(value = "onlyTop", required = false) Boolean onlyTop) {
         return Result.success(categoryModuleService.list(onlyTop));

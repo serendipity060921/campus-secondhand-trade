@@ -31,6 +31,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 商品核心模块接口（v0.05）。
@@ -53,6 +55,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/product")
 @RequiredArgsConstructor
+@Tag(name = "商品（核心模块）", description = "发布、图片上传、列表、详情、我的商品、上下架")
 public class ProductModuleController {
 
     private final ProductModuleService productModuleService;
@@ -65,6 +68,7 @@ public class ProductModuleController {
      * <p>卖家由 Token 解析出的当前登录用户决定，前端无需（也不允许）传 sellerId。</p>
      */
     @LoginRequired
+@Operation(summary = "发布商品（先过内容机审）")
     @PostMapping("/publish")
     @RateLimit(key = "publish", limit = 10, window = 300, dimension = RateLimit.Dimension.USER,
             message = "发布商品过于频繁")
@@ -85,6 +89,7 @@ public class ProductModuleController {
      * 若不带，则只返回图片地址，供发布接口在 imageUrls 中提交。</p>
      */
     @LoginRequired
+@Operation(summary = "上传商品图片（支持单张或多张，可带 productId 直接入库）")
     @PostMapping("/upload")
     public Result<List<FileUploadVO>> upload(
             @RequestParam(value = "files", required = false) MultipartFile[] files,
@@ -122,6 +127,7 @@ public class ProductModuleController {
     }
 
     /** 商品分页列表：只返回上架中的商品，支持分类/关键词/价格区间/排序 */
+@Operation(summary = "商品分页列表（仅上架商品，支持分类/关键词/价格区间/排序）")
     @GetMapping("/list")
     public Result<PageResult<ProductVO>> list(@Valid ProductQueryDTO query) {
         return Result.success(productModuleService.pageList(query));
@@ -129,12 +135,14 @@ public class ProductModuleController {
 
     /** 我的商品（含已下架）：需要登录 */
     @LoginRequired
+@Operation(summary = "我的商品（含待审核与已下架）")
     @GetMapping("/mine")
     public Result<PageResult<ProductVO>> mine(@Valid ProductQueryDTO query) {
         return Result.success(productModuleService.pageMine(query, UserContext.getUserId()));
     }
 
     /** 商品详情：公开接口，每次访问浏览量 +1 */
+@Operation(summary = "商品详情（每次访问浏览量 +1，带缓存与防击穿）")
     @GetMapping("/{id}")
     public Result<ProductDetailVO> detail(@PathVariable("id") Long id) {
         return Result.success(productModuleService.detail(id));
@@ -142,6 +150,7 @@ public class ProductModuleController {
 
     /** 上架 / 下架：必须登录，且只能操作自己发布的商品（限流：防止刷上下架扰动列表） */
     @LoginRequired
+@Operation(summary = "商品上架 / 下架（仅限自己的商品）")
     @PutMapping("/status")
     @RateLimit(key = "product-status", limit = 20, window = 300, dimension = RateLimit.Dimension.USER,
             message = "上下架操作过于频繁")

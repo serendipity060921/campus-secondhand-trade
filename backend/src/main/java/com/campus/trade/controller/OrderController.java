@@ -22,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 订单交易接口（v0.08）。
@@ -40,6 +42,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/order")
 @RequiredArgsConstructor
+@Tag(name = "订单交易", description = "下单、订单状态流转、我买到的/我卖出的、订单详情")
 public class OrderController {
 
     /** 每页条数上限 */
@@ -49,6 +52,7 @@ public class OrderController {
 
     /** 创建订单（限流：防止脚本刷单占用商品） */
     @LoginRequired
+@Operation(summary = "创建订单（下单即锁定商品，防一物多卖）")
     @PostMapping("/create")
     @RateLimit(key = "order-create", limit = 10, window = 300, dimension = RateLimit.Dimension.USER,
             message = "下单过于频繁，请稍后再试")
@@ -59,6 +63,7 @@ public class OrderController {
 
     /** 修改订单状态：已完成 / 已取消（限流：防止反复取消-下单刷状态） */
     @LoginRequired
+@Operation(summary = "修改订单状态：3 已完成 / 4 已取消")
     @PutMapping("/status")
     @RateLimit(key = "order-status", limit = 20, window = 300, dimension = RateLimit.Dimension.USER,
             message = "订单操作过于频繁，请稍后再试")
@@ -70,6 +75,7 @@ public class OrderController {
 
     /** 我买到的订单 */
     @LoginRequired
+@Operation(summary = "我买到的订单（分页，可按状态筛选）")
     @GetMapping("/buyList")
     public Result<PageResult<OrderVO>> buyList(@RequestParam(value = "status", required = false) Integer status,
                                                @RequestParam(value = "page", defaultValue = "1") long page,
@@ -80,6 +86,7 @@ public class OrderController {
 
     /** 我卖出的订单 */
     @LoginRequired
+@Operation(summary = "我卖出的订单（分页，可按状态筛选）")
     @GetMapping("/sellList")
     public Result<PageResult<OrderVO>> sellList(@RequestParam(value = "status", required = false) Integer status,
                                                 @RequestParam(value = "page", defaultValue = "1") long page,
@@ -90,6 +97,7 @@ public class OrderController {
 
     /** 订单详情（仅买卖双方） */
     @LoginRequired
+@Operation(summary = "订单详情（仅买卖双方可查看）")
     @GetMapping("/{id}")
     public Result<OrderDetailVO> detail(@PathVariable("id") Long id) {
         return Result.success(orderModuleService.detail(id, UserContext.getUserId()));

@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 推荐接口（v0.11）。
@@ -34,12 +36,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/product")
 @RequiredArgsConstructor
+@Tag(name = "个性化推荐", description = "基于用户行为的推荐列表")
 public class RecommendController {
 
     private final RecommendService recommendService;
     private final RecommendProperties properties;
 
     /** 猜你喜欢（strategy 可选：auto/hot/content/cf/hybrid，主要用于离线对比实验与 A/B） */
+@Operation(summary = "个性化推荐（基于用户行为，带缓存）")
     @GetMapping("/recommend")
     public Result<RecommendResultVO> recommend(@RequestParam(value = "size", required = false) Integer size,
                                                @RequestParam(value = "strategy", required = false) String strategy) {
@@ -52,6 +56,7 @@ public class RecommendController {
     }
 
     /** 相似商品（详情页相关推荐） */
+@Operation(summary = "相似商品推荐")
     @GetMapping("/similar/{id}")
     public Result<RecommendResultVO> similar(@PathVariable("id") Long id,
                                              @RequestParam(value = "size", required = false) Integer size) {
@@ -67,6 +72,7 @@ public class RecommendController {
      *
      * @param size 返回条数（1~30，默认 10）
      */
+@Operation(summary = "热门商品榜")
     @GetMapping("/hot")
     public Result<java.util.List<RecommendItemVO>> hot(
             @RequestParam(value = "size", required = false) Integer size) {

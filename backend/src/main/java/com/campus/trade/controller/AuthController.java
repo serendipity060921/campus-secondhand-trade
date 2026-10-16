@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 认证接口别名（v0.04，兼容脚手架预留路径）。
@@ -27,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
+@Tag(name = "用户与认证（兼容别名）", description = "与 /api/user 等价的兼容路径，供脚手架前端使用")
 public class AuthController {
 
     private final AuthService authService;
@@ -38,6 +41,7 @@ public class AuthController {
      * 这是别名接口，少一个守卫就等于给暴力破解留了一条绕行通道 ——
      * 本项目的限流覆盖检查脚本（tools/check-ratelimit.py）正是这样发现该问题的。</p>
      */
+@Operation(summary = "用户登录（兼容别名，等价于 /api/user/login）")
     @PostMapping("/login")
     @RateLimit(key = "login", limit = 20, window = 60, message = "登录尝试过于频繁")
     public Result<LoginVO> login(@Valid @RequestBody LoginDTO dto) {
@@ -45,6 +49,7 @@ public class AuthController {
     }
 
     /** 退出登录（等价于 POST /api/user/logout，无状态，直接返回成功） */
+@Operation(summary = "退出登录（兼容别名，无状态直接成功）")
     @PostMapping("/logout")
     public Result<Void> logout() {
         return Result.success("退出登录成功", null);

@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 商品分类接口（脚手架示例：演示 Controller → Service → Mapper → MySQL 完整分层调用）。
@@ -21,6 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor
+@Tag(name = "分类（公开）", description = "分类树查询，供前端筛选使用")
 public class CategoryController {
 
     private final CategoryService categoryService;
@@ -30,6 +33,7 @@ public class CategoryController {
      *
      * @param parentId 可选，传入时只查询该父分类下的子分类（0 表示一级分类）
      */
+@Operation(summary = "分类树（两级：一级 + 二级）")
     @GetMapping
     public Result<List<Category>> list(@RequestParam(value = "parentId", required = false) Long parentId) {
         LambdaQueryWrapper<Category> wrapper = new LambdaQueryWrapper<Category>()

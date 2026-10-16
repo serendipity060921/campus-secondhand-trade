@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 私信聊天接口（v0.07）。
@@ -44,6 +46,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/message")
 @RequiredArgsConstructor
+@Tag(name = "私信与实时消息", description = "发消息、会话列表、聊天记录、标记已读、在线状态")
 public class MessageController {
 
     /** 每页条数上限 */
@@ -58,6 +61,7 @@ public class MessageController {
      * <p>前端顶栏角标使用；WebSocket 连接建立时服务端也会主动下发一次（welcome 帧）。</p>
      */
     @LoginRequired
+@Operation(summary = "未读私信总数（顶栏角标）")
     @GetMapping("/unreadTotal")
     public Result<Long> unreadTotal() {
         return Result.success(messageModuleService.unreadTotal(UserContext.getUserId()));
@@ -68,6 +72,7 @@ public class MessageController {
      * <p>不传 peerId 时返回当前登录用户自己的在线状态。</p>
      */
     @LoginRequired
+@Operation(summary = "查询在线状态（不传 peerId 则查自己）")
     @GetMapping("/online")
     public Result<java.util.Map<String, Object>> online(
             @RequestParam(value = "peerId", required = false) Long peerId) {
@@ -84,6 +89,7 @@ public class MessageController {
      * <p>发送人取自 Token；给自己发消息会被拦截（5001）。</p>
      */
     @LoginRequired
+@Operation(summary = "发送私信（落库 + 实时推送）")
     @PostMapping("/send")
     @RateLimit(key = "send-msg", limit = 30, window = 60, dimension = RateLimit.Dimension.USER,
             message = "发送消息过于频繁")
@@ -94,6 +100,7 @@ public class MessageController {
 
     /** 会话列表：当前用户的所有聊天对象 + 最新一条消息 + 未读数 */
     @LoginRequired
+@Operation(summary = "会话列表（聊天对象 + 最后一条消息 + 未读数）")
     @GetMapping("/conversationList")
     public Result<List<ConversationVO>> conversationList() {
         return Result.success(messageModuleService.conversationList(UserContext.getUserId()));
@@ -105,6 +112,7 @@ public class MessageController {
      * @param peerId 聊天对象用户ID
      */
     @LoginRequired
+@Operation(summary = "聊天记录（分页，最新在前）")
     @GetMapping("/history")
     public Result<PageResult<MessageVO>> history(@RequestParam("peerId") Long peerId,
                                                  @RequestParam(value = "page", defaultValue = "1") long page,
@@ -117,6 +125,7 @@ public class MessageController {
 
     /** 标记消息已读，返回实际更新条数 */
     @LoginRequired
+@Operation(summary = "标记消息已读（按聊天对象或按消息 ID）")
     @PutMapping("/read")
     @RateLimit(key = "read-msg", limit = 60, window = 60, dimension = RateLimit.Dimension.USER,
             message = "操作过于频繁，请稍后再试")
@@ -127,6 +136,7 @@ public class MessageController {
 
     /** 聊天对象公开信息（配套接口：聊天窗口显示对方昵称/头像/校区/信用分） */
     @LoginRequired
+@Operation(summary = "聊天对象公开信息（昵称/头像/校区/信用分）")
     @GetMapping("/peer")
     public Result<ChatPeerVO> peer(@RequestParam("peerId") Long peerId) {
         return Result.success(messageModuleService.peer(peerId, UserContext.getUserId()));

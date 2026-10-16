@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 商品搜索接口（v0.09）。
@@ -24,10 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/product")
 @RequiredArgsConstructor
+@Tag(name = "商品搜索", description = "按关键词搜索商品")
 public class ProductSearchController {
 
     private final ProductSearchService productSearchService;
 
+@Operation(summary = "关键词搜索商品")
     @GetMapping("/search")
     public Result<PageResult<ProductVO>> search(@Valid ProductSearchDTO dto) {
         return Result.success(productSearchService.search(dto));

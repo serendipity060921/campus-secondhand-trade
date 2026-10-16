@@ -15,6 +15,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 健康检查 / 连通性自检接口。
@@ -28,6 +30,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/health")
 @RequiredArgsConstructor
+@Tag(name = "健康检查", description = "服务与依赖的存活探测")
 public class HealthController {
 
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -50,6 +53,7 @@ public class HealthController {
     private boolean detailEnabled;
 
     /** 后端存活检查 */
+@Operation(summary = "服务健康检查（版本、环境、运行时长）")
     @GetMapping
     public Result<HealthVO> health() {
         HealthVO vo = HealthVO.builder()
@@ -70,6 +74,7 @@ public class HealthController {
      * 因此增加开关 {@code app.health.detail-enabled}（生产默认 false），
      * 关闭时返回 403，仅保留 {@code /api/health} 存活探针供负载均衡与容器健康检查使用。</p>
      */
+@Operation(summary = "数据库健康检查")
     @GetMapping("/db")
     public Result<Map<String, Object>> dbHealth() {
         if (!detailEnabled) {

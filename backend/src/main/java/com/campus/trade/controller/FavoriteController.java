@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 商品收藏接口（v0.06）。
@@ -35,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/favorite")
 @RequiredArgsConstructor
+@Tag(name = "收藏", description = "收藏/取消收藏、我的收藏列表")
 public class FavoriteController {
 
     /** 每页条数上限 */
@@ -47,6 +50,7 @@ public class FavoriteController {
      * <p>用户ID 来自 Token，前端不能指定收藏人。</p>
      */
     @LoginRequired
+@Operation(summary = "收藏 / 取消收藏（幂等：重复调用不报错）")
     @PostMapping("/operate")
     @RateLimit(key = "favorite", limit = 60, window = 60, dimension = RateLimit.Dimension.USER,
             message = "操作过于频繁")
@@ -63,6 +67,7 @@ public class FavoriteController {
      * 以免依赖 ConstraintViolationException 的处理链（保持全局异常处理器不变）。</p>
      */
     @LoginRequired
+@Operation(summary = "我的收藏列表（分页）")
     @GetMapping("/list")
     public Result<PageResult<FavoriteVO>> list(@RequestParam(value = "page", defaultValue = "1") long page,
                                                @RequestParam(value = "size", defaultValue = "12") long size) {
@@ -74,6 +79,7 @@ public class FavoriteController {
 
     /** 当前用户是否已收藏该商品 */
     @LoginRequired
+@Operation(summary = "查询是否已收藏某商品")
     @GetMapping("/hasFavorite")
     public Result<FavoriteStatusVO> hasFavorite(@RequestParam("productId") Long productId) {
         return Result.success(favoriteModuleService.hasFavorite(productId, UserContext.getUserId()));

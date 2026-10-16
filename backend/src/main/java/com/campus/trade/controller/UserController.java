@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 用户模块接口（v0.04）。
@@ -36,6 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
+@Tag(name = "用户与认证", description = "注册、登录、退出登录；注册与登录都带限流")
 public class UserController {
 
     private final AuthService authService;
@@ -46,6 +49,7 @@ public class UserController {
      * 用户注册。
      * <p>参数校验：用户名/密码/昵称非空 + 长度与格式校验；用户名重复返回 2001。</p>
      */
+@Operation(summary = "注册新用户")
     @PostMapping("/register")
     @RateLimit(key = "register", limit = 10, window = 300, message = "注册过于频繁")
     public Result<UserVO> register(@Valid @RequestBody RegisterDTO dto) {
@@ -57,6 +61,7 @@ public class UserController {
      * 用户登录。
      * <p>成功返回 JWT Token 与用户基础信息；账号不存在返回 2002，密码错误返回 2003。</p>
      */
+@Operation(summary = "用户登录（返回 JWT Token）")
     @PostMapping("/login")
     @RateLimit(key = "login", limit = 20, window = 60, message = "登录尝试过于频繁")
     public Result<LoginVO> login(@Valid @RequestBody LoginDTO dto) {
@@ -69,6 +74,7 @@ public class UserController {
      * <p>用户ID 从 Token 解析后的上下文中获取，<b>不由前端传入</b>，避免越权查询他人信息。</p>
      */
     @LoginRequired
+@Operation(summary = "查询指定用户的公开信息")
     @GetMapping("/info")
     public Result<UserVO> info() {
         return Result.success(authService.getUserInfo(UserContext.getUserId()));
@@ -80,6 +86,7 @@ public class UserController {
      * （TTL = 该 Token 剩余有效期），因此退出后即使 Token 被复制也无法继续使用。</p>
      */
     @LoginRequired
+@Operation(summary = "退出登录（Token 加入黑名单）")
     @PostMapping("/logout")
     public Result<Void> logout(HttpServletRequest request) {
         log.info("[退出登录] userId={} username={}", UserContext.getUserId(), UserContext.getUsername());

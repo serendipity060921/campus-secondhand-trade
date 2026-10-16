@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 
 /**
  * 个人资料接口（v0.09）。
@@ -37,12 +39,14 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/user")
 @RequiredArgsConstructor
+@Tag(name = "个人资料", description = "查询与修改自己的资料、上传头像")
 public class UserProfileController {
 
     private final ProfileService profileService;
 
     /** 查询自己的完整资料 */
     @LoginRequired
+@Operation(summary = "查询自己的完整资料（含手机号/邮箱）")
     @GetMapping("/profile")
     public Result<UserProfileVO> profile() {
         return Result.success(profileService.getProfile(UserContext.getUserId()));
@@ -50,6 +54,7 @@ public class UserProfileController {
 
     /** 修改个人资料：用户ID 取自 Token，前端不能改别人（限流：防止刷写库） */
     @LoginRequired
+@Operation(summary = "修改个人资料（昵称/头像/校区/联系方式）")
     @PutMapping("/update")
     @RateLimit(key = "profile-update", limit = 10, window = 300, dimension = RateLimit.Dimension.USER,
             message = "修改资料过于频繁，请稍后再试")
@@ -60,6 +65,7 @@ public class UserProfileController {
 
     /** 上传头像：上传成功后返回最新的完整资料（含新头像地址） */
     @LoginRequired
+@Operation(summary = "上传头像（校验文件真实内容）")
     @PostMapping("/avatar")
     public Result<UserProfileVO> uploadAvatar(@RequestParam("file") MultipartFile file) {
         UserProfileVO vo = profileService.uploadAvatar(file, UserContext.getUserId());
