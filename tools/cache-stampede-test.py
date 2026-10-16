@@ -21,6 +21,15 @@
   <python> tools/cache-stampede-test.py --mode write --duration 15 --concurrency 10
 产物：tools/perf-<mode>.json
 """
+
+# ★ Windows 控制台的默认编码是 GBK，而本脚本会输出 ✓/✗/✅ 等字符 ——
+#   不重新配置 stdout 的话，手动执行会直接抛 UnicodeEncodeError 中断。
+import sys as _sys
+try:
+    _sys.stdout.reconfigure(encoding='utf-8')
+    _sys.stderr.reconfigure(encoding='utf-8')
+except Exception:
+    pass
 import argparse
 import http.client
 import json

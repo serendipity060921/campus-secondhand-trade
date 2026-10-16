@@ -13,6 +13,15 @@
 运行：<带 playwright 的 python> tools/story-browser-report.py
 产物：docs/story-evidence/*.png、docs/测试报告-用户故事视角.md
 """
+
+# ★ Windows 控制台的默认编码是 GBK，而本脚本会输出 ✓/✗/✅ 等字符 ——
+#   不重新配置 stdout 的话，手动执行会直接抛 UnicodeEncodeError 中断。
+import sys as _sys
+try:
+    _sys.stdout.reconfigure(encoding='utf-8')
+    _sys.stderr.reconfigure(encoding='utf-8')
+except Exception:
+    pass
 import atexit
 import datetime
 import pathlib

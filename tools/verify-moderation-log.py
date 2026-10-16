@@ -15,6 +15,15 @@
   · 脚本结束会清理本次创建的商品（标题以「【验证】」开头），
     但**保留机审记录**（moderation_log 是只追加的审计事实表）。
 """
+
+# ★ Windows 控制台的默认编码是 GBK，而本脚本会输出 ✓/✗/✅ 等字符 ——
+#   不重新配置 stdout 的话，手动执行会直接抛 UnicodeEncodeError 中断。
+import sys as _sys
+try:
+    _sys.stdout.reconfigure(encoding='utf-8')
+    _sys.stderr.reconfigure(encoding='utf-8')
+except Exception:
+    pass
 import json
 import os
 import pathlib

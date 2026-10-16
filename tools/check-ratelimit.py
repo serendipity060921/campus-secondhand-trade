@@ -25,6 +25,15 @@
     python tools/check-ratelimit.py --max-missing 0 # 棘轮：未限流接口数不得超过 N（CI 用）
     python tools/check-ratelimit.py --json          # 额外输出 JSON 供 CI 归档
 """
+
+# ★ Windows 控制台的默认编码是 GBK，而本脚本会输出 ✓/✗/✅ 等字符 ——
+#   不重新配置 stdout 的话，手动执行会直接抛 UnicodeEncodeError 中断。
+import sys as _sys
+try:
+    _sys.stdout.reconfigure(encoding='utf-8')
+    _sys.stderr.reconfigure(encoding='utf-8')
+except Exception:
+    pass
 import argparse
 import json
 import os

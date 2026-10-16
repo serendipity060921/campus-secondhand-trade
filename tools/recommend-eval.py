@@ -24,6 +24,15 @@
 依赖：后端 8080 已启动；mysql CLI 在 PATH 中（或修改下方 MYSQL 常量）
 产物：控制台报表 + tools/recommend-eval-result.json（供文档生成使用）
 """
+
+# ★ Windows 控制台的默认编码是 GBK，而本脚本会输出 ✓/✗/✅ 等字符 ——
+#   不重新配置 stdout 的话，手动执行会直接抛 UnicodeEncodeError 中断。
+import sys as _sys
+try:
+    _sys.stdout.reconfigure(encoding='utf-8')
+    _sys.stderr.reconfigure(encoding='utf-8')
+except Exception:
+    pass
 import json
 import os
 import pathlib

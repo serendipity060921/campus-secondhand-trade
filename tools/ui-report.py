@@ -8,6 +8,15 @@ tokens-lint.json / detect.json，输出 Markdown 对比表 + compare.json。
   python tools/ui-report.py --labels before tokens after
   python tools/ui-report.py --labels before after --out docs/UI优化对比.md
 """
+
+# ★ Windows 控制台的默认编码是 GBK，而本脚本会输出 ✓/✗/✅ 等字符 ——
+#   不重新配置 stdout 的话，手动执行会直接抛 UnicodeEncodeError 中断。
+import sys as _sys
+try:
+    _sys.stdout.reconfigure(encoding='utf-8')
+    _sys.stderr.reconfigure(encoding='utf-8')
+except Exception:
+    pass
 import argparse
 import json
 import pathlib

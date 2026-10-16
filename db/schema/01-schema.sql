@@ -117,6 +117,11 @@ CREATE TABLE `product` (
     KEY `idx_create_time` (`create_time`),
     KEY `idx_status_category` (`status`, `category_id`),
     KEY `idx_title` (`title`),
+    -- v0.18 索引审查（第1批-④）新增：商品按价格排序是"过滤列与排序列分离"的典型场景，
+    -- 原 idx_status 只能过滤不能排序，5 万行量级下实测需 24,876 行 filesort；
+    -- 加该索引后 EXPLAIN ANALYZE 实测只读取 12 行、2.96 ms。
+    -- 同日被评估但**拒绝**的其余 5 个候选索引及理由，见 db/schema/05-index-tuning.sql。
+    KEY `idx_status_price` (`status`, `price`),
     CONSTRAINT `fk_product_seller` FOREIGN KEY (`seller_id`) REFERENCES `user` (`id`),
     CONSTRAINT `fk_product_category` FOREIGN KEY (`category_id`) REFERENCES `category` (`id`),
     CONSTRAINT `fk_product_auditor` FOREIGN KEY (`auditor_id`) REFERENCES `user` (`id`)

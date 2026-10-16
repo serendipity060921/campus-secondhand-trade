@@ -15,6 +15,15 @@
   python tools/check-tokens.py --label before  # 结果写入 .impeccable/review/<label>/tokens-lint.json
   python tools/check-tokens.py --max-errors 0  # 供 CI 使用：有错误即非零退出
 """
+
+# ★ Windows 控制台的默认编码是 GBK，而本脚本会输出 ✓/✗/✅ 等字符 ——
+#   不重新配置 stdout 的话，手动执行会直接抛 UnicodeEncodeError 中断。
+import sys as _sys
+try:
+    _sys.stdout.reconfigure(encoding='utf-8')
+    _sys.stderr.reconfigure(encoding='utf-8')
+except Exception:
+    pass
 import argparse
 import json
 import pathlib

@@ -4,6 +4,15 @@
 用法：python tools/gen-test-doc.py
 依赖：%TEMP%/dsh-sqlval/ 下的 e2e_result.json、v010_result.json、api_extra_result.json
 """
+
+# ★ Windows 控制台的默认编码是 GBK，而本脚本会输出 ✓/✗/✅ 等字符 ——
+#   不重新配置 stdout 的话，手动执行会直接抛 UnicodeEncodeError 中断。
+import sys as _sys
+try:
+    _sys.stdout.reconfigure(encoding='utf-8')
+    _sys.stderr.reconfigure(encoding='utf-8')
+except Exception:
+    pass
 import json
 import os
 import pathlib

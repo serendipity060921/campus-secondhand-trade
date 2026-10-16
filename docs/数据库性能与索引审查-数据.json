@@ -1,0 +1,248 @@
+{
+ "scale": {
+  "user": 5000,
+  "category": 33,
+  "product": 50000,
+  "product_image": 100000,
+  "favorite": 30000,
+  "message": 50000,
+  "orders": 20000,
+  "user_behavior": 200000,
+  "report": 500,
+  "admin_log": 2000,
+  "moderation_log": 30000
+ },
+ "results": [
+  {
+   "name": "商品列表(默认)",
+   "table": "product",
+   "type": "index",
+   "key": "idx_create_time",
+   "possible_keys": "idx_status,idx_status_category,idx_status_price",
+   "rows": "24",
+   "extra": "Using where; Backward index scan",
+   "ok": true,
+   "sql": "SELECT id,title,price FROM product WHERE deleted=0 AND status=1 ORDER BY create_time DESC LIMIT 12"
+  },
+  {
+   "name": "商品列表(分类)",
+   "table": "product",
+   "type": "index",
+   "key": "idx_create_time",
+   "possible_keys": "idx_category_id,idx_status,idx_status_category,idx_status_price",
+   "rows": "414",
+   "extra": "Using where; Backward index scan",
+   "ok": true,
+   "sql": "SELECT id,title,price FROM product WHERE deleted=0 AND status=1 AND category_id=3 ORDER BY create_time DESC LIMIT 12"
+  },
+  {
+   "name": "商品列表(价格升序)",
+   "table": "product",
+   "type": "ref",
+   "key": "idx_status_price",
+   "possible_keys": "idx_status,idx_status_category,idx_status_price",
+   "rows": "24876",
+   "extra": "Using where",
+   "ok": true,
+   "sql": "SELECT id,title,price FROM product WHERE deleted=0 AND status=1 ORDER BY price ASC LIMIT 12"
+  },
+  {
+   "name": "商品列表(关键词模糊)",
+   "table": "product",
+   "type": "ref",
+   "key": "idx_status",
+   "possible_keys": "idx_status,idx_status_category,idx_status_price",
+   "rows": "24876",
+   "extra": "Using where",
+   "ok": true,
+   "sql": "SELECT id,title FROM product WHERE deleted=0 AND status=1 AND title LIKE '%教材%' LIMIT 12"
+  },
+  {
+   "name": "商品列表(关键词前缀)",
+   "table": "product",
+   "type": "ref",
+   "key": "idx_status",
+   "possible_keys": "idx_status,idx_status_category,idx_title,idx_status_price",
+   "rows": "24876",
+   "extra": "Using where",
+   "ok": true,
+   "sql": "SELECT id,title FROM product WHERE deleted=0 AND status=1 AND title LIKE '教材%' LIMIT 12"
+  },
+  {
+   "name": "商品详情",
+   "table": "product",
+   "type": "const",
+   "key": "PRIMARY",
+   "possible_keys": "PRIMARY",
+   "rows": "1",
+   "extra": "NULL",
+   "ok": true,
+   "sql": "SELECT * FROM product WHERE id=12345 AND deleted=0"
+  },
+  {
+   "name": "我的商品",
+   "table": "product",
+   "type": "ref",
+   "key": "idx_seller_ctime",
+   "possible_keys": "idx_seller_id,idx_seller_ctime",
+   "rows": "10",
+   "extra": "Using where; Backward index scan",
+   "ok": true,
+   "sql": "SELECT id,title FROM product WHERE seller_id=777 AND deleted=0 ORDER BY create_time DESC LIMIT 12"
+  },
+  {
+   "name": "待审核商品(管理端)",
+   "table": "product",
+   "type": "index",
+   "key": "idx_create_time",
+   "possible_keys": "idx_status,idx_status_category,idx_status_price",
+   "rows": "398",
+   "extra": "Using where; Backward index scan",
+   "ok": true,
+   "sql": "SELECT id,title FROM product WHERE deleted=0 AND status=0 ORDER BY create_time DESC LIMIT 20"
+  },
+  {
+   "name": "商品图片",
+   "table": "product_image",
+   "type": "ref",
+   "key": "idx_product_id",
+   "possible_keys": "idx_product_id",
+   "rows": "2",
+   "extra": "NULL",
+   "ok": true,
+   "sql": "SELECT * FROM product_image WHERE product_id=12345"
+  },
+  {
+   "name": "收藏夹列表",
+   "table": "favorite",
+   "type": "ref",
+   "key": "uk_user_product",
+   "possible_keys": "uk_user_product",
+   "rows": "6",
+   "extra": "Using where; Using filesort",
+   "ok": false,
+   "sql": "SELECT id,product_id FROM favorite WHERE user_id=777 AND deleted=0 ORDER BY create_time DESC LIMIT 20"
+  },
+  {
+   "name": "收藏判断(唯一索引)",
+   "table": "favorite",
+   "type": "NULL",
+   "key": "NULL",
+   "possible_keys": "NULL",
+   "rows": "NULL",
+   "extra": "no matching row in const table",
+   "ok": true,
+   "sql": "SELECT id FROM favorite WHERE user_id=777 AND product_id=12345"
+  },
+  {
+   "name": "买家订单列表",
+   "table": "orders",
+   "type": "ref",
+   "key": "idx_buyer_status",
+   "possible_keys": "idx_buyer_status",
+   "rows": "4",
+   "extra": "Using where; Using filesort",
+   "ok": false,
+   "sql": "SELECT id,order_no FROM orders WHERE buyer_id=777 AND deleted=0 ORDER BY create_time DESC LIMIT 10"
+  },
+  {
+   "name": "卖家订单(按状态)",
+   "table": "orders",
+   "type": "ref",
+   "key": "idx_seller_status",
+   "possible_keys": "idx_seller_status",
+   "rows": "4",
+   "extra": "Using where; Using filesort",
+   "ok": false,
+   "sql": "SELECT id,order_no FROM orders WHERE seller_id=888 AND status=1 AND deleted=0 ORDER BY create_time DESC LIMIT 10"
+  },
+  {
+   "name": "订单详情",
+   "table": "orders",
+   "type": "const",
+   "key": "PRIMARY",
+   "possible_keys": "PRIMARY",
+   "rows": "1",
+   "extra": "NULL",
+   "ok": true,
+   "sql": "SELECT * FROM orders WHERE id=9999"
+  },
+  {
+   "name": "会话列表(OR 条件)",
+   "table": "message",
+   "type": "index_merge",
+   "key": "idx_from_user,idx_to_user_read",
+   "possible_keys": "idx_from_user,idx_to_user_read,idx_conversation",
+   "rows": "20",
+   "extra": "Using sort_union(idx_from_user,idx_to_user_read); Using where; Using filesort",
+   "ok": false,
+   "sql": "SELECT id FROM message WHERE deleted=0 AND (from_user_id=777 OR to_user_id=777) ORDER BY create_time DESC LIMIT 20"
+  },
+  {
+   "name": "聊天记录(双方+时间倒序)",
+   "table": "message",
+   "type": "ref",
+   "key": "idx_conversation",
+   "possible_keys": "idx_from_user,idx_to_user_read,idx_conversation",
+   "rows": "1",
+   "extra": "Using where; Backward index scan",
+   "ok": true,
+   "sql": "SELECT id,content FROM message WHERE from_user_id=777 AND to_user_id=888 AND deleted=0 ORDER BY create_time DESC LIMIT 20"
+  },
+  {
+   "name": "未读私信总数",
+   "table": "message",
+   "type": "ref",
+   "key": "idx_to_user_read",
+   "possible_keys": "idx_to_user_read",
+   "rows": "10",
+   "extra": "Using where",
+   "ok": true,
+   "sql": "SELECT COUNT(*) FROM message WHERE to_user_id=777 AND is_read=0 AND deleted=0"
+  },
+  {
+   "name": "推荐-取用户行为",
+   "table": "user_behavior",
+   "type": "ref",
+   "key": "idx_user_time",
+   "possible_keys": "uk_user_product_type,idx_user_time",
+   "rows": "40",
+   "extra": "Backward index scan",
+   "ok": true,
+   "sql": "SELECT product_id,behavior_type,weight FROM user_behavior WHERE user_id=777 ORDER BY update_time DESC LIMIT 50"
+  },
+  {
+   "name": "推荐-物品相似度",
+   "table": "user_behavior",
+   "type": "ref",
+   "key": "idx_product",
+   "possible_keys": "uk_user_product_type,idx_product",
+   "rows": "4",
+   "extra": "NULL",
+   "ok": true,
+   "sql": "SELECT user_id FROM user_behavior WHERE product_id=12345 LIMIT 200"
+  },
+  {
+   "name": "机审按天统计",
+   "table": "moderation_log",
+   "type": "index",
+   "key": "idx_action_time",
+   "possible_keys": "idx_action_time,idx_create_time",
+   "rows": "28728",
+   "extra": "Using where; Using index",
+   "ok": true,
+   "sql": "SELECT action, COUNT(*) FROM moderation_log WHERE create_time >= '2026-10-01' GROUP BY action"
+  },
+  {
+   "name": "登录按用户名",
+   "table": "user",
+   "type": "NULL",
+   "key": "NULL",
+   "possible_keys": "NULL",
+   "rows": "NULL",
+   "extra": "no matching row in const table",
+   "ok": true,
+   "sql": "SELECT * FROM user WHERE username='stu_demo' AND deleted=0"
+  }
+ ]
+}

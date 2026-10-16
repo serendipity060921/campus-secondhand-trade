@@ -14,6 +14,15 @@
   账号：username LIKE 'e2e%'（可选后缀 TAG）
   商品：title LIKE 'E2E%'（可选后缀 TAG）或卖家是上述账号
 """
+
+# ★ Windows 控制台的默认编码是 GBK，而本脚本会输出 ✓/✗/✅ 等字符 ——
+#   不重新配置 stdout 的话，手动执行会直接抛 UnicodeEncodeError 中断。
+import sys as _sys
+try:
+    _sys.stdout.reconfigure(encoding='utf-8')
+    _sys.stderr.reconfigure(encoding='utf-8')
+except Exception:
+    pass
 import argparse
 import os
 import pathlib
