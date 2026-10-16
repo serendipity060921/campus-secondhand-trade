@@ -186,7 +186,8 @@
                            2026-10-15 20.46%（补「WebSocket 会话注册表」：多端在线/定向推送/坏连接隔离/并发）
                            2026-10-15 20.51%（安全测试 C2 发现异常处理缺口 → 补「请求体类型不支持」分支 + 单测）
                            2026-10-15 21.20%（C3 机审落库：ModerationLogService 独立事务落库 + 6 条单测）
-                         阈值取 21%（略低于实测 21.20%）→ 给日常小改动留余量；
+                           2026-10-16 26.69%（收尾⑥ 商品模块单测：发布机审三态、缓存纪律、防击穿降级链 36 条）
+                         阈值取 25%（略低于实测 26.69%）→ 给日常小改动留余量；
                          每补完一块测试就把这里的 minimum 上调一次。 -->
                     <execution>
                         <id>check-ratchet</id>
@@ -202,7 +203,7 @@
                                         <limit>
                                             <counter>INSTRUCTION</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.21</minimum>
+                                            <minimum>0.25</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
