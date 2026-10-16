@@ -64,8 +64,15 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
-# 日志级别
+# 日志级别与编码
+# ★ 必须显式指定 UTF-8：不指定时 logback 用**平台默认编码**（Windows 中文版是 GBK），
+#   日志文件里的中文会变成乱码（实测 [缓存重建] 写成 "[????"），
+#   导致所有基于日志的排查与统计手段失效。
+#   这个坑是在做缓存击穿实验、想从日志逐 key 统计重建次数时踩到的。
 logging:
+  charset:
+    file: UTF-8
+    console: UTF-8
   level:
     root: info
     com.campus.trade: debug

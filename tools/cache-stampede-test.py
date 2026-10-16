@@ -35,6 +35,7 @@ import http.client
 import json
 import os
 import pathlib
+import re
 import statistics
 import subprocess
 import threading
@@ -226,6 +227,215 @@ def stampede(host, port, product_id, concurrency, rounds):
     return summary
 
 
+# ---------------------------------------------------------------- 多热点键击穿实验
+
+def hot_product_ids(limit):
+    """从库里挑 limit 个「在售」商品 id 当热点 key（避免硬编码不存在的 id）"""
+    rows = q(f'SELECT id FROM product WHERE deleted = 0 AND status = 1 ORDER BY id LIMIT {limit};')
+    ids = []
+    for line in str(rows).splitlines():
+        line = line.strip()
+        if line.isdigit():
+            ids.append(int(line))
+    return ids
+
+
+LOG_PATH = pathlib.Path(os.environ.get(
+    'APP_LOG', r'D:\campus-secondhand-trade\deploy\windows\logs\campus-trade.log'))
+
+
+def log_offset():
+    """记录日志当前长度，作为"只看这次实验新增日志"的起点"""
+    try:
+        return LOG_PATH.stat().st_size
+    except OSError:
+        return 0
+
+
+def rebuilds_from_log(offset):
+    """从日志增量里逐 key 统计缓存重建次数。
+
+    应用在把商品详情写进缓存时会打 `[缓存重建] 商品详情 productId=N key=...` ——
+    有了它就能**精确**统计每个 key 重建了几次，而不是靠数据库语句增量估算（估算有噪声）。
+    没有这条日志时返回 None，脚本会退回估算口径。
+    """
+    if not LOG_PATH.exists():
+        return None
+    counts = {}
+    try:
+        with open(LOG_PATH, 'r', encoding='utf-8', errors='replace') as f:
+            f.seek(offset)
+            for line in f:
+                m = re.search(r'\[缓存重建\] 商品详情 productId=(\d+)', line)
+                if m:
+                    pid = int(m.group(1))
+                    counts[pid] = counts.get(pid, 0) + 1
+    except OSError:
+        return None
+    return counts if counts else None
+
+
+def burst(host, port, key_paths, per_key):
+    """对多组 (key, path) 同时发起 per_key 个并发请求（共享同一个栅栏后一起出发）。
+
+    返回总耗时、DB 语句增量、错误数，以及每个 key 的延迟列表。
+    """
+    barrier = threading.Barrier(len(key_paths) * per_key)
+    lat = {p: [] for _, p in key_paths}
+    errors = [0]
+    lock = threading.Lock()
+
+    def worker(path):
+        try:
+            barrier.wait(timeout=20)                 # 所有线程就位后同时出发
+            t0 = time.perf_counter()
+            status, _ = http_get(host, port, path)
+            dt = (time.perf_counter() - t0) * 1000
+            with lock:
+                lat[path].append(dt)
+                if status != 200:
+                    errors[0] += 1
+        except Exception:
+            with lock:
+                errors[0] += 1
+
+    db_before = db_questions()
+    threads = []
+    for _, path in key_paths:
+        threads += [threading.Thread(target=worker, args=(path,)) for _ in range(per_key)]
+    t_start = time.perf_counter()
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    elapsed = (time.perf_counter() - t_start) * 1000
+    db_after = db_questions()
+    return dict(elapsed_ms=round(elapsed, 1), db_delta=db_after - db_before,
+                errors=errors[0], latencies={k: sorted(v) for k, v in lat.items()})
+
+
+def multi_key_stampede(host, port, key_count, per_key, rounds):
+    """★ 多热点键击穿实验：验证互斥锁是**按 key** 的，而不是一把全局锁。
+
+    判别方法（关键设计）：
+      · 对照组 T1：**1 个** key，起 `key_count × per_key` 个并发（总并发与实验组一致）
+      · 实验组 TN：**key_count 个** key，每个起 `per_key` 个并发
+      · 若锁按 key 分（不同 key 可并行重建）→ TN ≈ T1
+        若是一把全局锁（重建被串行化）      → TN ≈ key_count × T1
+    同时用 DB 语句增量 / 单次重建成本，验证"每个 key 只重建 1 次"（合计 ≈ key_count 次，
+    而不是 key_count × per_key 次）。
+    """
+    ids = hot_product_ids(key_count)
+    if len(ids) < key_count:
+        print(f'  ✗ 在售商品不足 {key_count} 个（只找到 {len(ids)} 个），无法做多键实验')
+        return dict(mode='multi', error='not_enough_products', found=len(ids))
+
+    total_concurrency = key_count * per_key
+    paths = [f'/api/product/{i}' for i in ids]
+    keys = [f'{PREFIX}:product:detail:{i}' for i in ids]
+
+    print('=' * 96)
+    print(f'多热点键击穿实验：{key_count} 个热点商品，总并发 {total_concurrency}（每键 {per_key}），共 {rounds} 轮')
+    print(f'  商品 id = {ids}')
+    print(f'  Redis keys = {keys}')
+    print('  判别标准：实验组耗时 ≈ 单键对照组 → 锁按 key 分（可并行重建）；'
+          f'≈ {key_count} 倍 → 存在全局锁')
+    print('=' * 96)
+
+    # 预热（丢弃）
+    print('  预热中（本轮数据丢弃）…', end='', flush=True)
+    for p in paths:
+        for _ in range(2):
+            http_get(host, port, p)
+    print('完成')
+
+    # 基线：一次重建的数据库成本
+    baseline = single_rebuild_cost(host, port, ids[0], keys[0], paths[0])
+    print(f'  基线：一次缓存重建 ≈ {baseline} 条数据库语句')
+    print('-' * 96)
+
+    records = []
+    for i in range(1, rounds + 1):
+        # ---------- 对照组 T1：单键 + 全部并发 ----------
+        for p in paths:
+            http_get(host, port, p)                # 预热
+        redis_del(keys[0])
+        t1 = burst(host, port, [(keys[0], paths[0])], total_concurrency)
+        t1_rebuilds = round(t1['db_delta'] / baseline)
+
+        # ---------- 实验组 TN：多键 + 每键并发 ----------
+        for p in paths:
+            http_get(host, port, p)                # 预热
+        for k in keys:
+            redis_del(k)                           # 全部 key 同时"过期"
+        log_at = log_offset()                      # ★ 记录日志起点，用于逐 key 精确统计
+        tn = burst(host, port, list(zip(keys, paths)), per_key)
+        by_log = rebuilds_from_log(log_at)
+        tn_rebuilds = round(tn['db_delta'] / baseline)
+        ratio = round(tn['elapsed_ms'] / max(1.0, t1['elapsed_ms']), 2)
+
+        # 日志口径优先（精确）；没有日志锚点时才用数据库增量估算
+        exact = by_log if by_log else {}
+        exact_total = sum(exact.values()) if exact else None
+        max_per_key = max(exact.values()) if exact else None
+
+        rec = dict(round=i, key_count=key_count, per_key=per_key,
+                   total_concurrency=total_concurrency,
+                   baseline_per_rebuild=baseline,
+                   single_key=dict(elapsed_ms=t1['elapsed_ms'], db_delta=t1['db_delta'],
+                                   rebuilds=t1_rebuilds, errors=t1['errors']),
+                   multi_key=dict(elapsed_ms=tn['elapsed_ms'], db_delta=tn['db_delta'],
+                                  rebuilds=tn_rebuilds, errors=tn['errors'],
+                                  rebuilds_by_log=exact,
+                                  rebuilds_total_log=exact_total,
+                                  max_rebuilds_per_key=max_per_key,
+                                  http_ok=sum(len(v) for v in tn['latencies'].values()) - tn['errors']),
+                   elapsed_ratio_multi_over_single=ratio,
+                   naive_expectation_per_key=per_key,
+                   protection_ratio_per_key=round(per_key / max(1, (exact_total or tn_rebuilds) / key_count), 1))
+        records.append(rec)
+
+        verdict = ('✅ 锁按 key 分：多键并行重建' if ratio < 2.0
+                   else f'⚠️ 多键耗时是单键的 {ratio} 倍 —— 疑似存在全局锁')
+        log_info = (f"  日志逐键={exact} 合计={exact_total} 单键最多={max_per_key}"
+                    if exact else '  （日志无重建锚点，用 DB 增量估算）')
+        print(f"  第 {i} 轮  单键(T1)={t1['elapsed_ms']:>7}ms/{t1_rebuilds} 次重建   "
+              f"多键(TN)={tn['elapsed_ms']:>7}ms/{tn_rebuilds} 次重建   TN/T1={ratio:>5}  {verdict}")
+        print(f"          {log_info.strip()}")
+
+    avg_ratio = round(statistics.mean([r['elapsed_ratio_multi_over_single'] for r in records]), 2)
+    avg_rebuilds = round(statistics.mean([r['multi_key']['rebuilds'] for r in records]), 2)
+    log_totals = [r['multi_key']['rebuilds_total_log'] for r in records
+                  if r['multi_key']['rebuilds_total_log'] is not None]
+    max_per_key_all = [r['multi_key']['max_rebuilds_per_key'] for r in records
+                       if r['multi_key']['max_rebuilds_per_key'] is not None]
+    avg_rebuilds_log = round(statistics.mean(log_totals), 2) if log_totals else None
+    worst_per_key = max(max_per_key_all) if max_per_key_all else None
+
+    summary = dict(mode='multi', key_count=key_count, per_key=per_key,
+                   total_concurrency=total_concurrency, rounds=rounds,
+                   product_ids=ids, redis_keys=keys, baseline_per_rebuild=baseline,
+                   avg_rebuilds=avg_rebuilds, expected_rebuilds=key_count,
+                   avg_rebuilds_from_log=avg_rebuilds_log,
+                   max_rebuilds_per_key_observed=worst_per_key,
+                   avg_elapsed_ratio=avg_ratio,
+                   per_key_protection=round(per_key / max(1, avg_rebuilds_log or avg_rebuilds) , 1)
+                   if (avg_rebuilds_log or avg_rebuilds) else None,
+                   details=records, generated_at=time.strftime('%Y-%m-%d %H:%M:%S'))
+    print('-' * 96)
+    if avg_rebuilds_log is not None:
+        print(f"  结论（日志口径，精确）：{key_count} 个热点 key、每键 {per_key} 并发，"
+              f"合计只发生 {avg_rebuilds_log} 次重建（期望恰好 {key_count} 次）；"
+              f"任一 key 单轮最多重建 {worst_per_key} 次")
+    else:
+        print(f"  结论（DB 增量口径）：{key_count} 个热点 key、每键 {per_key} 并发，"
+              f"合计约 {avg_rebuilds} 次重建（期望 {key_count} 次；无互斥时期望 {total_concurrency} 次）")
+    print(f"        多键总耗时是单键的 {avg_ratio} 倍 —— "
+          + ('说明不同 key 的重建是**并行**的（锁按 key 分，而非全局锁）' if avg_ratio < 2.0
+             else '说明重建被串行化，需检查锁粒度'))
+    return summary
+
+
 # ---------------------------------------------------------------- 写路径压测
 
 def write_path(host, port, duration, concurrency):
@@ -301,18 +511,24 @@ def write_path(host, port, duration, concurrency):
 
 
 def main():
-    ap = argparse.ArgumentParser(description='缓存击穿实验 + 写路径压测')
-    ap.add_argument('--mode', choices=['stampede', 'write'], default='stampede')
+    ap = argparse.ArgumentParser(description='缓存击穿实验 + 多热点键实验 + 写路径压测')
+    ap.add_argument('--mode', choices=['stampede', 'multi', 'write'], default='stampede')
     ap.add_argument('--host', default='127.0.0.1')
     ap.add_argument('--port', type=int, default=8080)
-    ap.add_argument('--product', type=int, default=6, help='击穿实验用的商品 id')
+    ap.add_argument('--product', type=int, default=6, help='单键击穿实验用的商品 id')
     ap.add_argument('--concurrency', type=int, default=50)
+    ap.add_argument('--keys', type=int, default=5, help='多热点键实验的热点 key 个数')
+    ap.add_argument('--per-key', type=int, default=10, help='多热点键实验每个 key 的并发数')
     ap.add_argument('--rounds', type=int, default=3)
     ap.add_argument('--duration', type=int, default=15)
     args = ap.parse_args()
 
     if args.mode == 'stampede':
         s = stampede(args.host, args.port, args.product, args.concurrency, args.rounds)
+    elif args.mode == 'multi':
+        s = multi_key_stampede(args.host, args.port, args.keys, args.per_key, args.rounds)
+        if s.get('error'):
+            return 1
     else:
         s = write_path(args.host, args.port, args.duration, args.concurrency)
         if s is None:

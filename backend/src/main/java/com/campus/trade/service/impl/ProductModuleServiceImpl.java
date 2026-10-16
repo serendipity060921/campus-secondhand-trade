@@ -318,6 +318,11 @@ public class ProductModuleServiceImpl implements ProductModuleService {
                 vo.setViewCount(vo.getViewCount() + (int) pending);
             }
             cacheService.set(cacheKey, vo, cacheProperties.getProductDetailTtl());
+            // ★ 重建是可观测的事实，必须留痕（v0.18）：
+            //   ① 线上可据此发现"某个热点 key 被反复重建"的击穿征兆；
+            //   ② 击穿实验可据此**逐 key 精确统计**重建次数，
+            //      而不是只靠数据库语句增量去估算（估算值有 ±1 的噪声）。
+            log.info("[缓存重建] 商品详情 productId={} key={}", productId, cacheKey);
         }
 
         // v0.11 行为埋点（缓存命中路径也会调用，见 detail 方法）
