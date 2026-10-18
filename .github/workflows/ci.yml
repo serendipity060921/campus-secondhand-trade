@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 # 说明：
 #   本工作流只做「不需要数据库、Redis 与浏览器」的检查，因此在 GitHub 托管机上稳定可跑：
@@ -179,7 +179,7 @@ jobs:
       # 只在 pull_request 事件里执行（push 到 master 没有 PR 可评论，跳过是正常的）。
       - name: PR 覆盖率评论（粘性）
         if: always() && github.event_name == 'pull_request'
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@v3.0.5
         with:
           header: coverage
           path: coverage-comment.md
