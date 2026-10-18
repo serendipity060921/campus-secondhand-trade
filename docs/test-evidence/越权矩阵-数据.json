@@ -1,0 +1,619 @@
+{
+  "base": "http://127.0.0.1:8080",
+  "total": 43,
+  "failed": 0,
+  "details": [
+    {
+      "no": 1,
+      "method": "POST",
+      "path": "/api/order/create",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 2,
+      "method": "PUT",
+      "path": "/api/order/status",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 3,
+      "method": "GET",
+      "path": "/api/order/buyList",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 4,
+      "method": "GET",
+      "path": "/api/order/sellList",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 5,
+      "method": "GET",
+      "path": "/api/order/{id}",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 6,
+      "method": "GET",
+      "path": "/api/message/unreadTotal",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 7,
+      "method": "GET",
+      "path": "/api/message/online",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 8,
+      "method": "POST",
+      "path": "/api/message/send",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 9,
+      "method": "GET",
+      "path": "/api/message/conversationList",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 10,
+      "method": "GET",
+      "path": "/api/message/history",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 11,
+      "method": "PUT",
+      "path": "/api/message/read",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 12,
+      "method": "GET",
+      "path": "/api/message/peer",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 13,
+      "method": "POST",
+      "path": "/api/favorite/operate",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 14,
+      "method": "GET",
+      "path": "/api/favorite/list",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 15,
+      "method": "GET",
+      "path": "/api/favorite/hasFavorite",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 16,
+      "method": "POST",
+      "path": "/api/product/publish",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 17,
+      "method": "POST",
+      "path": "/api/product/upload",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 18,
+      "method": "GET",
+      "path": "/api/product/mine",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 19,
+      "method": "PUT",
+      "path": "/api/product/status",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 20,
+      "method": "POST",
+      "path": "/api/report/submit",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 21,
+      "method": "GET",
+      "path": "/api/report/mine",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 22,
+      "method": "GET",
+      "path": "/api/user/info",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 23,
+      "method": "POST",
+      "path": "/api/user/logout",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 24,
+      "method": "GET",
+      "path": "/api/user/profile",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 25,
+      "method": "PUT",
+      "path": "/api/user/update",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 26,
+      "method": "POST",
+      "path": "/api/user/avatar",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 27,
+      "method": "GET",
+      "path": "/api/admin/dashboard",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 28,
+      "method": "POST",
+      "path": "/api/category/add",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 29,
+      "method": "PUT",
+      "path": "/api/category/update",
+      "probe": "AUTH",
+      "caller": "匿名",
+      "expect": 401,
+      "actual": 401,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "GET",
+      "path": "/api/admin/dashboard",
+      "probe": "ROLE",
+      "caller": "A",
+      "expect": 403,
+      "actual": 403,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "GET",
+      "path": "/api/admin/dashboard",
+      "probe": "ROLE",
+      "caller": "B",
+      "expect": 403,
+      "actual": 403,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "POST",
+      "path": "/api/category/add",
+      "probe": "ROLE",
+      "caller": "A",
+      "expect": 403,
+      "actual": 403,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "POST",
+      "path": "/api/category/add",
+      "probe": "ROLE",
+      "caller": "B",
+      "expect": 403,
+      "actual": 403,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "PUT",
+      "path": "/api/category/update",
+      "probe": "ROLE",
+      "caller": "A",
+      "expect": 403,
+      "actual": 403,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "PUT",
+      "path": "/api/category/update",
+      "probe": "ROLE",
+      "caller": "B",
+      "expect": 403,
+      "actual": 403,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "GET",
+      "path": "/api/order/2",
+      "probe": "OWNERSHIP",
+      "caller": "B",
+      "expect": "拒绝",
+      "actual": 6004,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "GET",
+      "path": "/api/order/2",
+      "probe": "OWNERSHIP",
+      "caller": "A",
+      "expect": "200(属主)",
+      "actual": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "PUT",
+      "path": "/api/order/status",
+      "probe": "OWNERSHIP",
+      "caller": "B",
+      "expect": "拒绝",
+      "actual": 6004,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "PUT",
+      "path": "/api/product/status",
+      "probe": "OWNERSHIP",
+      "caller": "B",
+      "expect": "拒绝",
+      "actual": 3002,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "GET",
+      "path": "/api/message/history",
+      "probe": "OWNERSHIP",
+      "caller": "B",
+      "expect": "只能读自己参与的会话",
+      "actual": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "GET",
+      "path": "/api/order/buyList",
+      "probe": "SELF_SCOPE",
+      "caller": "B",
+      "expect": "只含本人资源",
+      "actual": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "GET",
+      "path": "/api/order/sellList",
+      "probe": "SELF_SCOPE",
+      "caller": "B",
+      "expect": "只含本人资源",
+      "actual": 200,
+      "ok": true,
+      "note": ""
+    },
+    {
+      "no": 0,
+      "method": "GET",
+      "path": "/api/product/mine",
+      "probe": "SELF_SCOPE",
+      "caller": "B",
+      "expect": "只含本人资源",
+      "actual": 200,
+      "ok": true,
+      "note": ""
+    }
+  ],
+  "auth": {
+    "创建订单": {
+      "匿名": 401
+    },
+    "变更订单状态": {
+      "匿名": 401
+    },
+    "我买到的": {
+      "匿名": 401
+    },
+    "我卖出的": {
+      "匿名": 401
+    },
+    "订单详情": {
+      "匿名": 401,
+      "属主": 200
+    },
+    "未读数": {
+      "匿名": 401
+    },
+    "在线状态": {
+      "匿名": 401
+    },
+    "发送私信": {
+      "匿名": 401
+    },
+    "会话列表": {
+      "匿名": 401
+    },
+    "聊天记录": {
+      "匿名": 401
+    },
+    "标记已读": {
+      "匿名": 401
+    },
+    "聊天对象信息": {
+      "匿名": 401
+    },
+    "收藏/取消收藏": {
+      "匿名": 401
+    },
+    "我的收藏": {
+      "匿名": 401
+    },
+    "是否已收藏": {
+      "匿名": 401
+    },
+    "发布商品": {
+      "匿名": 401
+    },
+    "上传图片": {
+      "匿名": 401
+    },
+    "我的商品": {
+      "匿名": 401
+    },
+    "商品状态变更": {
+      "匿名": 401
+    },
+    "提交举报": {
+      "匿名": 401
+    },
+    "我的举报": {
+      "匿名": 401
+    },
+    "当前用户信息": {
+      "匿名": 401
+    },
+    "退出登录": {
+      "匿名": 401
+    },
+    "个人资料": {
+      "匿名": 401
+    },
+    "修改资料": {
+      "匿名": 401
+    },
+    "上传头像": {
+      "匿名": 401
+    },
+    "管理看板": {
+      "匿名": 401,
+      "A": 403,
+      "B": 403
+    },
+    "新增分类": {
+      "匿名": 401,
+      "A": 403,
+      "B": 403
+    },
+    "修改分类": {
+      "匿名": 401,
+      "A": 403,
+      "B": 403
+    }
+  },
+  "role": {
+    "管理看板": {
+      "A": 403,
+      "B": 403
+    },
+    "新增分类": {
+      "A": 403,
+      "B": 403
+    },
+    "修改分类": {
+      "A": 403,
+      "B": 403
+    }
+  },
+  "ownership": {
+    "他人订单详情": {
+      "B": 6004,
+      "A": 200
+    },
+    "变更他人订单状态": {
+      "B": 6004
+    },
+    "变更他人商品状态": {
+      "B": 3002
+    },
+    "跨会话读私信": {
+      "B": 200
+    }
+  },
+  "self_scope": {
+    "我买到的": {
+      "返回条数": 2,
+      "泄漏条数": 0
+    },
+    "我卖出的": {
+      "返回条数": 0,
+      "泄漏条数": 0
+    },
+    "我的商品": {
+      "返回条数": 2,
+      "泄漏条数": 0
+    }
+  }
+}
