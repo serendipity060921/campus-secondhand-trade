@@ -70,6 +70,23 @@ public interface CacheService {
     /** 取热门榜前 N 名商品ID（按分数从高到低） */
     List<Long> topHot(String hotKey, int size);
 
+    /**
+     * 命中率监控（v0.18 / 第4批-⑯）。
+     *
+     * <p>缓存的价值只能靠数据说话："开了缓存"不等于"缓存有效"。这里返回进程内累计计数：</p>
+     * <ul>
+     *   <li>{@code hit} 命中次数；{@code miss} 未命中（含命中"空值缓存"）；</li>
+     *   <li>{@code error} Redis 异常次数（<b>不计入命中率分母</b>：故障不是未命中）；</li>
+     *   <li>{@code hitRate} 命中率百分比（hit / (hit + miss) × 100，保留两位小数）。</li>
+     * </ul>
+     * <p>说明：计数是<b>单实例、进程内</b>的，重启清零；多实例部署需按实例看，
+     * 或后续接入 Micrometer 汇总。做对照实验时这一点必须写清楚，否则数字会被误读。</p>
+     */
+    java.util.Map<String, Object> stats();
+
+    /** 将命中率计数清零（压测/对照实验前调用，避免历史数据混入） */
+    void resetStats();
+
     /** 读取列表缓存（带泛型类型，供业务直接使用） */
     <T> T getList(String key, Class<T> elementType);
 }

@@ -45,6 +45,17 @@ public class CacheServiceImpl implements CacheService {
     private final StringRedisTemplate stringRedisTemplate;
     private final CacheProperties properties;
 
+    /* v0.18 / 第4批-⑯ 命中率监控：进程内计数，不引入额外依赖。 */
+    private final java.util.concurrent.atomic.AtomicLong hitCount =
+            new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicLong missCount =
+            new java.util.concurrent.atomic.AtomicLong();
+    private final java.util.concurrent.atomic.AtomicLong errorCount =
+            new java.util.concurrent.atomic.AtomicLong();
+
+    /** 每累计这么多次读就输出一行统计，便于从日志直接看出命中率（不刷屏） */
+    private static final long STATS_LOG_EVERY = 500;
+
     @Override
     public boolean enabled() {
         return properties.isEnabled();
@@ -72,11 +83,21 @@ public class CacheServiceImpl implements CacheService {
         try {
             String raw = stringRedisTemplate.opsForValue().get(key);
             if (raw == null || NULL_MARK.equals(raw)) {
-                return null;      // 未命中，或命中"空值缓存"
+                missCount.incrementAndGet();      // 未命中，或命中"空值缓存"（同样算未命中业务数据）
+                maybeLogStats();
+                return null;
             }
             Object value = redisTemplate.opsForValue().get(key);
+            if (value == null) {
+                missCount.incrementAndGet();
+            } else {
+                hitCount.incrementAndGet();
+            }
+            maybeLogStats();
             return (T) value;
         } catch (Exception e) {
+            // 故障单独计数：把异常算成"未命中"会拉低命中率，让调优方向被误导
+            errorCount.incrementAndGet();
             warn("get", key, e);
             return null;
         }
@@ -86,6 +107,40 @@ public class CacheServiceImpl implements CacheService {
     @SuppressWarnings("unchecked")
     public <T> T getList(String key, Class<T> elementType) {
         return (T) get(key, Object.class);
+    }
+
+    @Override
+    public java.util.Map<String, Object> stats() {
+        long hit = hitCount.get();
+        long miss = missCount.get();
+        long err = errorCount.get();
+        long total = hit + miss;
+        double rate = total == 0 ? 0.0 : Math.round(hit * 10000.0 / total) / 100.0;
+
+        java.util.LinkedHashMap<String, Object> map = new java.util.LinkedHashMap<>();
+        map.put("hit", hit);
+        map.put("miss", miss);
+        map.put("error", err);
+        map.put("total", total);
+        map.put("hitRate", rate);
+        return map;
+    }
+
+    @Override
+    public void resetStats() {
+        hitCount.set(0);
+        missCount.set(0);
+        errorCount.set(0);
+    }
+
+    /** 每 STATS_LOG_EVERY 次读输出一行统计（用 info：生产默认能看见） */
+    private void maybeLogStats() {
+        long total = hitCount.get() + missCount.get();
+        if (total > 0 && total % STATS_LOG_EVERY == 0) {
+            java.util.Map<String, Object> s = stats();
+            log.info("[缓存统计] 累计读={} 命中={} 未命中={} 错误={} 命中率={}%",
+                    total, s.get("hit"), s.get("miss"), s.get("error"), s.get("hitRate"));
+        }
     }
 
     @Override
