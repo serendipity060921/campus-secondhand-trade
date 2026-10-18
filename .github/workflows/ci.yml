@@ -145,6 +145,11 @@ jobs:
   backend:
     name: 后端编译
     runs-on: ubuntu-latest
+    # v0.18 / 第5批-⑳：要在 PR 上贴覆盖率评论，需要写 pull-requests 的权限。
+    # 默认 GITHUB_TOKEN 是只读的（对来自 fork 的 PR 更是如此），不声明就会静默失败。
+    permissions:
+      contents: read
+      pull-requests: write
     defaults:
       run:
         working-directory: backend
@@ -162,6 +167,22 @@ jobs:
       # 同时 jacoco 插件会生成覆盖率报告，并执行"覆盖率棘轮"检查（只许上升）。
       - name: 单元测试 + 打包（使用仓库自带的 Maven Wrapper，不依赖 runner 预装版本）
         run: ./mvnw -B package
+
+      # v0.18 / 第5批-⑳：把 JaCoCo 报告转成人看得懂的摘要。
+      # 用 if: always() 是刻意的 —— 覆盖率跌破棘轮时 package 会失败，
+      # 但失败时更需要看到"差多少、哪个包拖后腿"，所以这一步必须在失败后仍然执行。
+      - name: 覆盖率摘要（写入 Job Summary）
+        if: always()
+        run: python3 ../tools/coverage-comment.py --out ../coverage-comment.md --summary
+
+      # PR 上贴成「粘性评论」：同一 PR 多次提交只保留一条，不刷屏。
+      # 只在 pull_request 事件里执行（push 到 master 没有 PR 可评论，跳过是正常的）。
+      - name: PR 覆盖率评论（粘性）
+        if: always() && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: coverage
+          path: coverage-comment.md
 
       # 覆盖率报告（target/site/jacoco）：CI 里虽看不到 HTML，但可作为产物下载查看
       - name: 上传覆盖率报告
