@@ -207,7 +207,8 @@
                            2026-10-16 48.40%（第3批⑫ 服务层起步：FileServiceImpl 上传四道校验 16 条 + FavoriteModuleServiceImpl 七条业务规则 15 条）
                            2026-10-16 62.88%（★ 第3批⑫ 推荐服务：RecommendServiceImpl 21 条覆盖缓存/降级链/排除集合/三路融合/热门榜兜底/相似商品，单类 +14.5 个百分点）
                            2026-10-16 75.15%（★ 第3批⑫ 管理端与分类：AdminServiceImpl 23 条（审核状态机/下架限制/自我保护/断实时连接/举报只能处理一次/趋势补 7 天）+ CategoryModuleServiceImpl 20 条（缓存键区分 top/all、件数汇总后代、降级与成环护栏））
-                         阈值取 73%（略低于实测 75.15%）→ 给日常小改动留余量；
+                           2026-10-16 85.56%（★ 第3批⑫ 收尾：认证/资料/举报/私信/搜索/行为 六个服务共 75 条，覆盖密码只存密文、并发注册转 2001、手机号唯一与空串转 NULL、举报 VO 的 null 安全、已读只能改本人消息、搜索分类含子类与批量补齐避免 N+1、行为幂等与热门榜加分）
+                         阈值取 83%（略低于实测 85.56%）→ 给日常小改动留余量；
                          每补完一块测试就把这里的 minimum 上调一次。 -->
                     <execution>
                         <id>check-ratchet</id>
@@ -223,7 +224,7 @@
                                         <limit>
                                             <counter>INSTRUCTION</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.73</minimum>
+                                            <minimum>0.83</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
