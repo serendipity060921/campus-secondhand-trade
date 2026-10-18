@@ -1,0 +1,125 @@
+{
+  "base": "http://127.0.0.1:8080",
+  "started": "2026-10-18 21:54:22",
+  "scenarios": {
+    "S1_并发抢购": [
+      {
+        "productId": 567,
+        "ok_code": 1,
+        "winners": 1,
+        "productStatus": 4,
+        "stats": {
+          "total": 4,
+          "ok": 1,
+          "p50": 28.6,
+          "p95": 29.7,
+          "max": 29.7,
+          "codes": {
+            "200": 1,
+            "6001": 3
+          },
+          "http_codes": {
+            "200": 4
+          },
+          "server_errors": 0
+        }
+      },
+      {
+        "productId": 568,
+        "ok_code": 1,
+        "winners": 1,
+        "productStatus": 4,
+        "stats": {
+          "total": 4,
+          "ok": 1,
+          "p50": 14.2,
+          "p95": 14.2,
+          "max": 15.3,
+          "codes": {
+            "6001": 3,
+            "200": 1
+          },
+          "http_codes": {
+            "200": 4
+          },
+          "server_errors": 0
+        }
+      },
+      {
+        "productId": 569,
+        "ok_code": 1,
+        "winners": 1,
+        "productStatus": 4,
+        "stats": {
+          "total": 4,
+          "ok": 1,
+          "p50": 18.5,
+          "p95": 18.5,
+          "max": 18.5,
+          "codes": {
+            "6001": 3,
+            "200": 1
+          },
+          "http_codes": {
+            "200": 4
+          },
+          "server_errors": 0
+        }
+      }
+    ],
+    "S2_并发重复收藏": {
+      "stats": {
+        "total": 20,
+        "ok": 1,
+        "p50": 27.4,
+        "p95": 29.1,
+        "max": 30.1,
+        "codes": {
+          "4001": 19,
+          "200": 1
+        },
+        "http_codes": {
+          "200": 20
+        },
+        "server_errors": 0
+      },
+      "favoriteCount": 1,
+      "ok": true
+    },
+    "S3_限流维度": {
+      "perAccount": [
+        {
+          "username": "perf31662_0",
+          "ok": 5,
+          "codes": {
+            "200": 5
+          },
+          "server_errors": 0
+        },
+        {
+          "username": "perf31662_1",
+          "ok": 5,
+          "codes": {
+            "200": 5
+          },
+          "server_errors": 0
+        },
+        {
+          "username": "perf31662_2",
+          "ok": 5,
+          "codes": {
+            "200": 5
+          },
+          "server_errors": 0
+        }
+      ],
+      "burstCodes": {
+        "200": 5,
+        "429": 7
+      },
+      "hit429": true
+    },
+    "S4_5xx总数": 0
+  },
+  "passed": true
+}
