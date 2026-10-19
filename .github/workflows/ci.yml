@@ -142,6 +142,17 @@ jobs:
           path: frontend/audit-report.json
           if-no-files-found: ignore
 
+      # v0.18 / 第5批-⑱：部署验证要经 Nginx 访问**真实的前端构建产物**
+      # （D2 会从 index.html 里正则提取 /assets/index-*.js 再断言长缓存），
+      # 所以把 dist 作为产物传给 deploy job，避免那边再装一次 pnpm 重新构建。
+      - name: 上传前端构建产物（供部署验证复用）
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
+          if-no-files-found: error
+
   backend:
     name: 后端编译
     runs-on: ubuntu-latest
@@ -327,4 +338,162 @@ jobs:
         with:
           name: security-result
           path: tests/api/security-result.json
+          if-no-files-found: warn
+
+  # ==========================================================================
+  # ⑱ 部署验证（D1–D28）：经 **真实 Nginx** 反向代理访问
+  #
+  # 与 ⑰ 的区别只有"前面多了一层 Nginx"，但这一层正是 D 用例要验的东西：
+  #   · D1–D3 静态资源与 SPA 路由回退（必须有真实 frontend/dist）
+  #   · D12 /upload 静态映射代理
+  #   · D13–D16 ★ WebSocket 经 Nginx 协议升级（Upgrade/Connection 头，最容易配错的一环）
+  #   · D17 限流、D18+ 生产配置与数据完整性
+  #
+  # ★ 三处 CI 适配（本地配置是 Windows 形态，实测过哪些地方必须改）：
+  #   ① root 指向 runner 上的 frontend/dist
+  #   ② include mime.types 改成绝对路径（自定义 -c 时前缀不是 /etc/nginx）
+  #   ③ error_log / pid / access_log 的 logs/ 前缀改到 /tmp（runner 上没有 logs 目录）
+  # ==========================================================================
+  deploy:
+    name: 部署验证（D1–D28，经 Nginx）
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: "123456"
+          MYSQL_DATABASE: campus_trade
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -p123456"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: "3306"
+      MYSQL_DB: campus_trade
+      MYSQL_USER: root
+      MYSQL_PASSWORD: "123456"
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ""
+      JWT_SECRET: 6e4e919eda00e89386ef99783fd120ee45238e38db7799f5
+      CORS_ORIGINS: http://localhost:8081,http://127.0.0.1:8081
+      AUDIT_ENABLED: "false"
+      CACHE_ENABLED: "true"
+      HEALTH_DETAIL_ENABLED: "false"
+      UPLOAD_PATH: /tmp/campus-uploads
+      LOG_PATH: /tmp/campus-logs
+      # D 用例默认打 8081（Nginx）；套件里的 mysql 客户端也支持 MYSQL_CLI 覆盖
+      WEB_BASE: http://127.0.0.1:8081
+      MYSQL_CLI: mysql
+      TEMP: /tmp
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+
+      - name: 安装 Nginx 与 WebSocket 客户端
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y nginx > /dev/null
+          nginx -v
+          # D13–D16 需要 websockets；runner 的 python 受 PEP668 管理，必须显式放开
+          (pip install -q websockets || pip install -q --break-system-packages websockets)
+          python3 -c "import websockets; print('websockets', websockets.__version__)"
+          ls frontend/dist | head -5
+
+      - name: 生成 CI 版 Nginx 配置（Windows 形态 → Linux 形态）
+        run: |
+          sed -e "s#D:/campus-secondhand-trade/frontend/dist#$PWD/frontend/dist#" \
+              -e "s@include[[:space:]]+mime\.types;@include /etc/nginx/mime.types;@" \
+              -e "s#logs/#/tmp/nginx-#g" \
+              deploy/windows/nginx.conf > /tmp/nginx-ci.conf
+          echo '--- 关键行核对 ---'
+          grep -nE 'listen|root|include /etc/nginx/mime|error_log|pid' /tmp/nginx-ci.conf | head -10
+          sudo systemctl stop nginx || true
+          sudo nginx -t -c /tmp/nginx-ci.conf
+          sudo nginx -c /tmp/nginx-ci.conf
+          for i in $(seq 1 10); do
+            if curl -sf http://127.0.0.1:8081/ > /dev/null; then echo "✅ Nginx 已就绪"; exit 0; fi
+            sleep 1
+          done
+          echo "❌ Nginx 未能在 8081 提供服务"; sudo tail -30 /tmp/nginx-campus-error.log || true; exit 1
+
+      - name: 初始化数据库（建表 → 补丁 → 演示数据）
+        run: |
+          mysql -h 127.0.0.1 -uroot -p123456 < db/schema/01-schema.sql
+          mysql -h 127.0.0.1 -uroot -p123456 campus_trade < db/schema/04-moderation.sql
+          python3 tools/seed-demo-data.py --reset
+
+      - name: 启动后端并等待健康检查（直连 8080）
+        run: |
+          nohup java -jar backend/target/*.jar \
+            --spring.profiles.active=prod \
+            --server.port=8080 --management.server.port=8090 \
+            > /tmp/backend.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8080/api/health > /dev/null; then
+              echo "✅ 后端已就绪（约 $((i * 3)) 秒）"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "❌ 后端 180 秒内未就绪"; tail -60 /tmp/backend.log; exit 1
+
+      - name: 跑部署验证（D1–D28，经 Nginx）
+        run: |
+          python3 tests/api/test-v015-deploy.py | tee /tmp/deploy.log
+          # ★ 该套件结尾没有 sys.exit，失败时退出码仍是 0，
+          #   所以必须自己对结果 JSON 断言，否则 CI 会"假绿"。
+          python3 - <<'PY'
+          import json, os, pathlib, sys
+          p = pathlib.Path(os.environ.get('TEMP') or '.') / 'dsh-sqlval' / 'v015_result.json'
+          data = json.loads(p.read_text(encoding='utf-8'))
+          res = data['results']
+          bad = [r for r in res if not r['ok']]
+          print(f"部署验证：{len(res) - len(bad)}/{len(res)} 通过")
+          if bad:
+              for r in bad:
+                  print(f"  ✗ {r['id']} {r['scenario']} —— {r['actual']}")
+              sys.exit(1)
+          PY
+
+      - name: 失败时输出 Nginx 与后端日志
+        if: failure()
+        run: |
+          echo '--- nginx error ---'; sudo tail -60 /tmp/nginx-campus-error.log || true
+          echo '--- backend ---'; tail -100 /tmp/backend.log || true
+
+      - name: 上传部署验证结果
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-result
+          path: /tmp/dsh-sqlval/v015_result.json
           if-no-files-found: warn
