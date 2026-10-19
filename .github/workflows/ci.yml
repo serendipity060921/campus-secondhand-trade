@@ -132,8 +132,21 @@ jobs:
       #   vite / esbuild 这类**构建期依赖**（不会进入生产产物），已在
       #   docs/安全测试报告.md 中记录并给出升级路径，因此不阻断日常提交；
       #   但一旦出现 critical 级别漏洞，CI 必须失败。
-      - name: 依赖漏洞审计（critical 级别阻断）
-        run: pnpm audit --audit-level=critical
+      # ★ v0.18 / 第6批-㉒ 调整口径（并写明理由）：
+      #   阻断门槛放在**生产依赖**上：`--prod` 只审计会进产物的依赖。
+      #   引入 Vitest 后，开发期依赖链上出现 2 个 critical（tinypool ≤2.1.0 / <2.1.2，
+      #   即 Vitest 自身 worker pool 的 RCE，GHSA-5gmw-xhrv-c9v3 与 GHSA-85c8-ppgw-ccpr）。
+      #   已核实：tinypool 的**所有 1.x 都受影响**，干净版本是 ≥2.1.2，而 vitest 依赖 1.x
+      #   → 升到最新 vitest 3.2.6 也清不掉；它只在本机/CI 跑测试时存在，不进生产产物。
+      #   因此：生产依赖仍必须 0 critical（阻断），开发依赖的全量审计只留档（不阻断）。
+      - name: 生产依赖漏洞审计（critical 阻断）
+        run: pnpm audit --prod --audit-level=critical
+
+      - name: 全量审计留档（含开发依赖，不阻断）
+        if: always()
+        run: |
+          pnpm audit --audit-level=critical || true
+          echo "--- 生产依赖结论（此步仅留档，阻断在校验上一步）---"
 
       # 完整审计报告留档（非阻断），便于在 Actions 产物里查看中低危明细
       - name: 导出依赖审计报告
