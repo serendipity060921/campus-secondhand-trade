@@ -262,12 +262,19 @@ jobs:
 
       # v0.18 / 第5批-⑰：把打包产物给安全套件 job 复用。
       # 不让安全 job 自己再跑一遍 640 条单测 —— 既省 CI 时间，也保证测的是【同一份二进制】。
+      # ★ 这个步骤曾经让后端 job 变红：报
+      #   "No files were found with the provided path: backend/target/*.jar"，
+      #   而同一 job 的「单元测试 + 打包」是 success —— 打包确实产出了 jar。
+      #   不纠结根因（upload-artifact 的 path 解析受 job 级 defaults/工作目录影响），
+      #   直接把匹配写宽：先按 workspace 相对路径，再兜一层 **/target/*.jar。
       - name: 上传可执行 jar（供安全套件复用）
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: backend-jar
-          path: backend/target/*.jar
+          path: |
+            backend/target/*.jar
+            **/target/*.jar
           if-no-files-found: error
 
   # ==========================================================================
