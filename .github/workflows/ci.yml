@@ -199,11 +199,12 @@ jobs:
       #   "卡在哪一步（编译/测试/覆盖率棘轮）" 能直接看到，而不是只有 exit code 1。
       - name: 单元测试 + 打包（使用仓库自带的 Maven Wrapper，不依赖 runner 预装版本）
         run: |
-          set -o pipefail
-          ./mvnw -B package 2>&1 | tee /tmp/mvn.log
-          rc=${PIPESTATUS[0]}
-          if [ "$rc" != "0" ]; then
-            echo "::error::maven 失败（exit $rc），尾部日志："
+          # ★ GitHub 的 run: 默认是 bash -eo pipefail：
+          #   直接写 ./mvnw ... | tee log 时，管道失败会立刻中止脚本，
+          #   根本走不到下面打注解的行（上一版就是这样，注解一直是空的）。
+          #   用 if ! ...; then 包住，if 上下文会临时关闭 errexit，失败后才拿得到线索。
+          if ! ./mvnw -B package 2>&1 | tee /tmp/mvn.log; then
+            echo "::error::maven 失败，尾部日志："
             tail -40 /tmp/mvn.log | while IFS= read -r line; do echo "::error::  ${line:0:700}"; done
             exit 1
           fi
