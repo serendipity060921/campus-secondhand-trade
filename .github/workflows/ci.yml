@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 # 说明：
 #   本工作流只做「不需要数据库、Redis 与浏览器」的检查，因此在 GitHub 托管机上稳定可跑：
@@ -192,3 +192,137 @@ jobs:
           name: jacoco-coverage
           path: backend/target/site/jacoco/
           if-no-files-found: ignore
+
+      # v0.18 / 第5批-⑰：把打包产物给安全套件 job 复用。
+      # 不让安全 job 自己再跑一遍 640 条单测 —— 既省 CI 时间，也保证测的是【同一份二进制】。
+      - name: 上传可执行 jar（供安全套件复用）
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target/*.jar
+          if-no-files-found: error
+
+  # ==========================================================================
+  # ⑰ 安全套件（52 条）：在 CI 里真正跑起来
+  #
+  # 为什么需要 service 容器：安全套件打的是"真实部署形态"的接口 ——
+  # 注入用例要有真库、越权用例要有真数据、限流用例要有真 Redis。
+  # ★ 主机名与端口：本 job 没有 container: 键（直接在 runner 上跑），
+  #   因此服务必须通过 **localhost + ports 映射** 访问，不能写服务名
+  #   （写服务名是"容器 job"的用法，写错的表现是连接超时）。
+  # ★ 健康检查必须写：没有 --health-* 时，步骤会在 MySQL 还没 initdb 完成时就开始跑，
+  #   于是出现典型的"本机能跑、CI 挂"。
+  # ==========================================================================
+  security:
+    name: 安全套件（52 条）
+    runs-on: ubuntu-latest
+    needs: backend
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: "123456"
+          MYSQL_DATABASE: campus_trade
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -p123456"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      MYSQL_HOST: 127.0.0.1
+      MYSQL_PORT: "3306"
+      MYSQL_DB: campus_trade
+      MYSQL_USER: root
+      MYSQL_PASSWORD: "123456"
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ""
+      JWT_SECRET: 6e4e919eda00e89386ef99783fd120ee45238e38db7799f5
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      AUDIT_ENABLED: "false"
+      CACHE_ENABLED: "true"
+      HEALTH_DETAIL_ENABLED: "false"
+      UPLOAD_PATH: /tmp/campus-uploads
+      LOG_PATH: /tmp/campus-logs
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend-jar
+          path: backend/target
+
+      - name: 确认 jar 与工具已就位
+        run: |
+          ls -lh backend/target/*.jar
+          mysql --version
+          python3 --version
+
+      # ★ 建库顺序是实测出来的，不是猜的：
+      #   ① 01-schema.sql 里的 CREATE DATABASE / USE 都是硬编码 campus_trade，库名必须叫这个；
+      #      它自带的只是"建表 + 1 个 admin + 32 个分类"，不是完整演示数据；
+      #   ② 04-moderation.sql 的内容不在 01 里，必须单独跑（否则 moderation_log 表缺失）；
+      #   ③ 演示数据交给项目自己的 seed 工具 —— 它会先清表再载入基线快照；
+      #      直接 mysql < demo-baseline.sql 会撞
+      #      "Duplicate entry '1' for key 'user.PRIMARY'"（本地实测过）。
+      - name: 初始化数据库（建表 → 补丁 → 演示数据）
+        run: |
+          mysql -h 127.0.0.1 -uroot -p123456 < db/schema/01-schema.sql
+          mysql -h 127.0.0.1 -uroot -p123456 campus_trade < db/schema/04-moderation.sql
+          python3 tools/seed-demo-data.py --reset
+          mysql -h 127.0.0.1 -uroot -p123456 -N -B -e "
+            SELECT 'user',COUNT(*) FROM campus_trade.user
+            UNION ALL SELECT 'product',COUNT(*) FROM campus_trade.product
+            UNION ALL SELECT 'orders',COUNT(*) FROM campus_trade.orders
+            UNION ALL SELECT 'message',COUNT(*) FROM campus_trade.message"
+
+      # 用 prod profile 跑：安全套件里有限流用例，必须让限流真实生效
+      # （dev profile 的 rate-limit-skip-local=true 会让它们失去意义）。
+      - name: 启动后端并等待健康检查
+        run: |
+          nohup java -jar backend/target/*.jar \
+            --spring.profiles.active=prod \
+            --server.port=8080 --management.server.port=8090 \
+            > /tmp/backend.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:8080/api/health > /dev/null; then
+              echo "✅ 后端已就绪（约 $((i * 3)) 秒）"
+              exit 0
+            fi
+            sleep 3
+          done
+          echo "❌ 后端 180 秒内未就绪"
+          tail -60 /tmp/backend.log
+          exit 1
+
+      - name: 跑安全套件（52 条）
+        run: python3 tests/api/test-security.py
+
+      - name: 失败时输出后端日志（便于定位）
+        if: failure()
+        run: tail -120 /tmp/backend.log || true
+
+      - name: 上传安全测试报告
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-result
+          path: tests/api/security-result.json
+          if-no-files-found: warn
