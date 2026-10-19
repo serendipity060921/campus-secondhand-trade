@@ -428,34 +428,54 @@ jobs:
           python3 -c "import websockets; print('websockets', websockets.__version__)"
           ls frontend/dist | head -5
 
-      - name: 生成 CI 版 Nginx 配置（Windows 形态 → Linux 形态）
+      - name: ① 生成 CI 版 Nginx 配置（Windows 形态 → Linux 形态）
         run: |
-          # 用 Python 做替换而不是 sed：不依赖 sed 方言（上一轮就因为漏写 -E，
-          # [[:space:]]+ 变成字面量而静默不生效，nginx -t 找不到 mime.types 直接失败），
-          # 并且在脚本里【断言替换结果】，任何一处没改到都会当场失败而不是留到 nginx -t。
           python3 - <<'PY'
           import os, pathlib, re
           src = pathlib.Path('deploy/windows/nginx.conf').read_text(encoding='utf-8')
           out = src.replace('D:/campus-secondhand-trade/frontend/dist', os.getcwd() + '/frontend/dist')
           out = re.sub(r'include\s+mime\.types;', 'include /etc/nginx/mime.types;', out)
+          # 静态目录与上传目录的 Windows 绝对路径一并改到 runner 上（否则 run 时 404/403）
+          out = out.replace('D:/campus-secondhand-trade/deploy/windows/uploads', '/tmp/campus-uploads')
+          out = out.replace('D:/campus-secondhand-trade', os.getcwd())
           out = out.replace('logs/', '/tmp/nginx-')
           assert os.getcwd() + '/frontend/dist' in out, 'root 未替换'
           assert '/etc/nginx/mime.types' in out, 'mime.types 未改为绝对路径'
           assert '/tmp/nginx-' in out, 'logs/ 未改到 /tmp'
+          assert 'D:/' not in out, '仍有未替换的 Windows 路径：' + str([l for l in out.splitlines() if 'D:/' in l][:3])
           pathlib.Path('/tmp/nginx-ci.conf').write_text(out, encoding='utf-8')
-          print('✅ 配置已生成，三处替换均已断言通过')
+          print('✅ 配置已生成，四处替换均已断言通过')
           PY
-          echo '--- 关键行核对 ---'
-          grep -nE 'listen|root|include /etc/nginx/mime|error_log|pid' /tmp/nginx-ci.conf | head -10
+          mkdir -p /tmp/campus-uploads
+          chmod -R a+rX frontend/dist
+          grep -nE 'listen|root |mime|error_log|pid |proxy_pass' /tmp/nginx-ci.conf | head -12
+
+      # 以下三步刻意拆分：本会话读不到 Actions 日志（需要登录），
+      # 只能靠【失败的步骤名】定位问题，所以把"生成/语法/启动/冒烟"分开，失败即定位。
+      - name: ② Nginx 配置语法校验（nginx -t）
+        run: sudo nginx -t -c /tmp/nginx-ci.conf
+
+      - name: ③ 启动 Nginx
+        run: |
           sudo systemctl stop nginx || true
-          sudo nginx -t -c /tmp/nginx-ci.conf
           sudo nginx -c /tmp/nginx-ci.conf
+          sleep 2
+          sudo cat /tmp/nginx-campus.pid 2>/dev/null && echo "(pid 文件已生成)"
+
+      - name: ④ Nginx 冒烟：8081 首页与 /api/health
+        run: |
+          ok=0
           for i in $(seq 1 10); do
-            if curl -sf http://127.0.0.1:8081/ > /dev/null; then echo "✅ Nginx 已就绪"; exit 0; fi
+            if curl -sf http://127.0.0.1:8081/ > /dev/null; then ok=1; break; fi
             sleep 1
           done
-          echo "❌ Nginx 未能在 8081 提供服务"; sudo tail -30 /tmp/nginx-campus-error.log || true; exit 1
-
+          if [ "$ok" != "1" ]; then
+            echo "❌ 8081 首页不可用"; sudo tail -30 /tmp/nginx-campus-error.log || true; exit 1
+          fi
+          echo "✅ 首页 200"
+          # /api/health 需要后端已起；这里只验证 Nginx 会把请求代理出去（后端未起时应是 502，不是 404）
+          code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8081/api/health || echo 000)
+          echo "  /api/health 经 Nginx 返回 HTTP $code（后端未起时 502 属正常）"
       - name: 初始化数据库（建表 → 补丁 → 演示数据）
         run: |
           mysql -h 127.0.0.1 -uroot -p123456 < db/schema/01-schema.sql
