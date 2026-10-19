@@ -214,7 +214,17 @@ jobs:
       - name: 失败时输出测试明细（注解）
         if: failure()
         run: |
-          echo "--- 汇总行 ---"
+          # ★ 关键：maven 日志的读取必须放在这个【后续的 if: failure() 步骤】里。
+          #   上一步失败时脚本被 errexit 掐掉，写在它内部的注解输出没机会跑（试过，注解是空的）；
+          #   而 /tmp/mvn.log 在同一个 job 的 workspace 里是保留的，所以在这里读一定读得到。
+          echo "=== maven 尾部日志 ==="
+          if [ -f /tmp/mvn.log ]; then
+            tail -60 /tmp/mvn.log | while IFS= read -r line; do echo "::error::  ${line:0:700}"; done
+          else
+            echo "::error::/tmp/mvn.log 不存在 —— 说明失败发生在 mvnw 启动之前"
+            echo "::error::当前目录: $(pwd)  文件: $(ls -la | head -5 | tr '\n' '|')"
+          fi
+          echo "=== surefire 汇总 ==="
           grep -h -E "Tests run:.*(Failures: [1-9]|Errors: [1-9])" target/surefire-reports/*.txt 2>/dev/null | head -10 || echo "(无 surefire 汇总)"
           for f in target/surefire-reports/*.txt; do
             [ -f "$f" ] || continue
