@@ -511,7 +511,13 @@ jobs:
 
       - name: 跑部署验证（D1–D28，经 Nginx）
         run: |
-          python3 tests/api/test-v015-deploy.py | tee /tmp/deploy.log
+          set -o pipefail
+          python3 -u tests/api/test-v015-deploy.py 2>&1 | tee /tmp/deploy.log || true
+          # ★ 本会话读不到 Actions 日志，但能读 check-runs 注解。
+          #   把套件输出的尾巴打成 ::error::，失败时就能直接看到崩在哪一步。
+          if [ ! -f /tmp/dsh-sqlval/v015_result.json ]; then
+            echo "::error::套件未生成结果文件；日志尾巴: $(tail -25 /tmp/deploy.log | tr '\n' '|' | cut -c1-900)"
+          fi
           # ★ 该套件结尾没有 sys.exit，失败时退出码仍是 0，
           #   所以必须自己对结果 JSON 断言，否则 CI 会"假绿"。
           python3 - <<'PY'
@@ -538,5 +544,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: deploy-result
-          path: /tmp/dsh-sqlval/v015_result.json
+          path: |
+            /tmp/dsh-sqlval/v015_result.json
+            **/v015_result.json
           if-no-files-found: warn
