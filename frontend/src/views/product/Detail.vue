@@ -17,6 +17,7 @@ import { conditionLabel, formatPrice, PRODUCT_STATUS, resolveDetailImages } from
 import { submitReport as submitReportApi } from '@/api/report'
 // v0.11 推荐模块：相关推荐面板
 import RecommendPanel from '@/components/RecommendPanel.vue'
+import EvaluationSection from '@/components/evaluation/EvaluationSection.vue'
 import SkeletonDetail from '@/components/states/SkeletonDetail.vue'
 import StateError from '@/components/states/StateError.vue'
 
@@ -348,6 +349,7 @@ onMounted(loadDetail)
       </el-card>
 
       <!-- v0.11 推荐模块：相关推荐（基于物品共现相似度，不足时用同分类热门补齐） -->
+      <EvaluationSection :product-id="productId" />
       <RecommendPanel mode="similar" :product-id="productId" title="相关推荐" :size="4" />
 
       <!-- v0.08 下单确认框 -->
