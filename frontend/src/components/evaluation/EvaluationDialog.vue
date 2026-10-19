@@ -81,7 +81,8 @@ async function checkBeforeOpen() {
   }
 }
 
-defineExpose({ checkBeforeOpen })
+// 暴露给父组件（打开前预检）与组件测试（直接驱动表单与提交，避免依赖 stub 出来的 DOM)
+defineExpose({ checkBeforeOpen, form, submit })
 </script>
 
 <template>
