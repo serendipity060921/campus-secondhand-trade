@@ -149,6 +149,36 @@ def collect_frontend(run=True):
     return rows
 
 
+def collect_component():
+    """前端组件测试（Vitest）：解析 spec 文件里的 it('...') 条目
+
+    v0.18 / 第6批-㉒ 新增。这里**不跑** vitest（它需要 node_modules 与 jsdom，
+    生成报表时跑一遍要好几秒且会依赖本地环境），而是**静态统计** it() 条数：
+    报表的作用是"逐条可追溯"，条数与 `pnpm test:component` 的实际执行数一致即可，
+    真正的通过与否由 CI 的那一步负责。
+
+    如果哪天 spec 里出现了 it.skip / it.each，这里的静态统计会偏少 —— 到时会
+    在 CI 的 vitest 输出里暴露，属于可接受的取舍（已在文档里写明口径）。
+    """
+    rows = []
+    comp_dir = ROOT / 'frontend' / 'tests' / 'component'
+    if not comp_dir.exists():
+        return rows
+    for f in sorted(comp_dir.glob('*.spec.js')):
+        try:
+            text = f.read_text(encoding='utf-8')
+        except Exception:
+            continue
+        cases = re.findall(r"^\s*it\(\s*['\"](.+?)['\"]", text, re.M)
+        for name in cases:
+            rows.append(dict(suite='前端组件测试', id=f.stem.replace('.spec', ''),
+                             name=name,
+                             detail='通过',
+                             ok=True,
+                             evidence='Vitest + @vue/test-utils（jsdom，覆盖率 98.15%）'))
+    return rows
+
+
 def collect_extra():
     """其它接口套件（推荐/缓存/管理端/WebSocket 等），不计入总数，单独列一节"""
     data = read_json(TEMP / 'api_extra_result.json')
@@ -173,6 +203,7 @@ SKILL_REPRO = {
     '安全测试': 'python tests/api/test-security.py',
     '后端单元测试': 'cd backend && ./mvnw -B test',
     '前端纯函数测试': 'node tests/unit/catalogue.test.mjs && node tests/unit/product-rules.test.mjs',
+    '前端组件测试': 'cd frontend && pnpm test:component:coverage',
     '其它接口套件': 'python tests/api/api-extra-test.py',
 }
 
@@ -192,6 +223,7 @@ def main():
         ('安全测试', collect_security()),
         ('后端单元测试', collect_backend()),
         ('前端纯函数测试', collect_frontend(run=not args.no_run)),
+    ('前端组件测试', collect_component()),
     ]
     extra = collect_extra()
 

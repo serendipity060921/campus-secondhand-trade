@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 # 说明：
 #   本工作流只做「不需要数据库、Redis 与浏览器」的检查，因此在 GitHub 托管机上稳定可跑：
@@ -121,6 +121,11 @@ jobs:
       # 组件与页面的渲染交互由端到端测试覆盖，不纳入行覆盖率统计。
       - name: 前端覆盖率（c8，纯函数模块）
         run: pnpm test:coverage
+
+      # v0.18 / 第6批-㉒：组件级测试（Vitest + @vue/test-utils + jsdom）。
+      # 带 --coverage 跑，阈值写在 frontend/vitest.config.js（据实测值设的棘轮）。
+      - name: 组件级测试（Vitest）
+        run: pnpm test:component:coverage
 
       # 依赖漏洞审计（v0.18 接入）：
       #   阻断级别取 critical —— 当前仓库有 1 个 high + 3 个 moderate，全部集中在
