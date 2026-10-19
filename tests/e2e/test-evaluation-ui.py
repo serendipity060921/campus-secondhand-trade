@@ -19,6 +19,7 @@
 import argparse
 import json
 import os
+import pathlib
 import re
 import sys
 import tempfile
@@ -34,7 +35,22 @@ PRODUCT_URL = '/product/8'
 BUYER = ('stu_test01', 'abc12345')
 SELLER = ('admin', '123456')
 
+# 截图落到与采图脚本同一目录，便于报告统一嵌入
+SHOT_DIR = pathlib.Path(__file__).resolve().parents[2] / 'docs' / 'story-evidence'
 results = []
+shots = []
+
+
+def snap(page, name, note=''):
+    """验证过程中的截图（既是证据，也能在报告里看到"验证是怎么跑的"）。"""
+    try:
+        SHOT_DIR.mkdir(parents=True, exist_ok=True)
+        path = SHOT_DIR / f'{name}.png'
+        page.screenshot(path=str(path), full_page=True)
+        shots.append(name)
+        print(f'    📷 {name}.png  {path.stat().st_size // 1024} KB' + (f'  {note}' if note else ''))
+    except Exception as e:
+        print(f'    ⚠️ 截图失败 {name}: {str(e)[:80]}')
 
 
 def check(ok, name, detail=''):
@@ -75,6 +91,7 @@ def main():
         open_order(page, BASE, BUYER)
         body = page.inner_text('body')
         check('评价这笔交易' in body, '订单详情页出现「评价这笔交易」入口', ORDER_URL)
+        snap(page, 'US-EVAL-04-验证-入口可见', '订单详情页')
 
         page.get_by_role('button', name=re.compile('评价这笔交易')).first.click()
         page.wait_for_selector('.el-dialog', state='attached', timeout=8000)
@@ -87,6 +104,7 @@ def main():
         check('描述相符' in dtext and '守约准时' in dtext, '标签候选（6 个）已渲染')
         check('/ 500' in dtext, '内容框有 500 字计数')
         check('匿名' in dtext, '弹窗有匿名开关与说明')
+        snap(page, 'US-EVAL-05-验证-弹窗表单', '已填内容、已勾标签')
 
         # 勾两个标签 + 填内容 + 打 5 星（默认就是 5）
         for t in ['描述相符', '态度很好']:
@@ -112,6 +130,7 @@ def main():
         page.wait_for_timeout(2000)
         body2 = page.inner_text('body')
         blocked = '已经评价过' in body2
+        snap(page, 'US-EVAL-06-验证-重复评价被拦', '第二次点入口后的提示')
         check(blocked or page.locator('.el-dialog').count() == 0, '★ 重复评价被拦下（提示已评价过）',
               '提示可见' if blocked else '弹窗未再次打开')
 
@@ -126,6 +145,7 @@ def main():
         d2 = p2.locator('.el-dialog').last
         d2.locator('.el-switch').last.click()
         p2.wait_for_timeout(400)
+        snap(p2, 'US-EVAL-08-验证-匿名开关已打开', '提交前')
         cls = d2.locator('.el-switch').last.get_attribute('class') or ''
         check('is-checked' in cls, '★ 匿名开关切到 on（断言，不假设）', cls[:60])
         d2.locator('textarea').first.fill('UI 验证：付款及时')
@@ -141,6 +161,7 @@ def main():
         p3.wait_for_load_state('networkidle', timeout=15000)
         p3.wait_for_timeout(1200)
         ptext = p3.inner_text('body')
+        snap(p3, 'US-EVAL-07-验证-商品页匿名展示', '含匿名同学与双向角色')
         check('交易评价' in ptext, '商品详情页有「交易评价」区')
         check('2 条' in ptext, '条数显示 2 条', '')
         check('匿名同学' in ptext, '★ 匿名评价显示为「匿名同学」')
