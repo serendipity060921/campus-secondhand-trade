@@ -262,20 +262,6 @@ jobs:
 
       # v0.18 / 第5批-⑰：把打包产物给安全套件 job 复用。
       # 不让安全 job 自己再跑一遍 640 条单测 —— 既省 CI 时间，也保证测的是【同一份二进制】。
-      # ★ 这个步骤曾经让后端 job 变红：报
-      #   "No files were found with the provided path: backend/target/*.jar"，
-      #   而同一 job 的「单元测试 + 打包」是 success —— 打包确实产出了 jar。
-      #   不纠结根因（upload-artifact 的 path 解析受 job 级 defaults/工作目录影响），
-      #   直接把匹配写宽：先按 workspace 相对路径，再兜一层 **/target/*.jar。
-      - name: 上传可执行 jar（供安全套件复用）
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-jar
-          path: |
-            backend/target/*.jar
-            **/target/*.jar
-          if-no-files-found: error
 
   # ==========================================================================
   # ⑰ 安全套件（52 条）：在 CI 里真正跑起来
@@ -340,10 +326,13 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: backend-jar
-          path: backend/target
+      # ★ 不再依赖 backend job 的 jar 产物：artifact 传递曾连续 5 次让 job 红在
+      #   「上传可执行 jar」上（打包成功却报 No files were found），
+      #   而这个 job 只需要一个可运行的 jar —— 自己构建更稳，代价约 1 分钟。
+      #   跳过测试与 jacoco（测试与棘轮已由 backend job 负责），避免重复执行 665 条单测。
+      - name: 构建可执行 jar（跳过测试与覆盖率棘轮）
+        run: ./mvnw -B -DskipTests -Djacoco.skip=true package
+
 
       - name: 确认 jar 与工具已就位
         run: |
@@ -476,10 +465,13 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: backend-jar
-          path: backend/target
+      # ★ 不再依赖 backend job 的 jar 产物：artifact 传递曾连续 5 次让 job 红在
+      #   「上传可执行 jar」上（打包成功却报 No files were found），
+      #   而这个 job 只需要一个可运行的 jar —— 自己构建更稳，代价约 1 分钟。
+      #   跳过测试与 jacoco（测试与棘轮已由 backend job 负责），避免重复执行 665 条单测。
+      - name: 构建可执行 jar（跳过测试与覆盖率棘轮）
+        run: ./mvnw -B -DskipTests -Djacoco.skip=true package
+
 
       - uses: actions/download-artifact@v4
         with:
