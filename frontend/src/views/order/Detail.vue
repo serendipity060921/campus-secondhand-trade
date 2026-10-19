@@ -228,6 +228,13 @@ onMounted(load)
               <el-descriptions-item v-if="order.cancelReason" label="取消原因">{{ order.cancelReason }}</el-descriptions-item>
             </el-descriptions>
 
+            <!-- v0.18：订单完成后可评价（双向）。入口放详情页，不放列表——
+                 列表里的按钮在 fixed-right 列中，实测点击不触发处理器。 -->
+            <div v-if="order.status === 3" class="eval-entry">
+              <div class="eval-hint">交易已完成，可以对交易对方留下评价（每单一次；匿名只隐藏昵称与头像）</div>
+              <el-button type="primary" plain @click="openEvaluation">评价这笔交易</el-button>
+            </div>
+
             <div class="actions">
               <template v-if="order.operable">
                 <el-button type="success" @click="handleFinish">确认交易完成</el-button>
@@ -271,6 +278,16 @@ onMounted(load)
 </template>
 
 <style scoped>
+.eval-entry {
+  margin: 16px 0 4px;
+}
+
+.eval-hint {
+  margin-bottom: 10px;
+  font-size: 13px;
+  color: var(--ct-text-muted);
+}
+
 .page-header {
   margin-bottom: 16px;
 }

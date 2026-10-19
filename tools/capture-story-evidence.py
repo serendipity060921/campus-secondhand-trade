@@ -111,9 +111,15 @@ def click_button(page, names, timeout=6000):
 
 
 def wait_dialog(page, timeout=8000):
+    """等弹窗挂到 DOM 上。
+
+    这里刻意用 state='attached' 而不是 'visible'：Element Plus 的弹窗先挂载、
+    再播放入场过渡，抓 'visible' 会卡在"已存在但还没有可见区域"的瞬间而超时
+    （之前就是因此误判成"弹窗没出现"）。挂载后再等 900ms 让动画结束。
+    """
     try:
-        page.wait_for_selector('.el-dialog, .el-drawer', state='visible', timeout=timeout)
-        page.wait_for_timeout(700)
+        page.wait_for_selector('.el-dialog, .el-drawer', state='attached', timeout=timeout)
+        page.wait_for_timeout(900)
         return True
     except Exception:
         return False
@@ -246,9 +252,12 @@ def run_seller(base, browser):
             shot(page, 'US-EVAL-01-2-评价弹窗', note='星级/标签/内容/匿名（整页截）')
             if dialog_button(page, ['提交评价']):
                 page.wait_for_timeout(2600)
-                shot(page, 'US-EVAL-01-3-提交后变为已评价', '.el-table, .order-card')
+                # 提交成功后弹窗关闭；再点一次入口，应由 precheck 拦住并提示「已评价过」
+                click_button(page, ['评价这笔交易'])
+                page.wait_for_timeout(2000)
+                shot(page, 'US-EVAL-01-3-重复评价被拦下')
             else:
-                log(False, 'US-EVAL-01-3-提交后变为已评价', '弹窗里没找到「提交评价」')
+                log(False, 'US-EVAL-01-3-重复评价被拦下', '弹窗里没找到「提交评价」')
         elif opened:
             log(False, 'US-EVAL-01-2-评价弹窗', '点了「评价」但弹窗没出现')
         else:
@@ -283,10 +292,21 @@ def run_admin(base, browser):
     if want('EVAL-02'):
         goto(page, base, '/orders/1')
         if click_button(page, ['评价这笔交易']) and wait_dialog(page):
-            try:
-                page.locator('.el-dialog').last.get_by_role('switch').first.click(timeout=4000)
-            except Exception:
-                pass
+            # ★ 匿名开关必须**断言真的切到 on** 再提交：
+            #   第一版直接 click 了一下就提交，结果库里 anonymous=0，
+            #   截图里显示的是真名（匿名没生效，证据就成了假的）。
+            turned = False
+            for sel in ['.el-dialog .el-switch', '.el-dialog .el-switch__core']:
+                try:
+                    page.locator(sel).last.click(timeout=4000)
+                    page.wait_for_timeout(400)
+                    cls = page.locator('.el-dialog .el-switch').last.get_attribute('class') or ''
+                    if 'is-checked' in cls:
+                        turned = True
+                        break
+                except Exception:
+                    continue
+            log(turned, '匿名开关已切到 on', '' if turned else '未能切到 on（本次评价可能不是匿名）')
             if dialog_button(page, ['提交评价']):
                 page.wait_for_timeout(2600)
                 log(True, 'US-EVAL-02-3-卖家匿名评价已提交', '稍后由商品页截图体现匿名')

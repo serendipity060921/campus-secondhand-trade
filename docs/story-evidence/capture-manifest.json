@@ -10,22 +10,32 @@
     {
       "name": "US-EVAL-01-1-订单详情评价入口",
       "ok": true,
-      "detail": "68 KB"
+      "detail": "73 KB"
     },
     {
       "name": "US-EVAL-01-2-评价弹窗",
-      "ok": false,
-      "detail": "没有「评价」按钮（可能已评价过，先清数据）"
+      "ok": true,
+      "detail": "79 KB  星级/标签/内容/匿名（整页截）"
+    },
+    {
+      "name": "US-EVAL-01-3-重复评价被拦下",
+      "ok": true,
+      "detail": "75 KB"
+    },
+    {
+      "name": "匿名开关已切到 on",
+      "ok": true,
+      "detail": ""
     },
     {
       "name": "US-EVAL-02-3-卖家匿名评价已提交",
-      "ok": false,
-      "detail": "没打开评价弹窗（可能已评价过）"
+      "ok": true,
+      "detail": "稍后由商品页截图体现匿名"
     },
     {
       "name": "US-EVAL-02-2-详情页评价区（含匿名评价）",
       "ok": true,
-      "detail": "125 KB"
+      "detail": "137 KB"
     }
   ]
 }
