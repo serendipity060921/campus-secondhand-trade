@@ -1,0 +1,391 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>校园二手交易平台 · 自动化测试报告</title>
+<style>
+:root{--ink:#1a1d19;--ink2:#5c6159;--muted:#8a8f86;--rule:#c9ccc4;--paper:#f5f6f3;
+      --card:#fff;--ok:#35603f;--bad:#8c3b5a;--warn:#7a5a2e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+     font:15px/1.7 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1180px;margin:0 auto;padding:32px 20px 80px}
+h1{font-size:26px;margin:0 0 6px}
+h2{font-size:19px;margin:38px 0 12px;padding-bottom:8px;border-bottom:.5px solid var(--rule)}
+h3{font-size:16px;margin:22px 0 8px}
+.sub{color:var(--ink2);margin:0 0 20px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:18px 0 8px}
+.kpi{background:var(--card);border:.5px solid var(--rule);border-radius:8px;padding:14px 16px}
+.kpi b{display:block;font-size:24px;line-height:1.2}
+.kpi span{font-size:12px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;background:var(--card);font-size:13px}
+th,td{padding:8px 10px;border-bottom:.5px solid var(--rule);text-align:left;vertical-align:top}
+th{background:var(--paper);color:var(--ink2);font-weight:600;position:sticky;top:0}
+tr.bad td{background:#fbf0f3}
+tr.bad td:first-child{border-left:3px solid var(--bad)}
+.ok{color:var(--ok);font-weight:600}
+.no{color:var(--bad);font-weight:600}
+.tag{display:inline-block;padding:1px 7px;border:.5px solid var(--rule);border-radius:999px;
+     font-size:12px;color:var(--ink2)}
+.mut{color:var(--muted)}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px;margin-top:12px}
+figure{background:var(--card);border:.5px solid var(--rule);border-radius:8px;margin:0;overflow:hidden}
+figure img{width:100%;display:block;border-bottom:.5px solid var(--rule);cursor:zoom-in}
+figcaption{padding:8px 12px;font-size:12px;color:var(--ink2);word-break:break-all}
+.story{background:var(--card);border:.5px solid var(--rule);border-radius:8px;
+       padding:14px 16px;margin:14px 0}
+.story h4{margin:0 0 10px;font-size:15px}
+nav a{color:var(--ink2);margin-right:14px;font-size:13px}
+.note{background:#fff;border-left:3px solid var(--warn);padding:10px 14px;margin:14px 0;font-size:13px}
+</style></head><body><div class="wrap">
+<h1>校园二手交易平台 · 自动化测试报告</h1>
+<p class="sub">黎钟 · 2023030203055 · 软件工程 · 电子科技大学中山学院　|　生成时间 2026-10-19 16:09　|　生成脚本 tools/gen-test-report-html.py</p>
+<div class="kpis">
+<div class="kpi"><b>158</b><span>本次报告收录的用例</span></div>
+<div class="kpi"><b class="ok">158</b><span>通过</span></div>
+<div class="kpi"><b class="ok">0</b><span>失败</span></div>
+<div class="kpi"><b>55</b><span>截图证据</span></div>
+<div class="kpi"><b>29/36</b><span>有截图的故事</span></div>
+<div class="kpi"><b>-</b><span>全量自动化用例（含单测）</span></div>
+</div>
+<nav><a href="#s0">端到端测试（Playwright，真实浏览器）</a><a href="#s1">部署与接口验证 D1–D28（经 Nginx）</a><a href="#s2">安全套件 S 系列</a><a href="#s3">双向评价 · 接口验证</a><a href="#s4">双向评价 · 界面验证（Playwright）</a><a href="#gallery">截图证据墙</a></nav>
+<div class="note">本报告由脚本从各套件的 JSON 结果与 <code>docs/story-evidence/</code> 的截图自动合成：用例逐条列出输入/预期/实际，截图按用户故事分组。<b>截图可点击放大</b>。失败的用例会整行标红。</div>
+<h2>一、全量用例构成</h2><table><thead><tr><th>套件</th><th>条数</th></tr></thead><tbody>
+<tr><td>端到端测试</td><td>31</td></tr>
+<tr><td>安全测试</td><td>52</td></tr>
+<tr><td>后端单元测试</td><td>665</td></tr>
+<tr><td>前端纯函数测试</td><td>76</td></tr>
+<tr><td>前端组件测试</td><td>15</td></tr>
+</tbody></table>
+<h2>二、本次收录的套件（逐条）</h2>
+<h3 id="s0">端到端测试（Playwright，真实浏览器） <span class="tag">31 条 · 通过 31</span></h3>
+<p class="mut">31 条，覆盖主业务闭环与异常场景　·　来源 <code>C:\Users\26859\AppData\Local\Temp\dsh-sqlval\e2e_result.json</code></p>
+<table><thead><tr><th>编号</th><th>场景</th><th>输入</th><th>预期</th><th>实际</th><th>结果</th></tr></thead><tbody>
+<tr><td>1.1</td><td>账号A注册</td><td class="mut">username=e2ea31394, password=abc12345</td><td class="mut">注册成功并跳转登录页，数据库新增记录</td><td>提示「注册成功，用户ID：408，请登录」；跳转 /login?username=e2ea31394；数据库 user 表记录数=1</td><td class="ok">通过</td></tr>
+<tr><td>1.2</td><td>账号A登录</td><td class="mut">e2ea31394/abc12345</td><td class="mut">登录成功，跳转首页，Token 生效</td><td>登录后 URL=/home，Token 已写入 localStorage（eyJhbGciOiJIUzI1Ni…），导航显示「搜索
+卖
+卖家A3139」</td><td class="ok">通过</td></tr>
+<tr><td>1.3</td><td>账号A完善资料并上传头像</td><td class="mut">昵称/校区/手机号/邮箱/头像图片</td><td class="mut">资料保存成功、头像落库为 /upload/...</td><td>头像提示「头像上传成功」+ 保存提示「资料已保存」；数据库：卖家A31394改	东校区A栋	e2ea31394@campus.edu	/upload/2026/10/376b091df69548c28ba51b4f3a6c6bc0.png</td><td class="ok">通过</td></tr>
+<tr><td>1.4</td><td>账号A发布商品（含图片）</td><td class="mut">名称=E2E测试商品-31394 价格=88.50 分类=第1项 成色=第2项 图片=textbook.png</td><td class="mut">发布成功，商品处于「在售」状态，首页可见</td><td>提示「发布成功！」；跳转商品详情 id=525；数据库：525	1	88.50	1	1（status=1 在售、封面图已保存）</td><td class="ok">通过</td></tr>
+<tr><td>1.4b</td><td>新商品在首页商品列表可见（已上架）</td><td class="mut">打开首页</td><td class="mut">首页列表出现该商品</td><td>首页商品卡片中找到标题含「E2E测试商品-31394」的商品</td><td class="ok">通过</td></tr>
+<tr><td>1.5</td><td>账号B注册并登录</td><td class="mut">e2eb31394/abc12345</td><td class="mut">B 注册登录成功，与 A 会话完全隔离</td><td>B 注册提示「注册成功，用户ID：409，请登录」，登录后 URL=/home</td><td class="ok">通过</td></tr>
+<tr><td>1.5b</td><td>账号B浏览首页并打开A的商品详情</td><td class="mut">首页点击商品卡片</td><td class="mut">详情页正确展示商品标题、价格、发布者信息</td><td>首页商品卡片 12 个；详情页 URL=/product/525，标题与价格（88.5）正常展示</td><td class="ok">通过</td></tr>
+<tr><td>1.6a</td><td>账号B收藏商品</td><td class="mut">productId=525</td><td class="mut">收藏成功，按钮变「★ 已收藏」，数据库新增收藏记录</td><td>收藏前按钮「☆ 收藏（0）」→ 点击后「★ 已收藏（1）」，提示「收藏成功」；数据库 favorite 记录数=1</td><td class="ok">通过</td></tr>
+<tr><td>1.6b</td><td>进入【我的收藏】查看</td><td class="mut">打开 /favorites</td><td class="mut">收藏列表出现该商品</td><td>我的收藏页包含商品「E2E测试商品-31394」</td><td class="ok">通过</td></tr>
+<tr><td>1.6c</td><td>取消收藏</td><td class="mut">点击取消收藏并确认</td><td class="mut">列表移除该商品，显示空状态，数据库软删除</td><td>取消提示「已取消收藏」；列表提示「还没有收藏任何商品，去首页逛」；数据库有效收藏数=0</td><td class="ok">通过</td></tr>
+<tr><td>1.7a</td><td>账号B在商品详情私聊卖家并发送消息</td><td class="mut">点击【私聊卖家】→ 输入消息 → 发送</td><td class="mut">跳转聊天页，消息发送成功并保存到数据库</td><td>进入聊天页 /chat/408?productId=525，发送提示「」；数据库消息数=1</td><td class="ok">通过</td></tr>
+<tr><td>1.7b</td><td>账号A打开消息会话列表，看到B的会话</td><td class="mut">打开 /messages</td><td class="mut">会话列表出现B，并显示未读标记</td><td>A 的会话列表出现买家；未读角标元素数=2</td><td class="ok">通过</td></tr>
+<tr><td>1.7c</td><td>账号A查看消息、标记已读并回复B</td><td class="mut">打开会话 → 查看消息 → 回复</td><td class="mut">消息可见、已读标记生效（未读清零）、回复发送成功</td><td>A 聊天页看到B的消息；标记已读后未读消息数=0；已回复B</td><td class="ok">通过</td></tr>
+<tr><td>1.7d</td><td>账号B收到A的回复</td><td class="mut">B 刷新聊天页</td><td class="mut">B 能看到 A 的回复</td><td>B 聊天页收到A 的回复消息</td><td class="ok">通过</td></tr>
+<tr><td>1.8</td><td>账号B下单，生成订单（待交易）</td><td class="mut">productId=525 交易地点=东校区图书馆门口</td><td class="mut">下单成功，订单状态「待交易」，商品转「交易中」，买家卖家正确</td><td>提示「下单成功，请与卖家约定面交时间」；跳转 /orders/165；数据库订单（status,buyer,seller,amount）=0	409	408	88.50，商品状态=4（4=交易中）</td><td class="ok">通过</td></tr>
+<tr><td>1.9a</td><td>账号B在【我买到的】查看订单</td><td class="mut">打开 /orders/bought</td><td class="mut">列表出现该订单，状态「待交易」</td><td>B【我买到的】显示订单（商品+状态待交易）</td><td class="ok">通过</td></tr>
+<tr><td>1.9b</td><td>账号A在【我卖出的】查看订单</td><td class="mut">打开 /orders/sold</td><td class="mut">列表出现该订单及买家信息</td><td>A【我卖出的】显示该订单</td><td class="ok">通过</td></tr>
+<tr><td>1.10a</td><td>卖家A将订单改为「交易完成」</td><td class="mut">orderId=165 → 完成</td><td class="mut">订单变已完成，商品变已售出，信用分累加</td><td>提示「交易已完成」；数据库订单状态=3（3=已完成），商品状态=5（5=已售出）</td><td class="ok">通过</td></tr>
+<tr><td>1.10b</td><td>买家B查看订单状态变化（已完成）</td><td class="mut">打开 /orders/165</td><td class="mut">B 侧状态同步为「已完成」，信用分增加</td><td>B 订单详情页显示状态已完成；信用分 100,100 → 101,101</td><td class="ok">通过</td></tr>
+<tr><td>1.11</td><td>取消订单并验证商品释放回在售</td><td class="mut">A 在【我卖出的】取消订单</td><td class="mut">订单变已取消，商品回到在售，B 侧同步</td><td>取消提示「订单已取消」；订单状态=4（4=已取消），商品状态=1（1=已释放回在售）；B 侧显示已取消</td><td class="ok">通过</td></tr>
+<tr><td>2.1</td><td>未登录直接访问需登录页面应被拦截跳登录页</td><td class="mut">逐个访问 /profile /profile/edit /product/publish /product/mine /favorites /messages /orders/bought /orders/sold</td><td class="mut">全部自动跳转到 /login</td><td>未登录访问 8 个受保护页面，全部跳转登录页</td><td class="ok">通过</td></tr>
+<tr><td>2.2</td><td>账号B越权修改账号A的商品（上下架）</td><td class="mut">PUT /api/product/status {productId:525, status:3}（B 的 Token）</td><td class="mut">返回 3002 无权操作他人商品</td><td>B 用 A 的商品 id=525 调上下架接口 → code=3002「无权操作他人发布的商品」</td><td class="ok">通过</td></tr>
+<tr><td>2.3</td><td>第三方越权查看他人订单（既非买家也非卖家）</td><td class="mut">第三方账号打开 /orders/165 且调用 GET /api/order/165</td><td class="mut">接口返回 6004，页面给出无权提示</td><td>第三方账号 e2ec31394 打开 /orders/165（A↔B 的订单）→ 页面提示「无权查看或操作该订单」；接口 code=6004</td><td class="ok">通过</td></tr>
+<tr><td>2.4</td><td>不能收藏自己发布的商品</td><td class="mut">B 打开自己的商品详情点收藏</td><td class="mut">提示「不能收藏自己发布的商品」（4002）</td><td>B 收藏自己的商品 527 → 页面提示「不能收藏自己发布的商品」，接口 code=4002</td><td class="ok">通过</td></tr>
+<tr><td>2.5</td><td>不能购买自己发布的商品</td><td class="mut">B 在自己的商品详情点【立即购买】</td><td class="mut">提示「不能购买自己发布的商品」（6002）</td><td>B 购买自己的商品 527 → 页面提示「不能收藏自己发布的商品」，接口 code=6002</td><td class="ok">通过</td></tr>
+<tr><td>2.6</td><td>不能给自己发私信</td><td class="mut">B 打开 /chat/e2eb31394（自己的用户ID）</td><td class="mut">发送被禁用或提示 5001</td><td>B 打开 /chat/409（自己）→ 发送按钮 disabled=True，页面提示「」；接口 code=5001</td><td class="ok">通过</td></tr>
+<tr><td>4.1</td><td>发布商品不填名称/价格 → 前端表单拦截</td><td class="mut">打开发布页直接点【立即发布】</td><td class="mut">出现表单校验提示，不发起请求、不跳转</td><td>前端表单校验提示 3 条（请输入商品名称；请选择商品分类；请输入售价），页面未跳转=是</td><td class="ok">通过</td></tr>
+<tr><td>4.2</td><td>访问不存在的商品ID / 订单ID</td><td class="mut">GET /product/999999、GET /orders/999999 及对应接口</td><td class="mut">页面友好提示，接口返回 3001 / 6003，不出现 500</td><td>商品页提示「商品不存在或已被删除」(接口 3001)；订单页提示「订单不存在」(接口 6003)</td><td class="ok">通过</td></tr>
+<tr><td>4.3</td><td>上传非图片文件 / 超大文件</td><td class="mut">发布页分别上传 not-image.txt 与 6MB big.png</td><td class="mut">均给出明确提示，不写入数据库</td><td>上传 .txt 提示「只支持 jpg / png / gif / webp / bmp 格式的图片」；上传 6MB 图片提示「图片大小不能超过 5MB」</td><td class="ok">通过</td></tr>
+<tr><td>4.4</td><td>简单并发测试：同一账号两窗口同时收藏同一商品</td><td class="mut">同一账号两个独立会话并发 POST /api/favorite/operate</td><td class="mut">只产生 1 条收藏记录，另一个返回 4001，无脏数据</td><td>同一账号两个独立会话同时收藏同一商品 → 接口返回 [&#x27;200&#x27;, &#x27;4001&#x27;]；数据库收藏记录数=1（期望 1 条，唯一索引 uk_user_product 保证不重复）</td><td class="ok">通过</td></tr>
+<tr><td>4.5</td><td>简单并发测试：两个账号同时抢购同一商品（防一物多卖）</td><td class="mut">B 与 C 并发 POST /api/order/create（同一商品）</td><td class="mut">只有 1 单成功，另一个返回 6001，无重复订单</td><td>两个不同账号同时下单同一商品 → 返回 [&#x27;200&#x27;, &#x27;6001&#x27;]；数据库订单数=1（期望 1），商品状态=4（4=交易中）</td><td class="ok">通过</td></tr>
+</tbody></table>
+<h3 id="s1">部署与接口验证 D1–D28（经 Nginx） <span class="tag">28 条 · 通过 28</span></h3>
+<p class="mut">28 条，含数据完整性、限流、WebSocket　·　来源 <code>C:\Users\26859\AppData\Local\Temp\dsh-sqlval\v015_result.json</code></p>
+<table><thead><tr><th>编号</th><th>场景</th><th>输入</th><th>预期</th><th>实际</th><th>结果</th></tr></thead><tbody>
+<tr><td>D1</td><td>首页可访问（经 Nginx）</td><td class="mut">GET http://127.0.0.1:8081/</td><td class="mut">HTTP 200 且返回 HTML</td><td>HTTP 200，返回 395 字节 HTML</td><td class="ok">通过</td></tr>
+<tr><td>D2</td><td>前端 JS 资源可访问且带长缓存</td><td class="mut">GET /assets/index-Bqxs1fKY.js</td><td class="mut">HTTP 200 且 Cache-Control 含 max-age</td><td>HTTP 200，Cache-Control=max-age=2592000</td><td class="ok">通过</td></tr>
+<tr><td>D3</td><td>SPA 路由回退：刷新 /home</td><td class="mut">GET /home</td><td class="mut">HTTP 200 且返回 index.html（而不是 404）</td><td>HTTP 200，返回 index.html ✓</td><td class="ok">通过</td></tr>
+<tr><td>D4</td><td>SPA 路由回退：刷新 /chat/7</td><td class="mut">GET /chat/7</td><td class="mut">HTTP 200 且返回 index.html（而不是 404）</td><td>HTTP 200，返回 index.html ✓</td><td class="ok">通过</td></tr>
+<tr><td>D5</td><td>SPA 路由回退：刷新 /admin/dashboard</td><td class="mut">GET /admin/dashboard</td><td class="mut">HTTP 200 且返回 index.html（而不是 404）</td><td>HTTP 200，返回 index.html ✓</td><td class="ok">通过</td></tr>
+<tr><td>D6</td><td>index.html 不被缓存（避免发版后白屏）</td><td class="mut">GET /index.html</td><td class="mut">Cache-Control 含 no-cache</td><td>Cache-Control=no-cache, no-store, must-revalidate</td><td class="ok">通过</td></tr>
+<tr><td>D7</td><td>/api 反向代理到后端</td><td class="mut">GET /api/product/list?page=1&amp;size=3</td><td class="mut">HTTP 200 且 code=200、返回商品数据</td><td>HTTP 200，code=200，返回 3 条商品</td><td class="ok">通过</td></tr>
+<tr><td>D8</td><td>代理后的数据与数据库一致（只统计在售）</td><td class="mut">对比接口 total 与 SQL(在售)</td><td class="mut">接口返回的 total 等于在售商品数</td><td>接口 total=13，SQL 在售=13</td><td class="ok">通过</td></tr>
+<tr><td>D9</td><td>运维探针 /health 走代理</td><td class="mut">GET /health</td><td class="mut">HTTP 200 且返回后端存活信息</td><td>HTTP 200，status=UP</td><td class="ok">通过</td></tr>
+<tr><td>D10</td><td>生产配置：数据库详情探针已关闭</td><td class="mut">GET /api/health/db</td><td class="mut">code=403（避免对外暴露库表统计）</td><td>code=403</td><td class="ok">通过</td></tr>
+<tr><td>D11</td><td>运行环境为 prod 且版本正确</td><td class="mut">GET /api/health</td><td class="mut">profile=prod、version=v0.16</td><td>profile=prod，version=v0.16</td><td class="ok">通过</td></tr>
+<tr><td>D12</td><td>/upload 静态映射已代理（不存在的图片应 404 而非 500）</td><td class="mut">GET /upload/not-exist-2026.png</td><td class="mut">HTTP 404 或业务错误码（证明请求到达后端）</td><td>HTTP 404</td><td class="ok">通过</td></tr>
+<tr><td>D13</td><td>经 Nginx 完成 WebSocket 升级并收到 welcome</td><td class="mut">连接 ws://127.0.0.1:8081/ws/chat（带 Origin: http://127.0.0.1:8081）</td><td class="mut">握手成功且收到 welcome 帧（含 unreadTotal）</td><td>type=welcome，data={&#x27;unreadTotal&#x27;: 0, &#x27;userId&#x27;: 5}</td><td class="ok">通过</td></tr>
+<tr><td>D14</td><td>代理链路上的心跳正常（长连接未被掐断）</td><td class="mut">发送 {&#x27;type&#x27;:&#x27;ping&#x27;}</td><td class="mut">收到 pong</td><td>收到 pong</td><td class="ok">通过</td></tr>
+<tr><td>D15</td><td>★ 经 Nginx 的实时私信双向可达</td><td class="mut">A 经代理发消息给 B</td><td class="mut">B 经代理收到该消息（证明 Upgrade 透传正确）</td><td>B 收到=是，消息 id=325</td><td class="ok">通过</td></tr>
+<tr><td>D16</td><td>非法 Token 经代理仍被拒绝</td><td class="mut">token=bad.token</td><td class="mut">握手失败 401</td><td>结果：server rejected WebSocket connection: HTTP 401</td><td class="ok">通过</td></tr>
+<tr><td>D17</td><td>生产配置下本机同样受登录限流（rate-limit-skip-local=false）</td><td class="mut">从本机连续登录 22 次</td><td class="mut">前 20 次成功，之后返回 429</td><td>成功 20 次、限流 2 次</td><td class="ok">通过</td></tr>
+<tr><td>D18</td><td>部署形态下 Redis 缓存仍然生效</td><td class="mut">GET /api/category/list 后检查缓存 Key</td><td class="mut">缓存 Key 存在</td><td>campus:category:list:all 存在=1</td><td class="ok">通过</td></tr>
+<tr><td>D19</td><td>在线状态 Key 由心跳维护（用例连接断开后成员被清理）</td><td class="mut">先按应用语义清扫窗口外成员，再检查用例账号是否仍留在线上集合</td><td class="mut">用例账号均已从 campus:online:zset 移除</td><td>用例账号残留=无；全局清扫后基数=0、窗口内活跃=0</td><td class="ok">通过</td></tr>
+<tr><td>D20</td><td>部署形态下数据完整（用户/商品/收藏/订单）</td><td class="mut">SQL 统计</td><td class="mut">与演示数据一致 4/17/4/4</td><td>统计=4/17/4/4</td><td class="ok">通过</td></tr>
+<tr><td>D21</td><td>生产日志写入文件（而非只输出控制台）</td><td class="mut">检查 LOG_PATH 下的日志文件</td><td class="mut">日志文件已生成且有内容</td><td>campus-trade.log 存在=True，大小=139635 字节</td><td class="ok">通过</td></tr>
+<tr><td>D22</td><td>上传目录已就绪（配置独立路径，便于挂载数据卷）</td><td class="mut">检查 UPLOAD_PATH 目录</td><td class="mut">目录存在</td><td>D:\campus-secondhand-trade\deploy\windows\uploads 存在=True</td><td class="ok">通过</td></tr>
+<tr><td>D23</td><td>登录可用（经 Nginx）</td><td class="mut">POST /api/user/login</td><td class="mut">两人都能拿到 Token</td><td>stu_test01=成功，stu_demo=成功</td><td class="ok">通过</td></tr>
+<tr><td>D24</td><td>发布商品并立即在前台可见（缓存失效生效）</td><td class="mut">POST /api/product/publish → 再查列表</td><td class="mut">发布成功且列表能查到（说明缓存已失效）</td><td>发布 code=200，id=543，列表可见=True</td><td class="ok">通过</td></tr>
+<tr><td>D25</td><td>收藏链路可用（经 Nginx）</td><td class="mut">收藏刚发布的商品 → 查我的收藏</td><td class="mut">收藏成功且出现在收藏列表</td><td>收藏 code=200，我的收藏可见=True</td><td class="ok">通过</td></tr>
+<tr><td>D26</td><td>个性化推荐可用（经 Nginx，含缓存）</td><td class="mut">GET /api/product/recommend?size=6</td><td class="mut">code=200 且返回推荐列表</td><td>code=200，返回 3 条推荐</td><td class="ok">通过</td></tr>
+<tr><td>D27</td><td>管理后台看板可用（经 Nginx）</td><td class="mut">GET /api/admin/dashboard（管理员）</td><td class="mut">code=200 且含概览与趋势数据</td><td>code=200，趋势天数=7，待审核=1</td><td class="ok">通过</td></tr>
+<tr><td>D28</td><td>部署验证产生的测试数据已清理</td><td class="mut">删除验证商品与收藏</td><td class="mut">商品数回到 17、收藏数回到 4</td><td>商品=17，收藏=4</td><td class="ok">通过</td></tr>
+</tbody></table>
+<h3 id="s2">安全套件 S 系列 <span class="tag">52 条 · 通过 52</span></h3>
+<p class="mut">52 条，越权 / 注入 / 上传 / 信息泄漏　·　来源 <code>tests/api/security-result.json</code></p>
+<table><thead><tr><th>编号</th><th>场景</th><th>输入</th><th>预期</th><th>实际</th><th>结果</th></tr></thead><tbody>
+<tr><td>S1</td><td>登录注入「经典 OR 永真绕过」不能拿到 token</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S2</td><td>登录注入「注释截断密码校验」不能拿到 token</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S3</td><td>登录注入「井号注释绕过」不能拿到 token</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S4</td><td>登录注入「联合查询」不能拿到 token</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S5</td><td>搜索注入 OR 1=1 不返回全部商品</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S6</td><td>联合查询不泄露 user 表（无密码哈希/用户名字段）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S7</td><td>时间盲注 SLEEP(3) 未生效（说明用了参数化查询）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S8</td><td>数字型参数传入注入串返回 400（类型校验生效）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S9</td><td>路径参数注入被拒（400/404，不执行 SQL）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S10</td><td>注入尝试后商品表仍然可查（未被破坏）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S11</td><td>接口一律返回 application/json（浏览器不会当 HTML 执行）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S12</td><td>脚本载荷请求返回 JSON 而非 HTML</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S13</td><td>登录名脚本载荷被正常拒绝且响应仍为 JSON</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S14</td><td>记录后端转义策略（原样回显 / 已转义 均属可接受，取决于前端是否转义）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S15</td><td>无 token 访问 /api/order/buyList 被拒（401）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S16</td><td>无 token 访问 /api/user/info 被拒（401）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S17</td><td>无 token 访问 /api/favorite/list 被拒（401）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S18</td><td>篡改 payload（改 userId 保留签名）被拒（401）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S19</td><td>alg=none 攻击被拒（401，不接受无签名 token）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S20</td><td>随机字符串 的 token 被拒（401）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S21</td><td>结构不合法 的 token 被拒（401）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S22</td><td>签名被改 的 token 被拒（401）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S23</td><td>空 token 的 token 被拒（401）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S24</td><td>横向越权：A 查看 B 的订单 4 被拒（6004）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S25</td><td>对照：B 查看自己的订单 4 正常（200）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S26</td><td>纵向越权：普通用户访问管理端仪表盘被拒（403）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S27</td><td>纵向越权：普通用户访问管理端用户列表被拒（403）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S28</td><td>纵向越权：普通用户访问管理端操作日志被拒（403）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S29</td><td>对照：管理员访问管理端正常（200）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S30</td><td>横向越权：A 下架 B 的商品 261 被拒</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S31</td><td>登录响应不含密码/哈希字段</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S32</td><td>用户信息接口不含密码/哈希字段</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S33</td><td>错误响应不暴露堆栈/框架内部信息</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S34</td><td>经 Nginx 访问 /actuator/env 不泄露 actuator 数据（落到前端 SPA 属正常）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S35</td><td>经 Nginx 访问 /actuator/beans 不泄露 actuator 数据（落到前端 SPA 属正常）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S36</td><td>经 Nginx 访问 /actuator/heapdump 不泄露 actuator 数据（落到前端 SPA 属正常）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S34b</td><td>管理端口 /actuator/env 未暴露（404）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S35b</td><td>管理端口 /actuator/beans 未暴露（404）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S36b</td><td>管理端口 /actuator/heapdump 未暴露（404）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S36c</td><td>管理端口 /actuator/shutdown 未暴露（404）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S37</td><td>商品详情不泄露卖家手机号/邮箱</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S38</td><td>超长字段（50KB 标题）返回 400 而非 500</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S39</td><td>路径遍历拿不到配置文件（不含 spring:/datasource）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S40</td><td>非法 JSON 返回 400（不抛 500，也不暴露解析器信息）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S50</td><td>上传用例前置：token_a 可用（拿不到则本组用例无意义）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S50</td><td>★ 对照组：真实 PNG 正常上传</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S51</td><td>★ HTML 页面伪装成 .png 被拒（只查扩展名会放过它）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S52</td><td>★ JPEG 内容却改名成 .png 被拒（扩展名与内容不一致）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S53</td><td>★ 脚本文件伪装成 .png 不被接受（绝不落库落盘）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S54</td><td>扩展名不在白名单内被拒（内容是真图片也不行）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S41</td><td>错误的 Content-Type 被拒（400/415），不静默成功</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td>S42</td><td>负数分页参数被容忍（不抛 500）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+</tbody></table>
+<h3 id="s3">双向评价 · 接口验证 <span class="tag">28 条 · 通过 28</span></h3>
+<p class="mut">28 条，9xxx 业务码、信用分、匿名分层、汇总口径　·　来源 <code>C:\Users\26859\AppData\Local\Temp\dsh-sqlval\evaluation_result.json</code></p>
+<table><thead><tr><th>编号</th><th>场景</th><th>输入</th><th>预期</th><th>实际</th><th>结果</th></tr></thead><tbody>
+<tr><td></td><td>三个账号登录成功</td><td class="mut"></td><td class="mut"></td><td>buyer=True seller=True third=True</td><td class="ok">通过</td></tr>
+<tr><td></td><td>匿名可以看商品评价列表</td><td class="mut"></td><td class="mut"></td><td>HTTP 200 共 0 条</td><td class="ok">通过</td></tr>
+<tr><td></td><td>匿名可以看评价汇总</td><td class="mut"></td><td class="mut"></td><td>count=0</td><td class="ok">通过</td></tr>
+<tr><td></td><td>第三方评价 → 9002 非买卖双方</td><td class="mut"></td><td class="mut"></td><td>只有买卖双方可以评价该订单</td><td class="ok">通过</td></tr>
+<tr><td></td><td>已取消订单评价 → 9003 订单未完成</td><td class="mut"></td><td class="mut"></td><td>订单完成后才能评价</td><td class="ok">通过</td></tr>
+<tr><td></td><td>订单不存在 → 9001</td><td class="mut"></td><td class="mut"></td><td>订单不存在</td><td class="ok">通过</td></tr>
+<tr><td></td><td>评分 6 → 400 参数校验</td><td class="mut"></td><td class="mut"></td><td>评分最多 5 星</td><td class="ok">通过</td></tr>
+<tr><td></td><td>买家评价成功</td><td class="mut"></td><td class="mut"></td><td>code=200</td><td class="ok">通过</td></tr>
+<tr><td></td><td>★ 角色由订单推导：买家评卖家</td><td class="mut"></td><td class="mut"></td><td>role=1 to=系统管理员</td><td class="ok">通过</td></tr>
+<tr><td></td><td>标签按逗号切成列表</td><td class="mut"></td><td class="mut"></td><td>[&#x27;描述相符&#x27;, &#x27;态度很好&#x27;]</td><td class="ok">通过</td></tr>
+<tr><td></td><td>自己写的评价 mine=true</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>重复评价 → 9004</td><td class="mut"></td><td class="mut"></td><td>你已经评价过这笔订单了</td><td class="ok">通过</td></tr>
+<tr><td></td><td>卖家评价成功</td><td class="mut"></td><td class="mut"></td><td>code=200</td><td class="ok">通过</td></tr>
+<tr><td></td><td>★ 角色由订单推导：卖家评买家</td><td class="mut"></td><td class="mut"></td><td>role=2</td><td class="ok">通过</td></tr>
+<tr><td></td><td>★ 匿名：展示层昵称被替换</td><td class="mut"></td><td class="mut"></td><td>匿名同学</td><td class="ok">通过</td></tr>
+<tr><td></td><td>★ 匿名：fromUserId 仍保留（可追溯）</td><td class="mut"></td><td class="mut"></td><td>fromUserId=1</td><td class="ok">通过</td></tr>
+<tr><td></td><td>条数 = 2</td><td class="mut"></td><td class="mut"></td><td>count=2</td><td class="ok">通过</td></tr>
+<tr><td></td><td>平均分 = 3.5（5 与 2 各一条）</td><td class="mut"></td><td class="mut"></td><td>avg=3.5</td><td class="ok">通过</td></tr>
+<tr><td></td><td>好评率 = 50.0%（仅 5 星算好评）</td><td class="mut"></td><td class="mut"></td><td>goodRate=50.0</td><td class="ok">通过</td></tr>
+<tr><td></td><td>星级分布 5:1 / 2:1</td><td class="mut"></td><td class="mut"></td><td>{&quot;5&quot;: 1, &quot;4&quot;: 0, &quot;3&quot;: 0, &quot;2&quot;: 1, &quot;1&quot;: 0}</td><td class="ok">通过</td></tr>
+<tr><td></td><td>未登录浏览：mine 一律 false</td><td class="mut"></td><td class="mut"></td><td>2 条</td><td class="ok">通过</td></tr>
+<tr><td></td><td>列表里匿名那条显示「匿名同学」</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>第三方查订单评价 → 9002</td><td class="mut"></td><td class="mut"></td><td>只有买卖双方可以评价该订单</td><td class="ok">通过</td></tr>
+<tr><td></td><td>买卖双方可查（2 条）</td><td class="mut"></td><td class="mut"></td><td>条数=2</td><td class="ok">通过</td></tr>
+<tr><td></td><td>能读到用户列表（用于核对信用分）</td><td class="mut"></td><td class="mut"></td><td>4 个用户</td><td class="ok">通过</td></tr>
+<tr><td></td><td>★ admin 收到 5 星 → 信用分 123→124</td><td class="mut"></td><td class="mut"></td><td>admin=124</td><td class="ok">通过</td></tr>
+<tr><td></td><td>★ stu_test01 收到 2 星 → 信用分 101→100</td><td class="mut"></td><td class="mut"></td><td>stu_test01=100</td><td class="ok">通过</td></tr>
+<tr><td></td><td>未参与评价的第三方信用分不变</td><td class="mut"></td><td class="mut"></td><td>stu_demo=100</td><td class="ok">通过</td></tr>
+</tbody></table>
+<h3 id="s4">双向评价 · 界面验证（Playwright） <span class="tag">19 条 · 通过 19</span></h3>
+<p class="mut">19 条，入口 → 弹窗 → 提交 → 重复拦截 → 商品页展示　·　来源 <code>C:\Users\26859\AppData\Local\Temp\dsh-sqlval\evaluation_ui_result.json</code></p>
+<table><thead><tr><th>编号</th><th>场景</th><th>输入</th><th>预期</th><th>实际</th><th>结果</th></tr></thead><tbody>
+<tr><td></td><td>订单详情页出现「评价这笔交易」入口</td><td class="mut"></td><td class="mut"></td><td>/orders/1</td><td class="ok">通过</td></tr>
+<tr><td></td><td>弹窗已渲染</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>弹窗标题正确</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>弹窗里显示了商品信息</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>标签候选（6 个）已渲染</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>内容框有 500 字计数</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>弹窗有匿名开关与说明</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>已勾选标签并填写内容（若控件缺失会体现为下面提交后的内容差异）</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>提交后出现成功提示</td><td class="mut"></td><td class="mut"></td><td>toast</td><td class="ok">通过</td></tr>
+<tr><td></td><td>提交后弹窗关闭</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>★ 重复评价被拦下（提示已评价过）</td><td class="mut"></td><td class="mut"></td><td>提示可见</td><td class="ok">通过</td></tr>
+<tr><td></td><td>★ 匿名开关切到 on（断言，不假设）</td><td class="mut"></td><td class="mut"></td><td>el-switch is-checked</td><td class="ok">通过</td></tr>
+<tr><td></td><td>卖家匿名评价已提交</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>商品详情页有「交易评价」区</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>条数显示 2 条</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>★ 匿名评价显示为「匿名同学」</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>双向评价的角色标签都在</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>好评率与星级分布已渲染</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+<tr><td></td><td>评价内容已展示</td><td class="mut"></td><td class="mut"></td><td></td><td class="ok">通过</td></tr>
+</tbody></table>
+<h2 id="gallery">三、截图证据墙（按用户故事分组）</h2>
+<p class="mut">共 55 张，覆盖 29 条用户故事。截图文件名本身即为断言（<code>US-模块-序号-N-说明.png</code>）。</p>
+<div class="story"><h4>US-USER-01 注册账号 <span class="tag">必须 · 2 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-USER-01-1-注册页空表单校验.png" alt="US-USER-01-1-注册页空表单校验" loading="lazy"><figcaption>US-USER-01-1-注册页空表单校验</figcaption></figure>
+<figure><img src="story-evidence/US-USER-01-2-注册成功.png" alt="US-USER-01-2-注册成功" loading="lazy"><figcaption>US-USER-01-2-注册成功</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-USER-02 登录与登录态保持 <span class="tag">必须 · 3 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-USER-02-1-登录成功.png" alt="US-USER-02-1-登录成功" loading="lazy"><figcaption>US-USER-02-1-登录成功</figcaption></figure>
+<figure><img src="story-evidence/US-USER-02-2-已登录可进入受保护页.png" alt="US-USER-02-2-已登录可进入受保护页" loading="lazy"><figcaption>US-USER-02-2-已登录可进入受保护页</figcaption></figure>
+<figure><img src="story-evidence/US-USER-02-3-未登录被守卫拦截.png" alt="US-USER-02-3-未登录被守卫拦截" loading="lazy"><figcaption>US-USER-02-3-未登录被守卫拦截</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-USER-03 完善个人资料与上传头像 <span class="tag">应该 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-USER-03-1-个人资料编辑页.png" alt="US-USER-03-1-个人资料编辑页" loading="lazy"><figcaption>US-USER-03-1-个人资料编辑页</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-GOODS-01 发布商品 <span class="tag">必须 · 4 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-GOODS-01-1-空表单校验.png" alt="US-GOODS-01-1-空表单校验" loading="lazy"><figcaption>US-GOODS-01-1-空表单校验</figcaption></figure>
+<figure><img src="story-evidence/US-GOODS-01-2-发布成功进入详情.png" alt="US-GOODS-01-2-发布成功进入详情" loading="lazy"><figcaption>US-GOODS-01-2-发布成功进入详情</figcaption></figure>
+<figure><img src="story-evidence/US-GOODS-01-3-首页可见新商品.png" alt="US-GOODS-01-3-首页可见新商品" loading="lazy"><figcaption>US-GOODS-01-3-首页可见新商品</figcaption></figure>
+<figure><img src="story-evidence/US-GOODS-01-4-机审拦截违规商品.png" alt="US-GOODS-01-4-机审拦截违规商品" loading="lazy"><figcaption>US-GOODS-01-4-机审拦截违规商品</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-GOODS-02 商品卡片展示分类与编号 <span class="tag">应该 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-GOODS-02-1-卡片分类与编号.png" alt="US-GOODS-02-1-卡片分类与编号" loading="lazy"><figcaption>US-GOODS-02-1-卡片分类与编号</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-GOODS-03 上架与下架自己的商品 <span class="tag">必须 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-GOODS-03-1-我的商品（上架下架入口）.png" alt="US-GOODS-03-1-我的商品（上架下架入口）" loading="lazy"><figcaption>US-GOODS-03-1-我的商品（上架下架入口）</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-GOODS-04 查看商品详情 <span class="tag">必须 · 2 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-GOODS-04-1-商品详情页.png" alt="US-GOODS-04-1-商品详情页" loading="lazy"><figcaption>US-GOODS-04-1-商品详情页</figcaption></figure>
+<figure><img src="story-evidence/US-GOODS-04-2-不存在商品的异常态.png" alt="US-GOODS-04-2-不存在商品的异常态" loading="lazy"><figcaption>US-GOODS-04-2-不存在商品的异常态</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-ADMIN-01 管理员审核商品 <span class="tag">必须 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-ADMIN-01-1-商品审核页.png" alt="US-ADMIN-01-1-商品审核页" loading="lazy"><figcaption>US-ADMIN-01-1-商品审核页</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-ADMIN-02 强制下架违规商品 <span class="tag">应该 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-ADMIN-02-1-强制下架入口.png" alt="US-ADMIN-02-1-强制下架入口" loading="lazy"><figcaption>US-ADMIN-02-1-强制下架入口</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-ADMIN-03 用户启用/禁用 <span class="tag">可以 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-ADMIN-03-1-用户管理（启用禁用）.png" alt="US-ADMIN-03-1-用户管理（启用禁用）" loading="lazy"><figcaption>US-ADMIN-03-1-用户管理（启用禁用）</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-ADMIN-04 数据看板 <span class="tag">应该 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-ADMIN-04-1-管理后台数据看板.png" alt="US-ADMIN-04-1-管理后台数据看板" loading="lazy"><figcaption>US-ADMIN-04-1-管理后台数据看板</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-SEARCH-01 关键词搜索商品 <span class="tag">必须 · 2 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-SEARCH-01-1-关键词搜索.png" alt="US-SEARCH-01-1-关键词搜索" loading="lazy"><figcaption>US-SEARCH-01-1-关键词搜索</figcaption></figure>
+<figure><img src="story-evidence/US-SEARCH-01-2-无结果空状态.png" alt="US-SEARCH-01-2-无结果空状态" loading="lazy"><figcaption>US-SEARCH-01-2-无结果空状态</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-SEARCH-02 按分类筛选 <span class="tag">应该 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-SEARCH-02-1-分类筛选.png" alt="US-SEARCH-02-1-分类筛选" loading="lazy"><figcaption>US-SEARCH-02-1-分类筛选</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-FAV-01 收藏与取消收藏 <span class="tag">应该 · 3 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-FAV-01-1-收藏商品.png" alt="US-FAV-01-1-收藏商品" loading="lazy"><figcaption>US-FAV-01-1-收藏商品</figcaption></figure>
+<figure><img src="story-evidence/US-FAV-01-2-我的收藏页.png" alt="US-FAV-01-2-我的收藏页" loading="lazy"><figcaption>US-FAV-01-2-我的收藏页</figcaption></figure>
+<figure><img src="story-evidence/US-FAV-01-3-取消收藏.png" alt="US-FAV-01-3-取消收藏" loading="lazy"><figcaption>US-FAV-01-3-取消收藏</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-FAV-02 查看我的收藏 <span class="tag">应该 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-FAV-02-1-我的收藏列表.png" alt="US-FAV-02-1-我的收藏列表" loading="lazy"><figcaption>US-FAV-02-1-我的收藏列表</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-CHAT-01 私聊卖家 <span class="tag">必须 · 3 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-CHAT-01-1-买家发送私信.png" alt="US-CHAT-01-1-买家发送私信" loading="lazy"><figcaption>US-CHAT-01-1-买家发送私信</figcaption></figure>
+<figure><img src="story-evidence/US-CHAT-01-2-卖家会话列表.png" alt="US-CHAT-01-2-卖家会话列表" loading="lazy"><figcaption>US-CHAT-01-2-卖家会话列表</figcaption></figure>
+<figure><img src="story-evidence/US-CHAT-01-3-卖家查看会话.png" alt="US-CHAT-01-3-卖家查看会话" loading="lazy"><figcaption>US-CHAT-01-3-卖家查看会话</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-CHAT-02 消息已读回执 <span class="tag">应该 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-CHAT-02-1-消息已读回执.png" alt="US-CHAT-02-1-消息已读回执" loading="lazy"><figcaption>US-CHAT-02-1-消息已读回执</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-CHAT-03 会话列表与未读数 <span class="tag">应该 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-CHAT-03-1-会话列表与未读数.png" alt="US-CHAT-03-1-会话列表与未读数" loading="lazy"><figcaption>US-CHAT-03-1-会话列表与未读数</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-ORDER-01 买家下单 <span class="tag">必须 · 4 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-ORDER-01-1-买家下单.png" alt="US-ORDER-01-1-买家下单" loading="lazy"><figcaption>US-ORDER-01-1-买家下单</figcaption></figure>
+<figure><img src="story-evidence/US-ORDER-01-2-我买到的.png" alt="US-ORDER-01-2-我买到的" loading="lazy"><figcaption>US-ORDER-01-2-我买到的</figcaption></figure>
+<figure><img src="story-evidence/US-ORDER-01-3-卖家订单视图.png" alt="US-ORDER-01-3-卖家订单视图" loading="lazy"><figcaption>US-ORDER-01-3-卖家订单视图</figcaption></figure>
+<figure><img src="story-evidence/US-ORDER-01-4-卖家确认完成.png" alt="US-ORDER-01-4-卖家确认完成" loading="lazy"><figcaption>US-ORDER-01-4-卖家确认完成</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-ORDER-04 取消订单并释放商品 <span class="tag">必须 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-ORDER-04-1-取消订单确认弹窗.png" alt="US-ORDER-04-1-取消订单确认弹窗" loading="lazy"><figcaption>US-ORDER-04-1-取消订单确认弹窗</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-RECO-01 首页个性化推荐 <span class="tag">可以 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-RECO-01-1-首页猜你喜欢.png" alt="US-RECO-01-1-首页猜你喜欢" loading="lazy"><figcaption>US-RECO-01-1-首页猜你喜欢</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-RECO-02 商品详情页相似商品 <span class="tag">可以 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-RECO-02-1-详情页相似商品.png" alt="US-RECO-02-1-详情页相似商品" loading="lazy"><figcaption>US-RECO-02-1-详情页相似商品</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-RECO-03 举报违规商品 <span class="tag">可以 · 2 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-RECO-03-1-举报弹窗.png" alt="US-RECO-03-1-举报弹窗" loading="lazy"><figcaption>US-RECO-03-1-举报弹窗</figcaption></figure>
+<figure><img src="story-evidence/US-RECO-03-2-举报在后台可见.png" alt="US-RECO-03-2-举报在后台可见" loading="lazy"><figcaption>US-RECO-03-2-举报在后台可见</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-QUALITY-01 接口权限与越权防护 <span class="tag">必须 · 2 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-QUALITY-01-1-普通用户访问后台被拦截.png" alt="US-QUALITY-01-1-普通用户访问后台被拦截" loading="lazy"><figcaption>US-QUALITY-01-1-普通用户访问后台被拦截</figcaption></figure>
+<figure><img src="story-evidence/US-QUALITY-01-2-管理员可进入后台.png" alt="US-QUALITY-01-2-管理员可进入后台" loading="lazy"><figcaption>US-QUALITY-01-2-管理员可进入后台</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-QUALITY-02 页面三态完备（加载/空/错误） <span class="tag">应该 · 2 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-QUALITY-02-1-加载态（骨架屏）.png" alt="US-QUALITY-02-1-加载态（骨架屏）" loading="lazy"><figcaption>US-QUALITY-02-1-加载态（骨架屏）</figcaption></figure>
+<figure><img src="story-evidence/US-QUALITY-02-3-错误态（可重试）.png" alt="US-QUALITY-02-3-错误态（可重试）" loading="lazy"><figcaption>US-QUALITY-02-3-错误态（可重试）</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-QUALITY-05 窄屏可用（手机浏览） <span class="tag">应该 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-QUALITY-05-1-390px窄屏首页.png" alt="US-QUALITY-05-1-390px窄屏首页" loading="lazy"><figcaption>US-QUALITY-05-1-390px窄屏首页</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-QUALITY-06 热点数据缓存与限流 <span class="tag">应该 · 1 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-QUALITY-06-1-登录限流提示.png" alt="US-QUALITY-06-1-登录限流提示" loading="lazy"><figcaption>US-QUALITY-06-1-登录限流提示</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-EVAL-01 评价交易对方 <span class="tag">必须 · 6 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-EVAL-01-1-订单详情评价入口.png" alt="US-EVAL-01-1-订单详情评价入口" loading="lazy"><figcaption>US-EVAL-01-1-订单详情评价入口</figcaption></figure>
+<figure><img src="story-evidence/US-EVAL-01-2-评价弹窗.png" alt="US-EVAL-01-2-评价弹窗" loading="lazy"><figcaption>US-EVAL-01-2-评价弹窗</figcaption></figure>
+<figure><img src="story-evidence/US-EVAL-01-3-重复评价被拦下.png" alt="US-EVAL-01-3-重复评价被拦下" loading="lazy"><figcaption>US-EVAL-01-3-重复评价被拦下</figcaption></figure>
+<figure><img src="story-evidence/US-EVAL-04-验证-入口可见.png" alt="US-EVAL-04-验证-入口可见" loading="lazy"><figcaption>US-EVAL-04-验证-入口可见</figcaption></figure>
+<figure><img src="story-evidence/US-EVAL-05-验证-弹窗表单.png" alt="US-EVAL-05-验证-弹窗表单" loading="lazy"><figcaption>US-EVAL-05-验证-弹窗表单</figcaption></figure>
+<figure><img src="story-evidence/US-EVAL-06-验证-重复评价被拦.png" alt="US-EVAL-06-验证-重复评价被拦" loading="lazy"><figcaption>US-EVAL-06-验证-重复评价被拦</figcaption></figure>
+</div></div>
+<div class="story"><h4>US-EVAL-02 查看商品口碑 <span class="tag">应该 · 4 张</span></h4>
+<div class="gallery">
+<figure><img src="story-evidence/US-EVAL-02-1-详情页评价区（评价前空态）.png" alt="US-EVAL-02-1-详情页评价区（评价前空态）" loading="lazy"><figcaption>US-EVAL-02-1-详情页评价区（评价前空态）</figcaption></figure>
+<figure><img src="story-evidence/US-EVAL-02-2-详情页评价区（含匿名评价）.png" alt="US-EVAL-02-2-详情页评价区（含匿名评价）" loading="lazy"><figcaption>US-EVAL-02-2-详情页评价区（含匿名评价）</figcaption></figure>
+<figure><img src="story-evidence/US-EVAL-07-验证-商品页匿名展示.png" alt="US-EVAL-07-验证-商品页匿名展示" loading="lazy"><figcaption>US-EVAL-07-验证-商品页匿名展示</figcaption></figure>
+<figure><img src="story-evidence/US-EVAL-08-验证-匿名开关已打开.png" alt="US-EVAL-08-验证-匿名开关已打开" loading="lazy"><figcaption>US-EVAL-08-验证-匿名开关已打开</figcaption></figure>
+</div></div>
+<h2>四、无界面的故事（不截图，另附证据）</h2><ul>
+<li>US-SEARCH-03 只看在售商品（数据隔离）</li><li>US-ORDER-02 买卖双方订单视图</li><li>US-ORDER-03 确认交易完成</li><li>US-QUALITY-03 界面视觉一致（设计令牌）</li><li>US-QUALITY-04 可访问性与对比度</li><li>US-QUALITY-07 缺陷可追溯与质量不退化</li><li>US-EVAL-03 信用分联动与防刷</li></ul>
+<p class="mut">这些故事的断言对象是接口返回值 / 源码静态属性 / CI 结论，截图无法证明；对应证据见 <code>docs/story-evidence/README.md</code>。</p>
+<p class="mut" style="margin-top:40px">环境：Windows-11-10.0.26200-SP0 · Python 3.12.14</p>
+<script>
+document.querySelectorAll('figure img').forEach(function(img){
+  img.addEventListener('click', function(){ window.open(img.getAttribute('src'), '_blank'); });
+});
+</script></div></body></html>

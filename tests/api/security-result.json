@@ -50,7 +50,7 @@
    "group": "SQL注入",
    "name": "时间盲注 SLEEP(3) 未生效（说明用了参数化查询）",
    "ok": true,
-   "detail": "响应耗时 47ms"
+   "detail": "响应耗时 9ms"
   },
   {
    "id": "S8",
@@ -368,5 +368,5 @@
    "detail": "code=400"
   }
  ],
- "generated_at": "2026-10-16 22:23:20"
+ "generated_at": "2026-10-19 16:09:10"
 }
