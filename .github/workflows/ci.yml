@@ -399,6 +399,11 @@ jobs:
       # D 用例默认打 8081（Nginx）；套件里的 mysql 客户端也支持 MYSQL_CLI 覆盖
       WEB_BASE: http://127.0.0.1:8081
       MYSQL_CLI: mysql
+      # 部署套件里还有 redis-cli / 日志文件 / 上传目录三处原为 Windows 硬编码，
+      # 已改成环境变量优先；这里指向 runner 上的实际位置。
+      REDIS_CLI: redis-cli
+      LOG_FILE: /tmp/campus-logs/campus-trade.log
+      UPLOAD_DIR: /tmp/campus-uploads
       TEMP: /tmp
     steps:
       - uses: actions/checkout@v4
@@ -421,7 +426,7 @@ jobs:
       - name: 安装 Nginx 与 WebSocket 客户端
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y nginx > /dev/null
+          sudo apt-get install -y nginx redis-tools > /dev/null
           nginx -v
           # D13–D16 需要 websockets；runner 的 python 受 PEP668 管理，必须显式放开
           (pip install -q websockets || pip install -q --break-system-packages websockets)

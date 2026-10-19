@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """校园二手交易平台 v0.16 部署验证用例（Nginx 反向代理 + 生产配置）
 
 验证目标（针对"部署"这件事本身，而不是业务功能）：
@@ -29,6 +29,11 @@ WEB = os.environ.get('WEB_BASE', 'http://127.0.0.1:8081').rstrip('/')
 BACKEND = os.environ.get('BACKEND_BASE', 'http://127.0.0.1:8080').rstrip('/')
 WS_URL = WEB.replace('http://', 'ws://').replace('https://', 'wss://') + '/ws/chat'
 MYSQL = os.environ.get('MYSQL_CLI', r'D:\major\tool\mysql-8.4.4-winx64\bin\mysql.exe')
+# v0.18 / 第5批-⑱：以下三项原先写死 Windows 路径，导致在 CI（Linux）上直接 FileNotFoundError。
+# 与 MYSQL_CLI 一致：环境变量优先，缺省值仍是本机路径，本地行为不变。
+REDIS_CLI = os.environ.get('REDIS_CLI', r'D:\major\tool\redis\redis-cli.exe')
+LOG_FILE = pathlib.Path(os.environ.get('LOG_FILE') or r'D:\campus-secondhand-trade\deploy\windows\logs\campus-trade.log')
+UPLOAD_DIR = pathlib.Path(os.environ.get('UPLOAD_DIR') or r'D:\campus-secondhand-trade\deploy\windows\uploads')
 RESULTS = []
 
 
@@ -80,7 +85,7 @@ def login(username, password):
 
 # 用例开始时清空本机限流计数：限流窗口是 60 秒，上一轮用例的登录次数可能仍在窗口内，
 # 导致本轮"获取 Token"直接 429（v0.15 首次运行时踩到）
-subprocess.run(['D:\\major\\tool\\redis\\redis-cli.exe', '-h', '127.0.0.1', '-p', '6379',
+subprocess.run([REDIS_CLI, '-h', '127.0.0.1', '-p', '6379',
                 'del', 'campus:ratelimit:login:ip127.0.0.1'], capture_output=True)
 
 print('=' * 106)
@@ -230,7 +235,7 @@ print('\n【4】生产配置生效验证')
 
 # 生产配置关闭了"跳过本机限流"，因此本机连续登录也应被限流
 # 先清空本机限流计数（前面 WebSocket 用例也调过登录接口，否则计数被提前占用）
-subprocess.run(['D:\\major\\tool\\redis\\redis-cli.exe', '-h', '127.0.0.1', '-p', '6379',
+subprocess.run([REDIS_CLI, '-h', '127.0.0.1', '-p', '6379',
                 'del', 'campus:ratelimit:login:ip127.0.0.1'], capture_output=True)
 codes = []
 for i in range(22):
@@ -244,10 +249,10 @@ rec('D17', '生产配置下本机同样受登录限流（rate-limit-skip-local=f
 
 # 缓存仍生效（部署形态下 Redis 缓存可用）
 from urllib.request import Request
-subprocess.run(['D:\\major\\tool\\redis\\redis-cli.exe', '-h', '127.0.0.1', '-p', '6379', 'del',
+subprocess.run([REDIS_CLI, '-h', '127.0.0.1', '-p', '6379', 'del',
                 'campus:category:list:all'], capture_output=True)
 http('GET', '/api/category/list')
-keys = subprocess.run(['D:\\major\\tool\\redis\\redis-cli.exe', '-h', '127.0.0.1', '-p', '6379',
+keys = subprocess.run([REDIS_CLI, '-h', '127.0.0.1', '-p', '6379',
                        'exists', 'campus:category:list:all'],
                       capture_output=True, text=True).stdout.strip()
 rec('D18', '部署形态下 Redis 缓存仍然生效', 'GET /api/category/list 后检查缓存 Key',
@@ -262,7 +267,7 @@ rec('D18', '部署形态下 Redis 缓存仍然生效', 'GET /api/category/list �
 # 所以断言前先按**应用自身的语义**清扫 90 秒窗口外的成员，再同时检查
 # "清扫后基数"与"窗口内活跃成员数"，既验证心跳维护在线状态这一真实意图，
 # 又不会把历史残留或并发会话误报成回归失败。
-_REDIS = 'D:\\major\\tool\\redis\\redis-cli.exe'
+_REDIS = REDIS_CLI
 import time as _t
 _now = int(_t.time())
 subprocess.run([_REDIS, '-h', '127.0.0.1', '-p', '6379', 'zremrangebyscore',
@@ -304,13 +309,13 @@ row = sql("SELECT CONCAT((SELECT COUNT(*) FROM `user` WHERE deleted=0),'/',"
 rec('D20', '部署形态下数据完整（用户/商品/收藏/订单）', 'SQL 统计',
     '与演示数据一致 4/17/4/4', row == '4/17/4/4', f'统计={row}')
 
-log_file = pathlib.Path(r'D:\campus-secondhand-trade\deploy\windows\logs\campus-trade.log')
+log_file = LOG_FILE
 rec('D21', '生产日志写入文件（而非只输出控制台）', '检查 LOG_PATH 下的日志文件',
     '日志文件已生成且有内容',
     log_file.exists() and log_file.stat().st_size > 0,
     f"{log_file.name} 存在={log_file.exists()}，大小={log_file.stat().st_size if log_file.exists() else 0} 字节")
 
-upload_dir = pathlib.Path(r'D:\campus-secondhand-trade\deploy\windows\uploads')
+upload_dir = UPLOAD_DIR
 rec('D22', '上传目录已就绪（配置独立路径，便于挂载数据卷）', '检查 UPLOAD_PATH 目录',
     '目录存在', upload_dir.exists(), f'{upload_dir} 存在={upload_dir.exists()}')
 
@@ -319,9 +324,9 @@ print('\n【6】生产形态下的核心业务闭环（经 Nginx 走完整链路
 
 # 清空限流计数，避免本机反复操作触发限流（生产配置下本机也受限）
 def clear_limits():
-    subprocess.run(['D:\\major\\tool\\redis\\redis-cli.exe', '-h', '127.0.0.1', '-p', '6379',
+    subprocess.run([REDIS_CLI, '-h', '127.0.0.1', '-p', '6379',
                     'del'] + subprocess.run(
-        ['D:\\major\\tool\\redis\\redis-cli.exe', '-h', '127.0.0.1', '-p', '6379', 'keys',
+        [REDIS_CLI, '-h', '127.0.0.1', '-p', '6379', 'keys',
          'campus:ratelimit:*'], capture_output=True, text=True).stdout.split(),
         capture_output=True)
 
