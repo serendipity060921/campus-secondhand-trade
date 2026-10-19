@@ -439,7 +439,12 @@ jobs:
           out = out.replace('D:/campus-secondhand-trade/deploy/windows/uploads', '/tmp/campus-uploads')
           out = out.replace('D:/campus-secondhand-trade', os.getcwd())
           out = out.replace('logs/', '/tmp/nginx-')
+          # ★ worker 进程默认以 nobody 运行，读不到 runner 工作目录下的静态文件会表现为 403，
+          #   而 403 在 curl -f 下等同于失败 —— 这里显式指定 user root（master 本来就由 sudo 启动）。
+          out = re.sub(r'(?m)^\s*user\s+[^;]+;\s*\n', '', out)
+          out = 'user root;\n' + out
           assert os.getcwd() + '/frontend/dist' in out, 'root 未替换'
+          assert out.lstrip().startswith('user root;'), 'user 指令未注入'
           assert '/etc/nginx/mime.types' in out, 'mime.types 未改为绝对路径'
           assert '/tmp/nginx-' in out, 'logs/ 未改到 /tmp'
           assert 'D:/' not in out, '仍有未替换的 Windows 路径：' + str([l for l in out.splitlines() if 'D:/' in l][:3])
@@ -447,7 +452,7 @@ jobs:
           print('✅ 配置已生成，四处替换均已断言通过')
           PY
           mkdir -p /tmp/campus-uploads
-          chmod -R a+rX frontend/dist
+          chmod -R a+rX frontend/dist || true
           grep -nE 'listen|root |mime|error_log|pid |proxy_pass' /tmp/nginx-ci.conf | head -12
 
       # 以下三步刻意拆分：本会话读不到 Actions 日志（需要登录），
@@ -470,7 +475,14 @@ jobs:
             sleep 1
           done
           if [ "$ok" != "1" ]; then
-            echo "❌ 8081 首页不可用"; sudo tail -30 /tmp/nginx-campus-error.log || true; exit 1
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8081/ || echo 000)
+            # ★ 把诊断信息写成 GitHub 注解（::error::）：本会话读不到日志，
+            #   但公开仓库的 check-runs 注释可以通过 API 读到，这是唯一的观测通道。
+            echo "::error::8081 首页不可用，HTTP=${code}；root=$(grep -m1 'root ' /tmp/nginx-ci.conf)；listen=$(grep -m1 listen /tmp/nginx-ci.conf)"
+            echo "::error::nginx error log: $(sudo tail -5 /tmp/nginx-campus-error.log | tr '\n' '|' )"
+            echo "::error::dist 内容: $(ls frontend/dist | head -5 | tr '\n' ' ') 权限: $(stat -c '%U:%a' frontend/dist)"
+            sudo tail -30 /tmp/nginx-campus-error.log || true
+            exit 1
           fi
           echo "✅ 首页 200"
           # /api/health 需要后端已起；这里只验证 Nginx 会把请求代理出去（后端未起时应是 502，不是 404）
