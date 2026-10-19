@@ -14,7 +14,6 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getBuyOrders, getSellOrders, updateOrderStatus } from '@/api/order'
 import { demoImage, resolveImageUrl } from '@/utils/product'
 import StateError from '@/components/states/StateError.vue'
-import EvaluationDialog from '@/components/evaluation/EvaluationDialog.vue'
 
 const props = defineProps({
   role: { type: String, default: 'buy' } // buy | sell
@@ -27,27 +26,6 @@ const loading = ref(false)
 const loadError = ref(false)
 const orders = ref([])
 
-// v0.18 / 第6批-㉑：已完成的订单可以评价（双向）。打开弹窗前先问后端"我评过没有"，
-// 避免用户填完才被拒；提交成功后把该行标成已评价（内存态；刷新后按钮仍可点，
-// 但再次点击会被后端 9004 拦住 —— 数据层有唯一索引兜底）。
-const evalDialogVisible = ref(false)
-const evalOrder = ref(null)
-const evalDialogRef = ref(null)
-
-async function openEvaluation(row) {
-  evalOrder.value = row
-  const ok = await evalDialogRef.value?.checkBeforeOpen?.()
-  if (ok === false) {
-    evalOrder.value = null
-    return
-  }
-  evalDialogVisible.value = true
-}
-
-function handleEvaluated() {
-  if (evalOrder.value) evalOrder.value._evaluated = true
-  evalOrder.value = null
-}
 const total = ref(0)
 const activeStatus = ref('all')
 
@@ -221,10 +199,9 @@ onMounted(() => {
               size="small"
               type="primary"
               plain
-              :disabled="row._evaluated"
-              @click="openEvaluation(row)"
+              @click="router.push(`/orders/${row.id}`)"
             >
-              {{ row._evaluated ? '已评价' : '评价' }}
+              去评价
             </el-button>
             <template v-if="row.status === 0">
               <el-button size="small" type="success" @click="handleStatusChange(row, 3)">完成</el-button>
@@ -250,12 +227,6 @@ onMounted(() => {
       </div>
     </el-card>
 
-    <EvaluationDialog
-      ref="evalDialogRef"
-      v-model="evalDialogVisible"
-      :order="evalOrder"
-      @submitted="handleEvaluated"
-    />
   </div>
 </template>
 

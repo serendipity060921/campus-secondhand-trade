@@ -11,6 +11,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { getOrderDetail, updateOrderStatus } from '@/api/order'
 import { demoImage, resolveImageUrl } from '@/utils/product'
 import StateError from '@/components/states/StateError.vue'
+import EvaluationDialog from '@/components/evaluation/EvaluationDialog.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -19,6 +20,18 @@ const loading = ref(false)
 const loadError = ref(false)
 const notAllowed = ref(false)
 const order = ref(null)
+
+// v0.18：订单完成后可评价（双向）。入口放在详情页而不是列表里 ——
+// 列表里的按钮在 fixed-right 列中，实测点击不触发处理器（Element Plus 固定列的坑），
+// 详情页是更稳也更符合习惯的入口（先看订单，再评价）。
+const evalDialogVisible = ref(false)
+const evalDialogRef = ref(null)
+
+async function openEvaluation() {
+  const ok = await evalDialogRef.value?.checkBeforeOpen?.()
+  if (ok === false) return
+  evalDialogVisible.value = true
+}
 
 const productImage = computed(() =>
   order.value && order.value.productImage ? resolveImageUrl(order.value.productImage) : demoImage()
@@ -248,6 +261,12 @@ onMounted(load)
         </el-col>
       </el-row>
     </template>
+
+    <EvaluationDialog
+      ref="evalDialogRef"
+      v-model="evalDialogVisible"
+      :order="order"
+    />
   </div>
 </template>
 

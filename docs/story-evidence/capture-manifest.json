@@ -1,0 +1,31 @@
+{
+  "base": "http://127.0.0.1:8081",
+  "only": "EVAL",
+  "results": [
+    {
+      "name": "US-EVAL-02-1-详情页评价区（评价前空态）",
+      "ok": true,
+      "detail": "125 KB"
+    },
+    {
+      "name": "US-EVAL-01-1-订单详情评价入口",
+      "ok": true,
+      "detail": "68 KB"
+    },
+    {
+      "name": "US-EVAL-01-2-评价弹窗",
+      "ok": false,
+      "detail": "没有「评价」按钮（可能已评价过，先清数据）"
+    },
+    {
+      "name": "US-EVAL-02-3-卖家匿名评价已提交",
+      "ok": false,
+      "detail": "没打开评价弹窗（可能已评价过）"
+    },
+    {
+      "name": "US-EVAL-02-2-详情页评价区（含匿名评价）",
+      "ok": true,
+      "detail": "125 KB"
+    }
+  ]
+}
