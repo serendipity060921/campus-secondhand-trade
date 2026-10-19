@@ -197,6 +197,22 @@ jobs:
       - name: 单元测试 + 打包（使用仓库自带的 Maven Wrapper，不依赖 runner 预装版本）
         run: ./mvnw -B package
 
+      # ★ v0.18 / 第6批-㉒：本会话读不到 Actions 日志，但能读 check-runs 注解。
+      #   失败时把 surefire 的失败明细打成 ::error::，这样"后端红了"能直接看到是哪个测试。
+      - name: 失败时输出测试明细（注解）
+        if: failure()
+        run: |
+          echo "--- 汇总行 ---"
+          grep -h -E "Tests run:.*(Failures: [1-9]|Errors: [1-9])" target/surefire-reports/*.txt 2>/dev/null | head -10 || echo "(无 surefire 汇总)"
+          for f in target/surefire-reports/*.txt; do
+            [ -f "$f" ] || continue
+            if grep -q -E "<<< (FAILURE|ERROR)!" "$f"; then
+              echo "::error::失败文件: $(basename "$f")"
+              grep -h -E "<<< (FAILURE|ERROR)!|expected:|AssertionError|Exception|Caused by" "$f" | head -6 | while IFS= read -r line; do echo "::error::  ${line:0:700}"; done
+            fi
+          done
+          echo "--- 报告文件数 ---"; ls target/surefire-reports/*.txt 2>/dev/null | wc -l
+          echo "--- jacoco ---"; ls -la target/site/jacoco/jacoco.csv 2>/dev/null || echo "(无 jacoco.csv)"
       # v0.18 / 第5批-⑳：把 JaCoCo 报告转成人看得懂的摘要。
       # 用 if: always() 是刻意的 —— 覆盖率跌破棘轮时 package 会失败，
       # 但失败时更需要看到"差多少、哪个包拖后腿"，所以这一步必须在失败后仍然执行。
