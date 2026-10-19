@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 # 说明：
 #   本工作流只做「不需要数据库、Redis 与浏览器」的检查，因此在 GitHub 托管机上稳定可跑：
@@ -20,7 +20,7 @@ jobs:
     name: 设计令牌纪律
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v5
         with:
@@ -96,7 +96,7 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # 顺序很重要：先装 Node，再装 pnpm。
       # 反过来的话，pnpm/action-setup 会在 runner 默认的旧 Node 上安装 pnpm 11 并自检失败。
@@ -165,7 +165,7 @@ jobs:
       run:
         working-directory: backend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-java@v4
         with:
@@ -270,7 +270,7 @@ jobs:
       WEB_BASE: http://127.0.0.1:8080
       LOG_PATH: /tmp/campus-logs
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-java@v4
         with:
@@ -406,7 +406,7 @@ jobs:
       UPLOAD_DIR: /tmp/campus-uploads
       TEMP: /tmp
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-java@v4
         with:
