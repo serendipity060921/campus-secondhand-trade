@@ -1,4 +1,4 @@
-name: CI
+﻿name: CI
 
 # 说明：
 #   本工作流只做「不需要数据库、Redis 与浏览器」的检查，因此在 GitHub 托管机上稳定可跑：
@@ -255,6 +255,8 @@ jobs:
       CACHE_ENABLED: "true"
       HEALTH_DETAIL_ENABLED: "false"
       UPLOAD_PATH: /tmp/campus-uploads
+      # 安全套件默认打 8081（Nginx 反代）；CI 里没有 Nginx，必须显式指向后端端口。
+      WEB_BASE: http://127.0.0.1:8080
       LOG_PATH: /tmp/campus-logs
     steps:
       - uses: actions/checkout@v4
