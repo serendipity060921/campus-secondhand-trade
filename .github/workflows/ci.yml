@@ -430,10 +430,21 @@ jobs:
 
       - name: 生成 CI 版 Nginx 配置（Windows 形态 → Linux 形态）
         run: |
-          sed -e "s#D:/campus-secondhand-trade/frontend/dist#$PWD/frontend/dist#" \
-              -e "s@include[[:space:]]+mime\.types;@include /etc/nginx/mime.types;@" \
-              -e "s#logs/#/tmp/nginx-#g" \
-              deploy/windows/nginx.conf > /tmp/nginx-ci.conf
+          # 用 Python 做替换而不是 sed：不依赖 sed 方言（上一轮就因为漏写 -E，
+          # [[:space:]]+ 变成字面量而静默不生效，nginx -t 找不到 mime.types 直接失败），
+          # 并且在脚本里【断言替换结果】，任何一处没改到都会当场失败而不是留到 nginx -t。
+          python3 - <<'PY'
+          import os, pathlib, re
+          src = pathlib.Path('deploy/windows/nginx.conf').read_text(encoding='utf-8')
+          out = src.replace('D:/campus-secondhand-trade/frontend/dist', os.getcwd() + '/frontend/dist')
+          out = re.sub(r'include\s+mime\.types;', 'include /etc/nginx/mime.types;', out)
+          out = out.replace('logs/', '/tmp/nginx-')
+          assert os.getcwd() + '/frontend/dist' in out, 'root 未替换'
+          assert '/etc/nginx/mime.types' in out, 'mime.types 未改为绝对路径'
+          assert '/tmp/nginx-' in out, 'logs/ 未改到 /tmp'
+          pathlib.Path('/tmp/nginx-ci.conf').write_text(out, encoding='utf-8')
+          print('✅ 配置已生成，三处替换均已断言通过')
+          PY
           echo '--- 关键行核对 ---'
           grep -nE 'listen|root|include /etc/nginx/mime|error_log|pid' /tmp/nginx-ci.conf | head -10
           sudo systemctl stop nginx || true
