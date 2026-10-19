@@ -3,7 +3,7 @@
 
 做法：用 Playwright 驱动**真实 Edge**，按 docs/user-stories.md 的用户故事逐条操作，
       每一步自动截图，最后生成带截图的报告 docs/测试报告-用户故事视角.md，
-      并附「33 条用户故事 → 验证方式」覆盖矩阵。
+      并附「用户故事 → 验证方式」覆盖矩阵（条数实时统计，不写死）。
 
 关于写操作：注册/发布/收藏/私信/下单会写入真实数据，因此
   1) 夹具命名统一带 TAG（账号 e2e*、商品标题 E2E*），与演示数据完全隔离；
@@ -56,6 +56,20 @@ results = []
 
 
 # ─────────────────────── 夹具清理（与 E2E 同一套做法）───────────────────────
+def _story_count():
+    """用户故事条数：以 docs/user-stories.md 的 `### US-` 标题为准，不写死。
+
+    v0.18 之前这里硬编码成「33 条」，新增 US-EVAL 三条后就会和正文对不上；
+    改成实时统计，文档改了多少条，报告标题就跟着变。
+    """
+    try:
+        p = pathlib.Path(__file__).resolve().parents[1] / 'docs' / 'user-stories.md'
+        text = p.read_text(encoding='utf-8')
+        return sum(1 for line in text.splitlines() if line.startswith('### US-'))
+    except Exception:
+        return 0
+
+
 def cleanup(tag=TAG):
     if not CLEANER.exists():
         print(f'（未找到清理工具 {CLEANER}）')
@@ -497,7 +511,7 @@ def us_search_01(browser):
     return (ok and empty_ok), notes, shots, len(errs)
 
 
-# ─────────────────────── 33 条故事覆盖矩阵 ───────────────────────
+# ─────────────────── 用户故事覆盖矩阵（条数实时统计）───────────────────
 MATRIX = [
     ('US-USER-01', '注册账号', '本报告（浏览器）', '—'),
     ('US-USER-02', '登录与登录态保持', '本报告（浏览器）', '—'),
@@ -621,7 +635,7 @@ def main():
         for s in r['shots']:
             L.append(f'![{r["id"]}](story-evidence/{s})')
             L.append('')
-    L.append('## 三、33 条用户故事覆盖矩阵\n')
+    L.append(f'## 三、{_story_count()} 条用户故事覆盖矩阵\n')
     L.append('| 用户故事 | 名称 | 验证方式 | 相关缺陷 |')
     L.append('| --- | --- | --- | --- |')
     for sid, name, how, bug in MATRIX:
