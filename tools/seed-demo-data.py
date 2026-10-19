@@ -32,16 +32,39 @@ except Exception:
 import argparse
 import datetime as dt
 import pathlib
+import os
 import re
+import shutil
 import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT_DIR = ROOT / 'db' / 'demo-data'
 BASELINE = OUT_DIR / 'demo-baseline.sql'
-MYSQL_BIN = pathlib.Path(r'D:\major\tool\mysql-8.4.4-winx64\bin')
-MYSQL = MYSQL_BIN / 'mysql.exe'
-MYSQLDUMP = MYSQL_BIN / 'mysqldump.exe'
+
+
+def _resolve_mysql_client(name):
+    """三级回退定位 mysql / mysqldump —— 本机是 Windows 的绿色版，CI 是 Linux 的 PATH。
+
+    v0.18 / 第5批-⑰：原先这里把 `D:\\major\\tool\\mysql-8.4.4-winx64\\bin\\mysql.exe`
+    写死，导致在 ubuntu runner 上直接 FileNotFoundError，CI 的「初始化数据库」步骤必然失败。
+    现在顺序是：环境变量 MYSQL_BIN（显式指定）→ 本机绿色版路径 → PATH。
+    """
+    exe = name + ('.exe' if os.name == 'nt' else '')
+    override = os.environ.get('MYSQL_BIN')
+    candidates = []
+    if override:
+        candidates.append(pathlib.Path(override) / exe)
+    candidates.append(pathlib.Path(r'D:\major\tool\mysql-8.4.4-winx64\bin') / exe)
+    for c in candidates:
+        if c.exists():
+            return str(c)
+    found = shutil.which(name)
+    return found if found else str(candidates[-1])
+
+
+MYSQL = _resolve_mysql_client('mysql')
+MYSQLDUMP = _resolve_mysql_client('mysqldump')
 DB = 'campus_trade'
 AUTH = ['-h', '127.0.0.1', '-P', '3306', '-u', 'root', '-p123456']
 
@@ -168,11 +191,16 @@ def reset(args):
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     backup = OUT_DIR / f'backup-{dt.datetime.now():%Y%m%d-%H%M%S}.sql'
-    dump = run([str(MYSQLDUMP), *AUTH, '--no-create-info', '--complete-insert',
+    # ★ 备份是"本机的保险"，不该成为 CI 的硬依赖：
+    #   runner 上未必装了 mysqldump，缺它不应该让「灌演示数据」失败。
+    dump = run([MYSQLDUMP, *AUTH, '--no-create-info', '--complete-insert',
                 '--skip-extended-insert', '--compact', '--default-character-set=utf8mb4',
-                '--databases', DB])
-    backup.write_text(dump, encoding='utf-8')
-    print(f'\n  ✓ 已自动备份当前数据：{backup.name}（{backup.stat().st_size/1024:.1f} KB）')
+                '--databases', DB], allow_fail=True)
+    if dump and dump.strip():
+        backup.write_text(dump, encoding='utf-8')
+        print(f'\n  ✓ 已自动备份当前数据：{backup.name}（{backup.stat().st_size/1024:.1f} KB）')
+    else:
+        print('\n  ⚠️ 跳过备份（mysqldump 不可用或输出为空）—— 继续重置，不影响数据正确性')
 
     sql = ['SET FOREIGN_KEY_CHECKS=0;']
     for t in DELETE_ORDER:
