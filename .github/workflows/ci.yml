@@ -194,8 +194,19 @@ jobs:
       # v0.17 起项目已建立后端单元测试（内容机审 ContentModeratorTest 等 15 条），
       # 因此这里不再跳过测试：package 会先执行 test，测试失败即 CI 失败。
       # 同时 jacoco 插件会生成覆盖率报告，并执行"覆盖率棘轮"检查（只许上升）。
+      # ★ v0.18 / 第6批-㉒：本会话读不到 Actions 日志，只能靠注解。
+      #   把 maven 输出 tee 到文件，失败时把尾部 40 行打成 ::error:: 注解 —— 这样
+      #   "卡在哪一步（编译/测试/覆盖率棘轮）" 能直接看到，而不是只有 exit code 1。
       - name: 单元测试 + 打包（使用仓库自带的 Maven Wrapper，不依赖 runner 预装版本）
-        run: ./mvnw -B package
+        run: |
+          set -o pipefail
+          ./mvnw -B package 2>&1 | tee /tmp/mvn.log
+          rc=${PIPESTATUS[0]}
+          if [ "$rc" != "0" ]; then
+            echo "::error::maven 失败（exit $rc），尾部日志："
+            tail -40 /tmp/mvn.log | while IFS= read -r line; do echo "::error::  ${line:0:700}"; done
+            exit 1
+          fi
 
       # ★ v0.18 / 第6批-㉒：本会话读不到 Actions 日志，但能读 check-runs 注解。
       #   失败时把 surefire 的失败明细打成 ::error::，这样"后端红了"能直接看到是哪个测试。
