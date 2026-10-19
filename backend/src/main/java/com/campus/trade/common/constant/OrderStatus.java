@@ -29,12 +29,12 @@ public enum OrderStatus {
     CANCELLED(4, "已取消"),
 
     /* ---------- 以下为预留状态（本模块不会产生） ---------- */
-    /** 待交付（预留：支付完成后） */
-    RESERVED_DELIVERING(1, "待交付"),
-    /** 待收货（预留：卖家发货后） */
-    RESERVED_RECEIVING(2, "待收货"),
-    /** 已退款（预留：异常订单） */
-    RESERVED_REFUNDED(5, "已退款");
+    /** 待交付（卖家已确认可交付） */
+    DELIVERING(1, "待交付"),
+    /** 待收货（卖家已交付，等买家确认收货） */
+    RECEIVING(2, "待收货"),
+    /** 已退款（交付/收货阶段协商退款） */
+    REFUNDED(5, "已退款");
 
     private final Integer code;
     private final String label;
@@ -59,6 +59,7 @@ public enum OrderStatus {
 
     /** 是否属于本模块可流转的状态 */
     public static boolean isActive(Integer code) {
-        return PENDING.code.equals(code) || FINISHED.code.equals(code) || CANCELLED.code.equals(code);
+        // v0.18：1 待交付 / 2 待收货 / 5 已退款 已接入状态机（见 OrderStatusFlow），不再算"预留"
+        return code != null && code >= 0 && code <= 5;
     }
 }

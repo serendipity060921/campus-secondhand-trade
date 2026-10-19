@@ -374,16 +374,32 @@ class OrderModuleServiceImplTest {
         }
 
         @Test
-        @DisplayName("目标状态只能为 3（已完成）或 4（已取消）")
-        void onlyFinishOrCancel() {
-            for (int bad : new int[]{0, 1, 2, 5, 9}) {
+        @DisplayName("越界目标状态（0 / 6 / 9 / -1）→ 400")
+        void illegalTarget() {
+            // v0.18：1 待交付 / 2 待收货 / 5 已退款 已接入状态机，不再是非法值
+            for (int bad : new int[]{0, 6, 9, -1}) {
                 OrderException e = assertThrows(OrderException.class,
                         () -> service.changeStatus(statusDTO(55L, bad, null), BUYER),
                         "status=" + bad + " 应被拒绝");
                 assertEquals(400, e.getCode());
-                assertTrue(e.getMessage().contains("3"), "提示应说明合法取值：" + e.getMessage());
             }
             verify(orderService, never()).updateById(any());
+        }
+
+        @Test
+        @DisplayName("★ 买家不能替卖家推进到待交付（6004 越权）")
+        void buyerCannotAdvanceDelivery() {
+            OrderException e = assertThrows(OrderException.class,
+                    () -> service.changeStatus(statusDTO(55L, 1, null), BUYER));
+            assertEquals(6004, e.getCode(), "交付动作应由卖家发起");
+            verify(orderService, never()).updateById(any());
+        }
+
+        @Test
+        @DisplayName("★ 卖家可以推进到待交付（0 → 1）")
+        void sellerCanAdvanceToDelivering() {
+            service.changeStatus(statusDTO(55L, 1, null), SELLER);
+            verify(orderService).updateById(any(Order.class));
         }
 
         @Test

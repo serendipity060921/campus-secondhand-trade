@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.campus.trade.common.constant.OrderStatus;
+import com.campus.trade.common.constant.OrderStatusFlow;
 import com.campus.trade.common.exception.OrderException;
 import com.campus.trade.common.exception.ProductException;
 import com.campus.trade.common.result.PageResult;
@@ -137,12 +138,14 @@ public class OrderModuleServiceImpl implements OrderModuleService {
     @Transactional(rollbackFor = Exception.class)
     public OrderDetailVO changeStatus(OrderStatusDTO dto, Long userId) {
         Integer target = dto.getStatus();
-        // ① 目标状态只能是 已完成(3) / 已取消(4)
+        // ① 目标状态合法（v0.18：1 待交付 / 2 待收货 / 5 已退款 不再是死状态）
+        if (target == null || target < OrderStatusFlow.DELIVERING || target > OrderStatusFlow.REFUNDED) {
+            throw OrderException.paramIllegal(
+                    "status 只能是 1(待交付)/2(待收货)/3(已完成)/4(已取消)/5(已退款)");
+        }
         boolean toFinish = OrderStatus.FINISHED.getCode().equals(target);
         boolean toCancel = OrderStatus.CANCELLED.getCode().equals(target);
-        if (!toFinish && !toCancel) {
-            throw OrderException.paramIllegal("status 只能为 3（已完成）或 4（已取消）；待交易(0) 是下单后的初始状态");
-        }
+        boolean toRefund = OrderStatus.REFUNDED.getCode().equals(target);
 
         // ② 订单必须存在
         Order order = orderService.getById(dto.getOrderId());
@@ -154,9 +157,15 @@ public class OrderModuleServiceImpl implements OrderModuleService {
             log.warn("[订单操作失败] 越权 orderId={} userId={}", order.getId(), userId);
             throw OrderException.noPermission();
         }
-        // ④ 只有"待交易"的订单可以流转
-        if (!OrderStatus.PENDING.getCode().equals(order.getStatus())) {
+        // ④ 流转合法性 + 谁能推进（v0.18 改为状态机驱动，规则集中在 OrderStatusFlow）
+        int from = order.getStatus() == null ? OrderStatusFlow.PENDING : order.getStatus();
+        if (!OrderStatusFlow.canTransit(from, target)) {
             throw OrderException.statusIllegal();
+        }
+        boolean isSeller = Objects.equals(order.getSellerId(), userId);
+        if (!OrderStatusFlow.actorAllowed(target, isSeller)) {
+            log.warn("[订单操作失败] 无权推进 orderId={} userId={} from={} to={}", order.getId(), userId, from, target);
+            throw OrderException.noPermission();
         }
 
         LocalDateTime now = LocalDateTime.now();
@@ -164,7 +173,19 @@ public class OrderModuleServiceImpl implements OrderModuleService {
         update.setId(order.getId());
         update.setStatus(target);
 
-        if (toFinish) {
+        if (toRefund) {
+            // 退款（v0.18）：记录时间与原因 + 商品回到在售（复用取消的两个字段，语义写清楚）
+            update.setCancelTime(now);
+            update.setCancelReason("已退款："
+                    + (StringUtils.hasText(dto.getCancelReason()) ? dto.getCancelReason() : "买卖双方协商退款"));
+            orderService.updateById(update);
+
+            productService.getBaseMapper().update(null, new LambdaUpdateWrapper<Product>()
+                    .set(Product::getStatus, PRODUCT_ON_SALE)
+                    .eq(Product::getId, order.getProductId())
+                    .eq(Product::getStatus, PRODUCT_TRADING));
+            log.info("[订单退款] orderNo={} 原因={}", order.getOrderNo(), update.getCancelReason());
+        } else if (toFinish) {
             // 完成：记录完成时间 + 商品标记已售出 + 双方信用分 +1
             update.setFinishTime(now);
             orderService.updateById(update);
@@ -178,7 +199,7 @@ public class OrderModuleServiceImpl implements OrderModuleService {
                     .setSql("credit_score = credit_score + 1")
                     .in(User::getId, List.of(order.getBuyerId(), order.getSellerId())));
             log.info("[订单完成] orderNo={} 买卖双方信用分 +1", order.getOrderNo());
-        } else {
+        } else if (toCancel) {
             // 取消：记录取消时间与原因 + 商品回到在售
             update.setCancelTime(now);
             update.setCancelReason(StringUtils.hasText(dto.getCancelReason()) ? dto.getCancelReason() : "用户取消");
@@ -189,6 +210,10 @@ public class OrderModuleServiceImpl implements OrderModuleService {
                     .eq(Product::getId, order.getProductId())
                     .eq(Product::getStatus, PRODUCT_TRADING));
             log.info("[订单取消] orderNo={} 原因={}", order.getOrderNo(), update.getCancelReason());
+        } else {
+            // 1 待交付 / 2 待收货：只推进状态，商品保持"交易中"（不动物流字段）
+            orderService.updateById(update);
+            log.info("[订单推进] orderNo={} {} → {}", order.getOrderNo(), from, target);
         }
 
         // v0.12 缓存失效：订单状态变更会联动商品状态（交易中/已售出/回到在售）
