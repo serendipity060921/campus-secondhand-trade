@@ -83,43 +83,85 @@ async function load() {
   }
 }
 
-/** 确认交易完成 */
-async function handleFinish() {
-  try {
-    await ElMessageBox.confirm(
-      `确认「${order.value.productTitle}」这笔交易已经完成吗？确认后商品将标记为已售出，双方信用分 +1。`,
-      '确认完成',
-      { type: 'warning' }
-    )
-  } catch (e) {
-    return
-  }
-  try {
-    const res = await updateOrderStatus({ orderId: order.value.id, status: 3 })
-    ElMessage.success(res.message || '交易已完成')
-    load()
-  } catch (e) {
-    /* 拦截器已提示 */
-  }
-}
+/** 是否卖家视角（v0.18：状态机里"谁能推进"要看这个） */
+const isSeller = computed(() => order.value?.myRole === 'seller')
 
-/** 取消订单（带原因） */
-async function handleCancel() {
+/**
+ * v0.18：按钮由**状态机**推导，与后端 OrderStatusFlow 一一对应。
+ *
+ * 之所以不写死在模板里：后端刚把 1 待交付 / 2 待收货 / 5 已退款 接进状态机，
+ * 前端如果继续只认"完成/取消"，这三个状态在界面上就依然不可达（等于没做）。
+ * 这里把"当前状态 × 我是谁 → 能做什么"集中成一份数据，模板只负责渲染。
+ */
+const stateActions = computed(() => {
+  const o = order.value
+  if (!o) return []
+  const acts = []
+  const push = (to, label, type, desc = '') => acts.push({ to, label, type, desc })
+
+  if (o.status === 0) {
+    // 待交易
+    if (isSeller.value) push(1, '标记可交付', 'primary', '标记后进入待交付，买家等待收货')
+    push(3, '确认交易完成', 'success', '确认后商品标记为已售出，双方信用分 +1')
+    push(4, '取消订单', 'warning')
+  } else if (o.status === 1) {
+    // 待交付：交付动作由卖家掌握
+    if (isSeller.value) push(2, '确认已交付', 'primary', '买家确认后订单完成')
+    push(5, '申请退款', 'danger', '退款后商品回到在售')
+  } else if (o.status === 2) {
+    // 待收货
+    push(3, '确认收货', 'success', '确认后商品标记为已售出，双方信用分 +1')
+    push(5, '申请退款', 'danger', '退款后商品回到在售')
+  }
+  return acts
+})
+
+/** 终态提示文案 */
+const statusHint = computed(() => {
+  const s = order.value?.status
+  if (s === 3) return '该订单已完成，商品已标记为已售出，双方信用分 +1'
+  if (s === 4) return '该订单已取消，商品已重新上架'
+  if (s === 5) return '该订单已退款，商品已重新上架'
+  return '该订单当前没有可执行的操作'
+})
+
+/** 推进订单状态（统一入口：确认 → 调接口 → 刷新） */
+async function handleAdvance(action) {
   let reason = ''
-  try {
-    const { value } = await ElMessageBox.prompt('请填写取消原因（选填）', '取消订单', {
-      confirmButtonText: '确认取消',
-      cancelButtonText: '再想想',
-      inputPlaceholder: '例如：约不上时间 / 商品与描述不符',
-      inputValue: '临时不需要了'
-    })
-    reason = value || ''
-  } catch (e) {
-    return
+  if (action.to === 4 || action.to === 5) {
+    try {
+      const { value } = await ElMessageBox.prompt(
+        action.to === 4 ? '请填写取消原因（选填）' : '请填写退款原因（选填）',
+        action.label,
+        {
+          confirmButtonText: '确认',
+          cancelButtonText: '再想想',
+          inputPlaceholder: action.to === 4 ? '例如：约不上时间 / 商品与描述不符' : '例如：商品有瑕疵 / 一直没收到',
+          inputValue: ''
+        }
+      )
+      reason = value || ''
+    } catch (e) {
+      return
+    }
+  } else {
+    try {
+      await ElMessageBox.confirm(
+        action.desc || `${action.label}？`,
+        action.label,
+        { type: 'warning' }
+      )
+    } catch (e) {
+      return
+    }
   }
   try {
-    const res = await updateOrderStatus({ orderId: order.value.id, status: 4, cancelReason: reason })
-    ElMessage.success(res.message || '订单已取消')
+    const res = await updateOrderStatus({
+      orderId: order.value.id,
+      status: action.to,
+      cancelReason: reason || undefined
+    })
+    ElMessage.success(res.message || '操作成功')
     load()
   } catch (e) {
     /* 拦截器已提示 */
@@ -236,9 +278,15 @@ onMounted(load)
             </div>
 
             <div class="actions">
-              <template v-if="order.operable">
-                <el-button type="success" @click="handleFinish">确认交易完成</el-button>
-                <el-button type="warning" @click="handleCancel">取消订单</el-button>
+              <template v-if="stateActions.length">
+                <el-button
+                  v-for="a in stateActions"
+                  :key="a.to"
+                  :type="a.type"
+                  @click="handleAdvance(a)"
+                >
+                  {{ a.label }}
+                </el-button>
               </template>
               <el-alert
                 v-else
@@ -246,9 +294,7 @@ onMounted(load)
                 :type="order.status === 3 ? 'success' : 'info'"
                 :closable="false"
                 show-icon
-                :title="order.status === 3
-                  ? '该订单已完成，商品已标记为已售出，双方信用分 +1'
-                  : '该订单已取消，商品已重新上架'"
+                :title="statusHint"
               />
               <el-button text type="primary" @click="router.push(isBuyer ? '/orders/bought' : '/orders/sold')">
                 ← 返回订单列表

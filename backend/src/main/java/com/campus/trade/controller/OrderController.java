@@ -61,7 +61,7 @@ public class OrderController {
         return Result.success("下单成功，请与卖家约定面交时间地点", vo);
     }
 
-    /** 修改订单状态：已完成 / 已取消（限流：防止反复取消-下单刷状态） */
+    /** 修改订单状态：1 待交付 / 2 待收货 / 3 已完成 / 4 已取消 / 5 已退款（限流：防止反复取消-下单刷状态） */
     @LoginRequired
 @Operation(summary = "修改订单状态：3 已完成 / 4 已取消")
     @PutMapping("/status")
@@ -70,7 +70,17 @@ public class OrderController {
     public Result<OrderDetailVO> changeStatus(@Valid @RequestBody OrderStatusDTO dto) {
         OrderDetailVO vo = orderModuleService.changeStatus(dto, UserContext.getUserId());
         boolean finished = vo.getStatus() != null && vo.getStatus() == 3;
-        return Result.success(finished ? "交易已完成" : "订单已取消", vo);
+// v0.18：提示语按目标状态给 —— 原来只有"已完成/已取消"两种，推进到 1/2/5 会误报"订单已取消"
+        String msg;
+        switch (dto.getStatus()) {
+            case 1 -> msg = "已标记为待交付";
+            case 2 -> msg = "已确认交付，等待买家收货";
+            case 3 -> msg = "交易已完成";
+            case 4 -> msg = "订单已取消";
+            case 5 -> msg = "订单已退款，商品已重新上架";
+            default -> msg = "操作成功";
+        }
+        return Result.success(msg, vo);
     }
 
     /** 我买到的订单 */
