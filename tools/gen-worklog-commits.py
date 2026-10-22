@@ -54,6 +54,10 @@ def commits():
             kind = dict(KIND).get(m.group(1), m.group(1))
             scope = (m.group(2) or '').strip('()')
             text = m.group(3)
+# ★ 自引用问题：刷新清单的那个提交永远无法出现在自己的清单里，
+        #   否则 --check 会永远差 1 个。这类提交（只改工作日志清单）直接排除。
+        if text.startswith('刷新提交清单') or '刷新提交清单' in text:
+            continue
         rows.append({'sha': sha, 'date': date, 'kind': kind, 'scope': scope, 'text': text})
     return rows
 
