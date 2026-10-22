@@ -108,10 +108,11 @@ def main():
         print(f'  提交 {len(rows)} 个；正文详述 {detailed} 个；清单{"已同步 ✓" if same else "已过期 ✗"}')
         return 0 if same else 1
 
+    # ★ 清单必须永远在**文件末尾**：否则 prose 会被截断在清单之前，
+    #   "正文详述"就统计不到下面的章节（实测曾把 83 行当成全部正文，只数到 7 个）。
     if current:
-        text = text.replace(current, block)
-    else:
-        text = text.rstrip('\n') + '\n\n---\n\n' + block
+        text = text.replace(current, '')
+    text = text.rstrip('\n') + '\n\n---\n\n' + block
     LOG.write_text(text, encoding='utf-8')
 
     # 回读校验
