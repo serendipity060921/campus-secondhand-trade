@@ -331,6 +331,11 @@ jobs:
       #   而这个 job 只需要一个可运行的 jar —— 自己构建更稳，代价约 1 分钟。
       #   跳过测试与 jacoco（测试与棘轮已由 backend job 负责），避免重复执行 665 条单测。
       - name: 构建可执行 jar（跳过测试与覆盖率棘轮）
+        # ★ 必须显式指定工作目录：security / deploy 这两个 job 没有 job 级
+        #   defaults.run.working-directory，在仓库根执行 ./mvnw 会 exit 127
+        #   （command not found）—— 这正是 CI 连续多轮失败的真正原因：
+        #   后端编译 / 前端构建 / 设计令牌 三个 job 一直是绿的，红的是这两个 job 的这一步。
+        working-directory: backend
         run: ./mvnw -B -DskipTests -Djacoco.skip=true package
 
 
@@ -470,6 +475,11 @@ jobs:
       #   而这个 job 只需要一个可运行的 jar —— 自己构建更稳，代价约 1 分钟。
       #   跳过测试与 jacoco（测试与棘轮已由 backend job 负责），避免重复执行 665 条单测。
       - name: 构建可执行 jar（跳过测试与覆盖率棘轮）
+        # ★ 必须显式指定工作目录：security / deploy 这两个 job 没有 job 级
+        #   defaults.run.working-directory，在仓库根执行 ./mvnw 会 exit 127
+        #   （command not found）—— 这正是 CI 连续多轮失败的真正原因：
+        #   后端编译 / 前端构建 / 设计令牌 三个 job 一直是绿的，红的是这两个 job 的这一步。
+        working-directory: backend
         run: ./mvnw -B -DskipTests -Djacoco.skip=true package
 
 
