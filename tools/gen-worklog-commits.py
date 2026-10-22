@@ -56,7 +56,12 @@ def commits():
             text = m.group(3)
 # ★ 自引用问题：刷新清单的那个提交永远无法出现在自己的清单里，
         #   否则 --check 会永远差 1 个。这类提交（只改工作日志清单）直接排除。
-        if text.startswith('刷新提交清单') or '刷新提交清单' in text:
+# 只改了 docs/工作日志.md 的提交（本质就是清单刷新本身）不列入清单，
+        # 否则 --check 永远差一个（清单无法包含"生成清单"这一动作自己的提交）。
+        files = subprocess.run(['git', 'show', '--name-only', '--format=', sha],
+                               cwd=str(ROOT), capture_output=True).stdout.decode('utf-8', 'replace')
+        changed = [f for f in files.splitlines() if f.strip()]
+        if changed and all(f.strip() == 'docs/工作日志.md' for f in changed):
             continue
         rows.append({'sha': sha, 'date': date, 'kind': kind, 'scope': scope, 'text': text})
     return rows
