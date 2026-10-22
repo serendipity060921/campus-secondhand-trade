@@ -68,7 +68,7 @@ python3 tools/seed-demo-data.py --reset                                      # �
 
 ---
 
-## 二、★ CI 调试实录：三层失败，全部"只在 CI 环境才暴露"
+## 二、★ CI 调试实录：四次失败，全部"只在 CI 环境才暴露"
 
 run #128 失败 → #131 又失败 → #132 全绿。
 因为 **Actions 日志需要登录才能读**，我拿不到日志，只能靠"读代码 + 反推"定位。
@@ -82,6 +82,44 @@ run #128 失败 → #131 又失败 → #132 全绿。
 **这三次迭代本身就是结论**：容器、灌库、起服务、套件四关，
 本地无论跑多少次都发现不了后两类问题 —— 它们依赖"CI 的运行形态"
 （Linux 路径、无 Nginx、全新库）。
+
+### ★ 第四层：job 级 `working-directory` 是隐式上下文（exit 127）
+
+**现象**：CI 连续 6 轮失败，但失败的**只有**「安全套件」和「部署验证」两个 job，
+「后端编译 / 前端构建 / 设计令牌」一直是绿的。两个红 job 都崩在同一步：
+
+```
+构建可执行 jar（跳过测试与覆盖率棘轮）   → Process completed with exit code 127
+```
+
+**诊断线索**：日志读不到，但注解里能读到 **exit code 127**，而 127 = command not found。
+
+**根因**：这两个 job **没有** job 级 `defaults.run.working-directory`，而「后端编译」job 有。
+我在把"复用 backend 的 jar artifact"改成"各自构建"时，写的是：
+
+```yaml
+- name: 构建可执行 jar（跳过测试与覆盖率棘轮）
+  run: ./mvnw -B -DskipTests -Djacoco.skip=true package   # ← 在仓库根找 mvnw，不存在
+```
+
+于是从那次提交起，每一轮都红在同一步。
+
+**修法**：只给这一步加 `working-directory: backend`（不设 job 级 —— 后续步骤要用仓库根的
+`tests/api/...` 与 `backend/target/...` 相对路径）。
+
+```yaml
+- name: 构建可执行 jar（跳过测试与覆盖率棘轮）
+  working-directory: backend
+  run: ./mvnw -B -DskipTests -Djacoco.skip=true package
+```
+
+修完 run #192：**5 个 job 全绿**（前端构建 / 后端编译 / 设计令牌纪律 / 安全套件 52 条 / 部署验证 D1–D28）。
+
+**教训**：同一段 `run:` 命令在不同 job 里语义可能不同 —— job 级 `working-directory`
+是隐式上下文；把"复用产物"改成"各自构建"时，最容易漏的就是这个假设。
+也说明前面给失败步骤补"退出码 + 日志注解"的投入是值得的：
+这次就是靠注解里的 `127` 才定位到的。
+
 
 ### 不能读日志时怎么定位？
 
