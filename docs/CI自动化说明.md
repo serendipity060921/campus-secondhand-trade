@@ -19,7 +19,7 @@
 ```
 design-guard  令牌纪律 / 状态可达性 / 后端卫生 / 限流覆盖（秒级，先失败先反馈）
 frontend      构建 + 纯函数覆盖率 + 依赖审计
-backend       640 条单测 + 覆盖率棘轮 + 覆盖率摘要/PR 评论 + 【上传 jar 产物】
+backend       708 条单测 + 覆盖率棘轮 + 覆盖率摘要/PR 评论
     ↓ needs: backend
 security      service 容器 MySQL+Redis → 灌库 → 起后端 → 52 条安全用例
 ```
