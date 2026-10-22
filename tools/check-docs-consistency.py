@@ -94,6 +94,9 @@ def main():
         for i, line in enumerate(lines, 1):
             if HISTORY.search(line):
                 continue
+            # 提交清单的表格行：引用历史提交信息，不是在陈述当前事实
+            if re.match(r"^\|\s*`[0-9a-f]{7}`\s*\|", line):
+                continue
             for name, pattern, kind, note in RULES:
                 if re.search(pattern, line):
                     hits.append({'file': p.relative_to(ROOT).as_posix(), 'line': i,
