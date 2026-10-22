@@ -1,0 +1,498 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>需求规格与概要设计说明书</title><style>
+:root{--ink:#1a1d19;--ink2:#4a4f47;--muted:#8a8f86;--rule:#d8dbd3;--paper:#f6f7f4;--card:#fff;--accent:#35603f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+     font:16px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:40px 28px 100px;background:var(--card);
+      min-height:100vh;box-shadow:0 0 0 1px var(--rule)}
+h1{font-size:30px;margin:0 0 8px;line-height:1.3}
+h2{font-size:22px;margin:36px 0 12px;padding-bottom:8px;border-bottom:1.5px solid var(--rule)}
+h3{font-size:18px;margin:26px 0 8px}
+h4{font-size:16px;margin:18px 0 6px;color:var(--ink2)}
+p{margin:10px 0}
+ul,ol{margin:10px 0;padding-left:26px}
+li{margin:4px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th,td{border:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper);font-weight:600}
+tr:nth-child(even) td{background:#fbfcfa}
+code{background:#f0f2ee;padding:1px 5px;border-radius:3px;font-size:13px;
+     font-family:Consolas,"Courier New",monospace}
+pre{background:#f0f2ee;padding:14px;border-radius:6px;overflow:auto;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0}
+blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--accent);
+           background:#f7f9f6;color:var(--ink2)}
+img{max-width:100%;border:1px solid var(--rule);border-radius:4px;margin:6px 0}
+hr{border:none;border-top:1px solid var(--rule);margin:28px 0}
+a{color:var(--accent)}
+.meta{color:var(--muted);font-size:13px;margin-bottom:24px}
+@media print{
+  body{background:#fff}
+  .wrap{box-shadow:none;max-width:none;padding:0}
+  h2{page-break-after:avoid}
+  table,pre,img{page-break-inside:avoid}
+}
+</style></head><body><div class="wrap"><div class="meta">来源：spec.md　|　打印成 PDF：Ctrl+P → 目标选「另存为 PDF」</div><h1>二手校园交易系统 —— 系统需求与设计规格说明书</h1>
+<table><thead><tr><th>项目名称</th><th>二手校园交易系统（Campus Secondhand Trade）</th></tr></thead><tbody>
+<tr><td>文档版本</td><td>v1.0</td></tr>
+<tr><td>文档类型</td><td>需求规格 + 概要设计（毕业设计）</td></tr>
+<tr><td><strong>当前版本</strong></td><td><strong>v0.18（2026-10-22 需求对齐：双向评价、订单 6 态状态机）</strong></td></tr>
+<tr><td>技术栈</td><td>Spring Boot 3 + Vue 3 + MySQL 8 + MyBatis-Plus + Redis + JWT</td></tr>
+<tr><td>配套文件</td><td><code>db/schema/01-schema.sql</code>（建表 SQL）、<code>spec.md</code>（本文档）</td></tr>
+</tbody></table>
+<blockquote>说明：本文档只做需求与设计，不含业务代码实现。数据库脚本见同目录 <code>db/schema/01-schema.sql</code>。<br><br><strong>版本说明</strong>：v0.01 需求分析（本文档）→ v0.02 数据库设计（<code>db/schema/01-schema.sql</code>）→ <strong>v0.03 前后端分离脚手架</strong> → <strong>v0.04 用户注册登录模块（JWT 鉴权）</strong> → <strong>v0.05 商品核心模块（含商品占位图）</strong> → <strong>v0.06 商品收藏模块</strong> → <strong>v0.07 私信聊天模块</strong> → <strong>v0.08 订单交易模块</strong> → <strong>v0.09 辅助功能模块（个人信息/商品搜索/分类管理）</strong> → <strong>v0.10 系统测试与 bug 修复（161 条用例 / 接口文档）</strong> → <strong>v0.11 个性化推荐模块（行为埋点 + Item-CF/内容/热门三路融合 + 离线评测）</strong> → <strong>v0.12 Redis 缓存与限流（缓存三防、浏览量去重、热门榜、注解限流、JWT 黑名单；压测 QPS 提升约 10 倍、数据库负载下降 99.9%）</strong> → <strong>v0.13 管理后台与数据看板（举报表 + 操作日志表、ECharts 看板、商品审核/强制下架、用户启禁用、举报处理）</strong> → <strong>v0.14 WebSocket 实时私信（握手鉴权、心跳与断线重连、已读回执、在线状态、多端在线、限流与 REST 兜底）</strong> → <strong>v0.15 部署与交付（生产配置分离、Nginx 反向代理含 WebSocket 升级、Docker Compose 一键编排、Windows 一键启停脚本、部署验证用例 28 条、生产加固：健康探针关闭/限流收紧/密钥注入）</strong>，启动方式与各版本验收记录见 <a href="./README.md">README.md</a>，测试、接口、数据库、算法、性能、后台、实时通信与部署文档见 <code>docs/</code>。</blockquote>
+<hr>
+<h2>1. 项目概述</h2>
+<h3>1.1 项目背景</h3>
+<p>校园内每年产生大量闲置物品（教材、电子产品、自行车、生活用品等），学生之间的二手交易需求旺盛，但现有渠道存在明显痛点：</p>
+<ul>
+<li>微信群 / QQ 群 / 表白墙发帖：信息碎片化、无搜索、无分类、楼层刷屏后信息不可追溯；</li>
+<li>闲鱼等公开平台：面向社会用户，交易对象不可信、同校见面交付不便、审核规则不适合校园场景；</li>
+<li>缺少订单与评价闭环：交易过程无记录，出现纠纷难以追溯。</li>
+</ul>
+<h3>1.2 项目目标</h3>
+<p>构建一个<strong>仅面向本校学生</strong>的二手交易平台，实现「发布 → 审核 → 浏览/搜索 → 沟通 → 下单 → 交付 → 完成」的完整闭环，并具备管理员内容审核与基础运营管理能力。系统需满足毕业设计对<strong>工程完整性</strong>（分层架构、鉴权、参数校验、统一异常、分页、日志）与<strong>技术广度</strong>（Spring Boot 3 + Vue 3 前后端分离、JWT 无状态鉴权、Redis 缓存/验证码）的要求。</p>
+<h3>1.3 系统范围（边界）</h3>
+<table><thead><tr><th>范围内</th><th>范围外（本期不做）</th></tr></thead><tbody>
+<tr><td>学生注册登录、浏览、发布、搜索、留言私信、下单、订单流转</td><td>在线支付（对接微信/支付宝支付网关）</td></tr>
+<tr><td>管理员对商品/用户/分类的审核与管理</td><td>物流对接、电子面单</td></tr>
+<tr><td>校内交易（面交为主，可选快递信息登记）</td><td>直播、短视频、算法推荐</td></tr>
+<tr><td>图片上传（本地/对象存储）</td><td>平台抽佣、资金托管、提现</td></tr>
+</tbody></table>
+<blockquote>设计取舍：<strong>支付环节虚拟化</strong>——订单状态由买卖双方在平台内手动推进（模拟支付按钮），以规避真实资金与支付资质问题，同时保证订单状态机完整可演示。</blockquote>
+<h3>1.4 技术选型</h3>
+<table><thead><tr><th>层次</th><th>技术</th><th>版本</th><th>说明</th></tr></thead><tbody>
+<tr><td>后端框架</td><td>Spring Boot</td><td>3.2.x</td><td>Java 17 + Jakarta EE 9+ 命名空间</td></tr>
+<tr><td>持久层</td><td>MyBatis-Plus</td><td>3.5.x</td><td>单表 CRUD 零 SQL + 分页插件</td></tr>
+<tr><td>数据库</td><td>MySQL</td><td>8.0 / 8.4</td><td>InnoDB、utf8mb4</td></tr>
+<tr><td>连接池</td><td>HikariCP</td><td>随 Boot</td><td>默认</td></tr>
+<tr><td>缓存</td><td>Redis</td><td>7.x</td><td>验证码、热门搜索、Token 黑名单</td></tr>
+<tr><td>鉴权</td><td>JWT (jjwt) + Spring Security</td><td>0.12.x / 6.x</td><td>无状态鉴权 + 方法级权限</td></tr>
+<tr><td>参数校验</td><td>Jakarta Validation</td><td>-</td><td><code>@Valid</code> + 全局异常处理</td></tr>
+<tr><td>接口文档</td><td>Knife4j / springdoc-openapi</td><td>4.x / 2.x</td><td>Swagger 在线调试</td></tr>
+<tr><td>工具</td><td>Lombok、Hutool、MapStruct</td><td>-</td><td>简化样板代码</td></tr>
+<tr><td>前端框架</td><td>Vue 3</td><td>3.4.x</td><td>Composition API + <code>&lt;script setup&gt;</code></td></tr>
+<tr><td>构建工具</td><td>Vite</td><td>5.x</td><td>开发热更新、生产打包</td></tr>
+<tr><td>UI 组件库</td><td>Element Plus</td><td>2.x</td><td>后台管理 + 表单表格</td></tr>
+<tr><td>状态管理</td><td>Pinia</td><td>2.x</td><td>用户态、购物/收藏态</td></tr>
+<tr><td>路由</td><td>Vue Router</td><td>4.x</td><td>动态路由 + 路由守卫</td></tr>
+<tr><td>HTTP</td><td>Axios</td><td>1.x</td><td>请求/响应拦截器统一处理 Token 与错误</td></tr>
+<tr><td>部署</td><td>Nginx + jar</td><td>-</td><td>前端静态资源 + 反向代理</td></tr>
+</tbody></table>
+<hr>
+<h2>2. 用户角色与权限</h2>
+<h3>2.1 角色定义</h3>
+<p>系统共 <strong>2 个登录角色</strong>（普通学生、管理员）与 <strong>1 个非登录角色</strong>（游客）。</p>
+<table><thead><tr><th>角色</th><th>标识（<code>user.role</code>）</th><th>说明</th><th>关键差异</th></tr></thead><tbody>
+<tr><td>游客</td><td>—（未登录）</td><td>未注册/未登录访问者</td><td>只能浏览、搜索商品；不能发布、留言、下单</td></tr>
+<tr><td>普通学生</td><td><code>0</code></td><td>通过学号 + 手机号注册、经校内身份校验的学生。<strong>同一账号既是买家也是卖家</strong>，不区分两个角色</td><td>可发布商品（需审核）、买卖下单、留言私信</td></tr>
+<tr><td>管理员</td><td><code>1</code></td><td>平台运营人员，由超级管理员在后台创建/授权，不开放自助注册</td><td>商品审核、用户管理、分类管理、订单查询与干预</td></tr>
+</tbody></table>
+<blockquote>设计说明：需求中的「买家/卖家」在本系统中是<strong>同一学生在不同订单中的行为身份</strong>，而不是两套账号。订单表中同时保存 <code>buyer_id</code> 与 <code>seller_id</code> 来表达该关系，避免角色冗余与切换成本。</blockquote>
+<h3>2.2 权限矩阵</h3>
+<table><thead><tr><th>功能</th><th>游客</th><th>普通学生</th><th>管理员</th></tr></thead><tbody>
+<tr><td>浏览首页 / 商品列表</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>查看商品详情</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>注册 / 登录</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>发布 / 编辑 / 下架商品</td><td>❌</td><td>✅（仅本人）</td><td>✅（可强制下架）</td></tr>
+<tr><td>收藏商品</td><td>❌</td><td>✅</td><td>✅</td></tr>
+<tr><td>商品留言 / 私信</td><td>❌</td><td>✅</td><td>✅</td></tr>
+<tr><td>创建订单 / 取消订单 / 确认收货</td><td>❌</td><td>✅（仅参与方）</td><td>❌（仅查询/干预）</td></tr>
+<tr><td>商品审核（通过/驳回）</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>分类管理（增删改）</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>用户管理（禁用/解禁）</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td>全平台订单查询</td><td>❌</td><td>❌（仅本人相关）</td><td>✅</td></tr>
+</tbody></table>
+<h3>2.3 关键用户故事（User Story）</h3>
+<ol>
+<li>作为<strong>学生卖家</strong>，我想上传商品图片、填写价格与成色后发布，以便把闲置物品卖出去；发布后商品处于「待审核」，审核通过才在列表可见。</li>
+<li>作为<strong>学生买家</strong>，我想按分类筛选或用关键词搜索，并按价格/时间排序，以便快速找到想要的教材。</li>
+<li>作为<strong>学生买家</strong>，我想在商品下留言询问或直接私信卖家，以便确认成色与面交地点。</li>
+<li>作为<strong>学生买家</strong>，我想下单并查看订单状态，以便与卖家约定线下交付并最终确认收货。</li>
+<li>作为<strong>学生卖家</strong>，我想在订单里看到买家信息和交付方式，以便完成交易并让商品自动变为「已售出」。</li>
+<li>作为<strong>管理员</strong>，我想批量审核待审商品并填写驳回理由，以便过滤违规内容。</li>
+<li>作为<strong>管理员</strong>，我想管理分类树和禁用违规用户，以便维护平台秩序。</li>
+</ol>
+<hr>
+<h2>3. 功能需求</h2>
+<h3>3.1 功能模块总览</h3>
+<pre><code>二手校园交易系统
+├── 1. 用户模块       注册、登录、登出、个人资料、修改密码、头像、实名/学号认证
+├── 2. 商品模块       发布、编辑、下架、删除、图片上传、我的商品、商品详情、商品列表
+├── 3. 分类模块       分类树查询（前台）、分类增删改（后台）
+├── 4. 搜索模块       关键词搜索、分类筛选、价格区间、排序、分页、搜索历史/热词
+├── 5. 留言私信模块   商品留言（含回复）、私信会话、未读消息数、消息已读
+├── 6. 订单模块       下单、订单列表（买家/卖家视角）、订单详情、取消、支付(模拟)、交付、确认收货、完成
+├── 7. 后台管理模块   商品审核、用户管理、订单管理、分类管理、数据概览
+└── 8. 公共支撑模块   文件上传、统一响应、全局异常、JWT 拦截、参数校验、操作日志</code></pre>
+<h3>3.2 功能清单（Feature List）</h3>
+<p>优先级：P0 = 必做（答辩演示主线）；P1 = 应做；P2 = 可做（加分项）。</p>
+<table><thead><tr><th>编号</th><th>模块</th><th>功能点</th><th>角色</th><th>优先级</th><th>验收要点</th></tr></thead><tbody>
+<tr><td>F01</td><td>用户</td><td>学生注册</td><td>游客</td><td>P0</td><td>用户名唯一、学号唯一、两次密码一致、密码 BCrypt 加密入库</td></tr>
+<tr><td>F02</td><td>用户</td><td>账号密码登录</td><td>游客</td><td>P0</td><td>返回 JWT；密码错误提示模糊化；连续失败锁定（Redis 计数）</td></tr>
+<tr><td>F03</td><td>用户</td><td>图形/短信验证码登录</td><td>游客</td><td>P2</td><td>验证码存 Redis，5 分钟过期</td></tr>
+<tr><td>F04</td><td>用户</td><td>登出</td><td>学生/管理员</td><td>P1</td><td>Token 加入 Redis 黑名单即时失效</td></tr>
+<tr><td>F05</td><td>用户</td><td>查看/修改个人资料</td><td>学生</td><td>P0</td><td>头像、昵称、手机号、校区可改；学号不可改</td></tr>
+<tr><td>F06</td><td>用户</td><td>修改密码</td><td>学生</td><td>P1</td><td>校验旧密码；修改后旧 Token 失效</td></tr>
+<tr><td>F07</td><td>商品</td><td>发布商品</td><td>学生</td><td>P0</td><td>必填校验；最多 9 张图；发布后<strong>直接上架在售</strong>（v0.16 实测更正，原写作"待审核"）；机审拦截违规内容</td></tr>
+<tr><td>F08</td><td>商品</td><td>编辑商品</td><td>学生</td><td>P0</td><td>仅本人且未被下单；编辑后重新进入待审核</td></tr>
+<tr><td>F09</td><td>商品</td><td>上下架商品</td><td>学生</td><td>P0</td><td>在售 ↔ 已下架；已售出不可再上架</td></tr>
+<tr><td>F10</td><td>商品</td><td>删除商品</td><td>学生</td><td>P1</td><td>逻辑删除；有进行中订单时禁止删除</td></tr>
+<tr><td>F11</td><td>商品</td><td>我的商品列表</td><td>学生</td><td>P0</td><td>按状态 Tab 分类、分页</td></tr>
+<tr><td>F12</td><td>商品</td><td>商品详情</td><td>全部</td><td>P0</td><td>浏览量 +1（Redis 计数异步落库）</td></tr>
+<tr><td>F13</td><td>商品</td><td>商品列表/首页推荐</td><td>全部</td><td>P0</td><td>仅展示审核通过且在售商品</td></tr>
+<tr><td>F14</td><td>分类</td><td>分类树查询</td><td>全部</td><td>P0</td><td>二级分类、按 <code>sort_order</code> 排序</td></tr>
+<tr><td>F15</td><td>分类</td><td>分类增删改</td><td>管理员</td><td>P0</td><td>有商品的分类不可删除</td></tr>
+<tr><td>F16</td><td>搜索</td><td>关键词搜索</td><td>全部</td><td>P0</td><td>匹配标题/描述；结果高亮；防 SQL 注入</td></tr>
+<tr><td>F17</td><td>搜索</td><td>多条件筛选</td><td>全部</td><td>P0</td><td>分类 + 价格区间 + 成色 + 校区</td></tr>
+<tr><td>F18</td><td>搜索</td><td>排序</td><td>全部</td><td>P1</td><td>最新发布 / 价格升 / 价格降 / 浏览量</td></tr>
+<tr><td>F19</td><td>搜索</td><td>搜索历史与热词</td><td>学生</td><td>P2</td><td>Redis ZSet 统计热词</td></tr>
+<tr><td>F20</td><td>留言</td><td>商品留言</td><td>学生</td><td>P0</td><td>支持对留言回复（<code>parent_id</code>）；展示留言者昵称与头像</td></tr>
+<tr><td>F21</td><td>留言</td><td>删除自己的留言</td><td>学生</td><td>P2</td><td>逻辑删除；管理员可删任意留言</td></tr>
+<tr><td>F22</td><td>留言</td><td>留言通知</td><td>学生</td><td>P1</td><td>商品被留言时通知卖家</td></tr>
+<tr><td>F23</td><td>私信</td><td>发起私信</td><td>学生</td><td>P0</td><td>从商品详情「联系卖家」进入会话</td></tr>
+<tr><td>F24</td><td>私信</td><td>会话列表与聊天记录</td><td>学生</td><td>P1</td><td>按对方维度聚合，展示最后一条与未读数</td></tr>
+<tr><td>F25</td><td>私信</td><td>未读消息数</td><td>学生</td><td>P1</td><td>顶部红点；进入会话即清零</td></tr>
+<tr><td>F26</td><td>订单</td><td>创建订单</td><td>学生(买家)</td><td>P0</td><td>商品必须为在售；不可购买自己的商品；生成唯一订单号；商品状态→锁定/已售</td></tr>
+<tr><td>F27</td><td>订单</td><td>我的订单（买/卖）</td><td>学生</td><td>P0</td><td>双视角 Tab（我买到的 / 我卖出的）+ 状态筛选</td></tr>
+<tr><td>F28</td><td>订单</td><td>订单详情</td><td>学生(参与方)</td><td>P0</td><td>展示商品快照、金额、买家/卖家、交付方式</td></tr>
+<tr><td>F29</td><td>订单</td><td>取消订单</td><td>学生(买家)/管理员</td><td>P0</td><td>仅待付款可取消；取消后商品回到在售</td></tr>
+<tr><td>F30</td><td>订单</td><td>模拟支付</td><td>学生(买家)</td><td>P1</td><td>待付款 → 待交付，写入 <code>pay_time</code></td></tr>
+<tr><td>F31</td><td>订单</td><td>卖家确认交付</td><td>学生(卖家)</td><td>P0</td><td>待交付 → 待收货；登记交付地点/面交时间</td></tr>
+<tr><td>F32</td><td>订单</td><td>买家确认收货</td><td>学生(买家)</td><td>P0</td><td>待收货 → 已完成；商品状态 → 已售出；双方信用分 +1</td></tr>
+<tr><td>F33</td><td>订单</td><td>订单超时自动取消</td><td>系统</td><td>P2</td><td>定时任务扫描 30 分钟未支付订单</td></tr>
+<tr><td>F34</td><td>后台</td><td>商品审核列表</td><td>管理员</td><td>P0</td><td>按状态筛选；支持关键词与提交时间范围</td></tr>
+<tr><td>F35</td><td>后台</td><td>商品审核通过与驳回</td><td>管理员</td><td>P0</td><td>驳回必填理由；记录审核人与审核时间；通知卖家</td></tr>
+<tr><td>F36</td><td>后台</td><td>商品强制下架/删除</td><td>管理员</td><td>P0</td><td>违规商品处理，保留操作日志</td></tr>
+<tr><td>F37</td><td>后台</td><td>用户管理</td><td>管理员</td><td>P1</td><td>列表、检索、禁用/解禁、重置密码</td></tr>
+<tr><td>F38</td><td>后台</td><td>订单管理</td><td>管理员</td><td>P1</td><td>全平台订单查询、查看详情、异常订单关闭</td></tr>
+<tr><td>F39</td><td>后台</td><td>数据概览</td><td>管理员</td><td>P1</td><td>用户数、在售商品数、今日订单数、待审核数</td></tr>
+<tr><td>F40</td><td>支撑</td><td>图片上传</td><td>学生</td><td>P0</td><td>校验后缀与大小（≤5MB），返回 URL</td></tr>
+<tr><td>F41</td><td>支撑</td><td>统一响应与全局异常</td><td>系统</td><td>P0</td><td><code>code/message/data</code> 结构；业务异常统一转换</td></tr>
+<tr><td>F42</td><td>支撑</td><td>操作日志</td><td>管理员</td><td>P2</td><td>记录后台关键操作（审核、禁用）</td></tr>
+<tr><td>F43</td><td>评价</td><td>提交交易评价</td><td>学生</td><td>P0</td><td>仅<strong>已完成</strong>订单的买卖双方；对象由订单推导（前端只传 orderId）；每单每人一次（唯一索引兜底）；评分 1~5</td></tr>
+<tr><td>F44</td><td>评价</td><td>查看商品口碑</td><td>游客/学生</td><td>P0</td><td>平均分 / 好评率（4~5 星占比）/ 星级分布 / 评价列表；无评价显示空态</td></tr>
+<tr><td>F45</td><td>评价</td><td>信用分联动</td><td>系统</td><td>P1</td><td>4~5 星 +1、3 星不变、1~2 星 −1，夹在 [0,150]；每单只变一次；SQL 原子更新</td></tr>
+<tr><td>F46</td><td>订单</td><td>订单状态流转扩展</td><td>学生</td><td>P0</td><td>0 待交易 → 1 待交付（卖家）→ 2 待收货（卖家）→ 3 已完成（双方）；1/2 可退款回在售；0→3 保留一步完成；终态不可回退</td></tr>
+</tbody></table>
+<h3>3.3 非功能性需求</h3>
+<table><thead><tr><th>类别</th><th>要求</th></tr></thead><tbody>
+<tr><td>性能</td><td>列表接口 P95 ≤ 500ms（数据量 10 万商品）；分页单页 ≤ 20 条；热门分类与首页列表走 Redis 缓存</td></tr>
+<tr><td>安全</td><td>密码不可逆加密（BCrypt）；JWT 有效期 2h + Refresh 机制；接口防越权（资源归属校验，禁止横向越权改他人商品）；MyBatis 预编译防注入；上传文件类型白名单；敏感字段（密码、手机号）响应脱敏</td></tr>
+<tr><td>一致性</td><td>下单、支付、确认收货使用 <code>@Transactional</code>；商品与订单状态变更需保证「商品不可被重复下单」（<code>product.status</code> 条件更新 + 乐观校验）</td></tr>
+<tr><td>可用性</td><td>前端适配 1366×768 及以上；列表空态/加载态/错误态齐全；操作有二次确认与 Toast 反馈</td></tr>
+<tr><td>可维护性</td><td>后端严格分层（Controller/Service/Mapper/Entity/DTO/VO），统一命名；数据库表与字段均带注释；关键流程写清日志</td></tr>
+<tr><td>兼容性</td><td>Chrome / Edge 最新版；后端 JDK 17+；MySQL 8.0+</td></tr>
+</tbody></table>
+<hr>
+<h2>4. 核心业务流程</h2>
+<h3>4.1 商品发布与审核流程</h3>
+<pre><code>学生填写商品信息 + 上传图片
+        │
+        ▼
+   提交成功 → product.status = 0（待审核）──通知管理员
+        │
+        ├── 管理员审核通过 → status = 1（在售）→ 出现在列表/搜索
+        │
+        └── 管理员驳回（必填理由）→ status = 2（审核不通过）→ 学生修改后重新提交（回到 status = 0）</code></pre>
+<h3>4.2 交易主流程（订单状态机）</h3>
+<blockquote>v0.18：状态机从"3 态可用"补齐为<strong>完整 6 态</strong>，并用 TDD 实现（见 <code>docs/tdd-demo-2.md</code>）。<br>规则集中在纯函数类 <code>OrderStatusFlow</code>，业务码段 6xxx。</blockquote>
+<pre><code>                    ┌──────────── 卖家「标记可交付」──────────┐
+                    ▼                                        │
+  待交易(0) ────────────────卖家「确认已交付」──▶ 待收货(2) ──买家/卖家「确认收货」──▶ 已完成(3)
+     │   └──双方「确认交易完成」一步完成──────────────────────────────────────────────┘
+     └──双方「取消订单」──▶ 已取消(4)        待交付(1)/待收货(2) ──「申请退款」──▶ 已退款(5)</code></pre>
+<table><thead><tr><th>流转</th><th>谁能操作</th><th>商品状态联动</th></tr></thead><tbody>
+<tr><td>0 → 1 待交付</td><td>卖家</td><td>保持「交易中」</td></tr>
+<tr><td>0 → 3 已完成（一步完成，线下当面交易）</td><td>买家 / 卖家</td><td>「已售出」</td></tr>
+<tr><td>1 → 2 待收货</td><td>卖家</td><td>保持「交易中」</td></tr>
+<tr><td>2 → 3 已完成</td><td>买家 / 卖家</td><td>「已售出」</td></tr>
+<tr><td>0 → 4 已取消</td><td>买家 / 卖家</td><td>回到「在售」</td></tr>
+<tr><td>1/2 → 5 已退款</td><td>买家 / 卖家</td><td>回到「在售」</td></tr>
+<tr><td>3/4/5 之后</td><td>不可再流转（终态）</td><td>——</td></tr>
+</tbody></table>
+<blockquote>说明：<code>0 → 3</code> 这条"一步完成"是 US-ORDER-03 的既有要求（线下当面交易），<br>因此与分阶段的 <code>0→1→2→3</code> 并存；两条路径都合法。</blockquote>
+<h3>4.3 留言与私信流程</h3>
+<pre><code>商品详情页
+ ├── 留言区：登录后可发表留言 → 展示在商品下（含回复，parent_id 关联）→ 通知卖家
+ └── 「联系卖家」按钮 → 创建/进入与卖家的私信会话 → 双方可互发消息 → 未读数提示</code></pre>
+<hr>
+<h2>5. 数据库设计说明</h2>
+<blockquote>完整建表语句见 <strong><a href="./db/schema/01-schema.sql">db/schema/01-schema.sql</a></strong>。字符集统一 <code>utf8mb4</code>，引擎统一 <code>InnoDB</code>，所有表带 <code>create_time</code> / <code>update_time</code>，主表带逻辑删除字段 <code>deleted</code>。</blockquote>
+<h3>5.1 数据表清单</h3>
+<table><thead><tr><th>序号</th><th>表名</th><th>中文名</th><th>说明</th><th>类型</th></tr></thead><tbody>
+<tr><td>1</td><td><code>user</code></td><td>用户表</td><td>学生与管理员共用，<code>role</code> 区分</td><td>核心</td></tr>
+<tr><td>2</td><td><code>category</code></td><td>商品分类表</td><td>支持二级分类（<code>parent_id</code> 自关联）</td><td>核心</td></tr>
+<tr><td>3</td><td><code>product</code></td><td>商品表</td><td>含审核字段与统计字段</td><td>核心</td></tr>
+<tr><td>4</td><td><code>message</code></td><td>留言/私信表</td><td><code>type</code> 区分商品留言与私信，一张表承载两类消息</td><td>核心</td></tr>
+<tr><td>5</td><td><code>orders</code></td><td>订单表</td><td>名称用复数规避 MySQL 保留字 <code>ORDER</code></td><td>核心</td></tr>
+<tr><td>6</td><td><code>product_image</code></td><td>商品图片表</td><td>一商品多图，<code>sort_order</code> 控制首图</td><td>扩展</td></tr>
+<tr><td>7</td><td><code>favorite</code></td><td>收藏表</td><td>用户 ↔ 商品多对多，唯一索引防重复收藏</td><td>扩展</td></tr>
+</tbody></table>
+<h3>5.2 关键字段设计要点</h3>
+<table><thead><tr><th>表</th><th>字段</th><th>设计考虑</th></tr></thead><tbody>
+<tr><td><code>user</code></td><td><code>password</code></td><td>存 BCrypt 密文，长度 100，禁止明文/MD5</td></tr>
+<tr><td><code>user</code></td><td><code>student_no</code></td><td>唯一索引，作为校内身份凭证；注册后不可修改</td></tr>
+<tr><td><code>user</code></td><td><code>role</code></td><td><code>0</code> 学生、<code>1</code> 管理员；用 TINYINT 节省空间，配合枚举常量</td></tr>
+<tr><td><code>user</code></td><td><code>status</code></td><td><code>1</code> 正常、<code>0</code> 禁用；禁用用户登录直接拦截</td></tr>
+<tr><td><code>category</code></td><td><code>parent_id</code></td><td><code>0</code> 表示一级分类，其余为二级；删除前校验是否存在子分类/商品</td></tr>
+<tr><td><code>product</code></td><td><code>price</code> / <code>original_price</code></td><td><code>DECIMAL(10,2)</code>，禁止用 FLOAT/DOUBLE 存金额</td></tr>
+<tr><td><code>product</code></td><td><code>condition_level</code></td><td>成色 1–4；<strong>不叫 <code>condition</code></strong>，因其为 MySQL 保留字</td></tr>
+<tr><td><code>product</code></td><td><code>status</code></td><td><code>0</code> 待审核、<code>1</code> 在售、<code>2</code> 审核不通过、<code>3</code> 已下架、<code>4</code> 交易中、<code>5</code> 已售出</td></tr>
+<tr><td><code>product</code></td><td><code>audit_*</code></td><td>审核人、审核时间、驳回理由，满足后台审核可追溯要求</td></tr>
+<tr><td><code>product</code></td><td>冗余 <code>seller_id</code> + 索引</td><td>支撑「我的商品」高频查询</td></tr>
+<tr><td><code>message</code></td><td><code>type</code> + <code>product_id</code> + <code>from/to_user_id</code></td><td>一条记录同时表达「商品留言」与「私信」；<code>product_id</code> 为 NULL 表示纯私信</td></tr>
+<tr><td><code>message</code></td><td><code>parent_id</code></td><td>留言盖楼回复，<code>0</code> 表示顶层</td></tr>
+<tr><td><code>orders</code></td><td><code>order_no</code></td><td>唯一索引，业务订单号（如 <code>20250101120000</code> + 随机位），对外暴露而非自增 ID</td></tr>
+<tr><td><code>orders</code></td><td>双 <code>buyer_id</code>/<code>seller_id</code></td><td>支持买家视角与卖家视角双列表查询，均有索引</td></tr>
+<tr><td><code>orders</code></td><td>商品快照字段</td><td>标题/封面/成交价冗余，保证历史订单可读</td></tr>
+<tr><td><code>orders</code></td><td><code>status</code></td><td><code>0</code> 待付款、<code>1</code> 待交付、<code>2</code> 待收货、<code>3</code> 已完成、<code>4</code> 已取消、<code>5</code> 已退款</td></tr>
+<tr><td>全表</td><td><code>deleted</code></td><td>逻辑删除，避免物理删除破坏订单/留言的历史关联</td></tr>
+<tr><td>全表</td><td>外键 <code>FOREIGN KEY</code></td><td>脚本中显式声明外键约束，保证毕设 ER 图与实现一致；如追求高并发可改为应用层保证</td></tr>
+</tbody></table>
+<h3>5.3 索引设计</h3>
+<table><thead><tr><th>表</th><th>索引</th><th>目的</th></tr></thead><tbody>
+<tr><td><code>user</code></td><td><code>uk_username</code>、<code>uk_student_no</code>、<code>uk_phone</code></td><td>登录与唯一性校验</td></tr>
+<tr><td><code>category</code></td><td><code>idx_parent_id</code></td><td>分类树查询</td></tr>
+<tr><td><code>product</code></td><td><code>idx_category_id</code>、<code>idx_seller_id</code>、<code>idx_status</code>、<code>idx_create_time</code>、<code>idx_title</code></td><td>分类筛选、我的商品、审核列表、按时间排序、标题检索</td></tr>
+<tr><td><code>product</code></td><td>组合索引 <code>idx_status_category</code></td><td>覆盖「在售 + 分类」的列表主查询</td></tr>
+<tr><td><code>message</code></td><td><code>idx_product_id</code>、<code>idx_to_user_read</code>、<code>idx_conversation</code></td><td>商品留言、未读数统计、私信会话查询</td></tr>
+<tr><td><code>orders</code></td><td><code>uk_order_no</code>、<code>idx_buyer_status</code>、<code>idx_seller_status</code>、<code>idx_product_id</code></td><td>订单号唯一、双视角列表、按商品回溯订单</td></tr>
+<tr><td><code>favorite</code></td><td><code>uk_user_product</code></td><td>防重复收藏 + 快速查询</td></tr>
+</tbody></table>
+<blockquote>设计取舍：全文检索需求若后续增强，可将 <code>product</code> 的标题/描述迁移到 Elasticsearch 或 MySQL 全文索引（<code>FULLTEXT</code>），本期先用 <code>LIKE '%kw%'</code> + 组合索引满足毕设数据量。</blockquote>
+<hr>
+<h2>6. 接口设计概览（RESTful 约定）</h2>
+<ul>
+<li>统一前缀 <code>/api</code>，统一响应体 <code>{ "code": 200, "message": "success", "data": ... }</code>；分页响应 <code>{ "total": n, "pages": n, "current": n, "records": [...] }</code>。</li>
+<li>鉴权：请求头 <code>Authorization: Bearer &lt;token&gt;</code>。</li>
+</ul>
+<table><thead><tr><th>模块</th><th>方法</th><th>路径</th><th>说明</th><th>权限</th></tr></thead><tbody>
+<tr><td>认证</td><td>POST</td><td><code>/api/auth/register</code></td><td>学生注册</td><td>公开</td></tr>
+<tr><td>认证</td><td>POST</td><td><code>/api/auth/login</code></td><td>登录，返回 Token</td><td>公开</td></tr>
+<tr><td>认证</td><td>POST</td><td><code>/api/auth/logout</code></td><td>登出</td><td>登录</td></tr>
+<tr><td>用户</td><td>GET/PUT</td><td><code>/api/user/profile</code></td><td>查询/修改个人资料</td><td>登录</td></tr>
+<tr><td>用户</td><td>PUT</td><td><code>/api/user/password</code></td><td>修改密码</td><td>登录</td></tr>
+<tr><td>分类</td><td>GET</td><td><code>/api/categories/tree</code></td><td>分类树</td><td>公开</td></tr>
+<tr><td>分类</td><td>POST/PUT/DELETE</td><td><code>/api/admin/categories/**</code></td><td>分类管理</td><td>管理员</td></tr>
+<tr><td>商品</td><td>GET</td><td><code>/api/products</code></td><td>商品列表（分类/关键词/价格/排序/分页）</td><td>公开</td></tr>
+<tr><td>商品</td><td>GET</td><td><code>/api/products/{id}</code></td><td>商品详情</td><td>公开</td></tr>
+<tr><td>商品</td><td>POST/PUT/DELETE</td><td><code>/api/products</code></td><td>发布/编辑/删除</td><td>登录</td></tr>
+<tr><td>商品</td><td>PUT</td><td><code>/api/products/{id}/shelf</code></td><td>上/下架</td><td>登录（本人）</td></tr>
+<tr><td>商品</td><td>GET</td><td><code>/api/products/mine</code></td><td>我的商品</td><td>登录</td></tr>
+<tr><td>留言</td><td>GET/POST</td><td><code>/api/products/{id}/messages</code></td><td>留言列表/发表留言</td><td>公开读 / 登录写</td></tr>
+<tr><td>私信</td><td>GET</td><td><code>/api/messages/conversations</code></td><td>会话列表</td><td>登录</td></tr>
+<tr><td>私信</td><td>GET/POST</td><td><code>/api/messages/chat/{userId}</code></td><td>聊天记录/发送私信</td><td>登录</td></tr>
+<tr><td>订单</td><td>POST</td><td><code>/api/orders</code></td><td>创建订单</td><td>登录（买家）</td></tr>
+<tr><td>订单</td><td>GET</td><td><code>/api/orders</code></td><td>我的订单（<code>role=buyer/seller</code>）</td><td>登录</td></tr>
+<tr><td>订单</td><td>GET</td><td><code>/api/orders/{id}</code></td><td>订单详情</td><td>参与方</td></tr>
+<tr><td>订单</td><td>PUT</td><td><code>/api/orders/{id}/pay</code></td><td>模拟支付</td><td>买家</td></tr>
+<tr><td>订单</td><td>PUT</td><td><code>/api/orders/{id}/deliver</code></td><td>卖家确认交付</td><td>卖家</td></tr>
+<tr><td>订单</td><td>PUT</td><td><code>/api/orders/{id}/confirm</code></td><td>买家确认收货</td><td>买家</td></tr>
+<tr><td>订单</td><td>PUT</td><td><code>/api/orders/{id}/cancel</code></td><td>取消订单</td><td>买家</td></tr>
+<tr><td>后台</td><td>GET</td><td><code>/api/admin/products/audit</code></td><td>待审核商品列表</td><td>管理员</td></tr>
+<tr><td>后台</td><td>PUT</td><td><code>/api/admin/products/{id}/audit</code></td><td>审核通过/驳回</td><td>管理员</td></tr>
+<tr><td>后台</td><td>GET/PUT</td><td><code>/api/admin/users/**</code></td><td>用户列表/禁用</td><td>管理员</td></tr>
+<tr><td>后台</td><td>GET</td><td><code>/api/admin/orders</code></td><td>全平台订单</td><td>管理员</td></tr>
+<tr><td>后台</td><td>GET</td><td><code>/api/admin/stats</code></td><td>数据概览</td><td>管理员</td></tr>
+<tr><td>上传</td><td>POST</td><td><code>/api/files/upload</code></td><td>图片上传</td><td>登录</td></tr>
+</tbody></table>
+<hr>
+<h2>7. 项目目录结构</h2>
+<h3>7.1 仓库根目录</h3>
+<pre><code>campus-secondhand-trade/
+├── backend/                      # Spring Boot 3 后端工程
+├── frontend/                     # Vue 3 前端工程（学生端 + 管理端）
+├── docs/                         # 设计文档与图表
+│   ├── spec.md                   # 需求与设计规格（软链/副本）
+│   ├── er-diagram.png            # ER 图（后续补充）
+│   └── api.md                    # 接口详细文档（后续补充）
+├── db/schema/01-schema.sql                 # 数据库建表脚本（含初始化数据）
+├── db/test-data/db_smoke_test.sql             # 数据库结构与业务冒烟测试脚本（在 MySQL 8.4.4 实测通过）
+├── spec.md                       # 系统需求与设计规格说明书（本文件）
+├── README.md                     # 项目说明与启动指南
+└── .gitignore</code></pre>
+<h3>7.2 后端目录（Spring Boot 3，Maven 单模块，包名 <code>com.campus.trade</code>）</h3>
+<pre><code>backend/
+├── pom.xml
+├── src/
+│   ├── main/
+│   │   ├── java/com/campus/trade/
+│   │   │   ├── CampusTradeApplication.java        # 启动类
+│   │   │   ├── common/                            # 公共层
+│   │   │   │   ├── result/                        # Result、PageResult、ResultCode
+│   │   │   │   ├── exception/                     # 业务异常 + 全局异常处理器
+│   │   │   │   ├── constant/                      # 常量、枚举（商品状态、订单状态、角色）
+│   │   │   │   ├── annotation/                    # @LoginRequired、@AdminOnly 等自定义注解
+│   │   │   │   └── util/                          # JwtUtil、OrderNoUtil、FileUtil
+│   │   │   ├── config/                            # 配置层
+│   │   │   │   ├── SecurityConfig.java            # Spring Security + 过滤器链
+│   │   │   │   ├── MybatisPlusConfig.java         # 分页插件、字段自动填充
+│   │   │   │   ├── RedisConfig.java
+│   │   │   │   ├── WebMvcConfig.java              # 静态资源、跨域、拦截器注册
+│   │   │   │   └── Knife4jConfig.java             # 接口文档
+│   │   │   ├── controller/                        # 接口层
+│   │   │   │   ├── AuthController.java
+│   │   │   │   ├── UserController.java
+│   │   │   │   ├── CategoryController.java
+│   │   │   │   ├── ProductController.java
+│   │   │   │   ├── MessageController.java
+│   │   │   │   ├── OrderController.java
+│   │   │   │   ├── FileController.java
+│   │   │   │   └── admin/                         # 后台管理接口
+│   │   │   │       ├── AdminProductController.java
+│   │   │   │       ├── AdminUserController.java
+│   │   │   │       ├── AdminCategoryController.java
+│   │   │   │       └── AdminOrderController.java
+│   │   │   ├── service/                           # 业务接口
+│   │   │   │   ├── impl/                          # 业务实现
+│   │   │   │   ├── UserService.java
+│   │   │   │   ├── ProductService.java
+│   │   │   │   ├── CategoryService.java
+│   │   │   │   ├── MessageService.java
+│   │   │   │   └── OrderService.java
+│   │   │   ├── mapper/                            # MyBatis-Plus Mapper
+│   │   │   │   ├── UserMapper.java
+│   │   │   │   ├── ProductMapper.java
+│   │   │   │   ├── CategoryMapper.java
+│   │   │   │   ├── MessageMapper.java
+│   │   │   │   └── OrderMapper.java
+│   │   │   ├── entity/                            # 与数据表一一对应
+│   │   │   │   ├── User.java
+│   │   │   │   ├── Product.java
+│   │   │   │   ├── Category.java
+│   │   │   │   ├── Message.java
+│   │   │   │   ├── Order.java
+│   │   │   │   ├── ProductImage.java
+│   │   │   │   └── Favorite.java
+│   │   │   ├── dto/                               # 入参对象（含校验注解）
+│   │   │   │   ├── RegisterDTO.java / LoginDTO.java
+│   │   │   │   ├── ProductDTO.java / ProductQueryDTO.java
+│   │   │   │   ├── MessageDTO.java
+│   │   │   │   └── OrderCreateDTO.java / AuditDTO.java
+│   │   │   ├── vo/                                # 出参对象（脱敏、聚合）
+│   │   │   │   ├── LoginVO.java / UserVO.java
+│   │   │   │   ├── ProductVO.java / ProductDetailVO.java
+│   │   │   │   ├── MessageVO.java / ConversationVO.java
+│   │   │   │   └── OrderVO.java / StatsVO.java
+│   │   │   └── interceptor/                       # JwtInterceptor、AuthInterceptor
+│   │   └── resources/
+│   │       ├── application.yml                    # 主配置
+│   │       ├── application-dev.yml                # 开发环境（本地 MySQL/Redis）
+│   │       ├── application-prod.yml               # 生产环境
+│   │       ├── mapper/                            # 复杂 SQL 的 XML（可选）
+│   │       │   ├── ProductMapper.xml
+│   │       │   └── OrderMapper.xml
+│   │       └── static/upload/                     # 本地上传目录（开发用）
+│   └── test/java/com/campus/trade/                # 单元测试
+│       ├── service/OrderServiceTest.java
+│       └── mapper/ProductMapperTest.java
+└── target/                                        # 构建产物（.gitignore）</code></pre>
+<h3>7.3 前端目录（Vue 3 + Vite）</h3>
+<pre><code>frontend/
+├── index.html
+├── package.json
+├── vite.config.js
+├── .env.development / .env.production             # VITE_API_BASE 等
+├── public/
+│   └── favicon.ico
+└── src/
+    ├── main.js                                    # 应用入口（挂载 Pinia / Router / Element Plus）
+    ├── App.vue
+    ├── api/                                       # 接口封装（按模块拆分）
+    │   ├── request.js                             # Axios 实例 + 拦截器（Token、401 跳转、错误提示）
+    │   ├── auth.js
+    │   ├── user.js
+    │   ├── category.js
+    │   ├── product.js
+    │   ├── message.js
+    │   ├── order.js
+    │   └── admin.js
+    ├── assets/                                    # 图片、全局样式
+    │   ├── images/
+    │   └── styles/global.scss
+    ├── components/                                # 通用组件
+    │   ├── ProductCard.vue                        # 商品卡片
+    │   ├── CategoryTree.vue                       # 分类树
+    │   ├── ImageUpload.vue                        # 图片上传
+    │   ├── OrderStatusTag.vue
+    │   ├── EmptyState.vue
+    │   └── Pagination.vue
+    ├── layout/                                    # 布局
+    │   ├── FrontLayout.vue                        # 学生端：顶部导航 + 内容 + 页脚
+    │   ├── AdminLayout.vue                        # 管理端：侧边菜单 + 面包屑
+    │   └── components/Navbar.vue, Sidebar.vue, Footer.vue
+    ├── router/
+    │   ├── index.js                               # 路由表 + 全局前置守卫（鉴权/角色）
+    │   └── modules/front.js, admin.js
+    ├── store/                                     # Pinia
+    │   ├── index.js
+    │   ├── modules/user.js                        # Token、用户信息、角色
+    │   ├── modules/category.js
+    │   └── modules/message.js                     # 未读消息数
+    ├── utils/
+    │   ├── auth.js                                # Token 存取
+    │   ├── format.js                              # 价格、时间格式化
+    │   └── validate.js                            # 手机号/学号等校验规则
+    └── views/
+        ├── home/Index.vue                         # 首页（分类入口 + 最新商品）
+        ├── auth/Login.vue, Register.vue
+        ├── product/List.vue                       # 列表 + 搜索 + 筛选
+        ├── product/Detail.vue                     # 详情 + 留言 + 联系卖家
+        ├── product/Publish.vue                    # 发布/编辑商品
+        ├── user/Profile.vue, MyProducts.vue, MyFavorites.vue
+        ├── message/Chat.vue                       # 私信会话
+        ├── order/Create.vue, MyOrders.vue, Detail.vue
+        ├── error/404.vue
+        └── admin/
+            ├── Dashboard.vue                      # 数据概览
+            ├── ProductAudit.vue                   # 商品审核
+            ├── CategoryManage.vue
+            ├── UserManage.vue
+            └── OrderManage.vue</code></pre>
+<hr>
+<h2>8. 后续实施计划（建议排期）</h2>
+<table><thead><tr><th>阶段</th><th>内容</th><th>产出</th></tr></thead><tbody>
+<tr><td>第 1 周</td><td>需求确认、数据库落地、工程骨架搭建</td><td>本文档、<code>db/schema/01-schema.sql</code>、前后端空工程可启动</td></tr>
+<tr><td>第 2 周</td><td>用户模块 + JWT 鉴权 + 统一响应/异常</td><td>注册登录联调通过</td></tr>
+<tr><td>第 3 周</td><td>分类 + 商品发布 + 图片上传 + 商品列表/详情</td><td>商品主线可演示</td></tr>
+<tr><td>第 4 周</td><td>搜索筛选 + 留言私信</td><td>互动功能可用</td></tr>
+<tr><td>第 5 周</td><td>订单模块（状态机）+ 后台商品审核</td><td>交易闭环完成</td></tr>
+<tr><td>第 6 周</td><td>后台用户/订单/分类管理 + 数据概览</td><td>管理端完整</td></tr>
+<tr><td>第 7 周</td><td>联调、压测、异常场景修复、论文撰写</td><td>测试报告、论文</td></tr>
+<tr><td>第 8 周</td><td>部署（Nginx + jar）、答辩演示脚本与 PPT</td><td>答辩材料</td></tr>
+</tbody></table>
+<hr>
+<h2>9. 附：数据库字段与需求对应关系（可追溯性）</h2>
+<table><thead><tr><th>需求编号</th><th>涉及表</th><th>关键字段</th></tr></thead><tbody>
+<tr><td>F01–F06 用户</td><td><code>user</code></td><td><code>username</code>、<code>password</code>、<code>student_no</code>、<code>role</code>、<code>status</code></td></tr>
+<tr><td>F07–F13 商品</td><td><code>product</code>、<code>product_image</code>、<code>category</code></td><td><code>title</code>、<code>price</code>、<code>condition_level</code>、<code>status</code>、<code>audit_remark</code></td></tr>
+<tr><td>F14–F15 分类</td><td><code>category</code></td><td><code>parent_id</code>、<code>name</code>、<code>sort_order</code></td></tr>
+<tr><td>F16–F19 搜索</td><td><code>product</code></td><td><code>title</code>、<code>description</code>、<code>category_id</code>、<code>price</code>、<code>view_count</code>、<code>create_time</code></td></tr>
+<tr><td>F20–F25 留言私信</td><td><code>message</code></td><td><code>type</code>、<code>product_id</code>、<code>from_user_id</code>、<code>to_user_id</code>、<code>parent_id</code>、<code>is_read</code></td></tr>
+<tr><td>F26–F33 订单</td><td><code>orders</code>、<code>product</code></td><td><code>order_no</code>、<code>buyer_id</code>、<code>seller_id</code>、<code>amount</code>、<code>status</code>、<code>pay_time</code></td></tr>
+<tr><td>F34–F39 后台</td><td><code>product</code>、<code>user</code>、<code>orders</code>、<code>category</code></td><td><code>auditor_id</code>、<code>audit_time</code>、<code>status</code></td></tr>
+<tr><td>F40–F42 支撑</td><td><code>product_image</code></td><td><code>url</code>、<code>sort_order</code></td></tr>
+</tbody></table>
+<hr>
+<h2>10. SQL 脚本校验记录</h2>
+<p><code>db/schema/01-schema.sql</code> 已在<strong>真实 MySQL 8.4.4 社区版服务器</strong>（<code>sql_mode</code> 含 <code>STRICT_TRANS_TABLES</code>）上整体执行并通过，同时用 <code>db/test-data/db_smoke_test.sql</code> 完成结构与业务冒烟测试。</p>
+<table><thead><tr><th>校验项</th><th>结果</th></tr></thead><tbody>
+<tr><td><code>db/schema/01-schema.sql</code> 首次执行</td><td>退出码 0，无 ERROR、无 WARNING（仅 <code>DROP TABLE IF EXISTS</code> 的 1051 Note）</td></tr>
+<tr><td><code>db/schema/01-schema.sql</code> 重复执行</td><td>退出码 0，仅 1007 Note（库已存在），脚本可重复运行</td></tr>
+<tr><td>建表数量 / 列数量 / 外键数量 / 索引条目</td><td>7 / 99 / 12 / 42</td></tr>
+<tr><td>引擎与字符集</td><td>7 张表全部 InnoDB + <code>utf8mb4_general_ci</code></td></tr>
+<tr><td>注释覆盖率</td><td>表注释 7/7，列注释 99/99</td></tr>
+<tr><td>唯一索引</td><td><code>uk_username</code>、<code>uk_student_no</code>、<code>uk_phone</code>、<code>uk_parent_name</code>、<code>uk_order_no</code>、<code>uk_user_product</code> 全部生效</td></tr>
+<tr><td>初始化数据</td><td>分类 32 条（一级 8 + 二级 24），管理员账号 1 个</td></tr>
+<tr><td>业务链路</td><td>注册 → 发布(待审核) → 审核通过(在售) → 留言+回复 → 私信 → 下单(交易中) → 支付 → 交付 → 确认收货(已完成/已售出)，全部成功</td></tr>
+<tr><td>约束反向验证</td><td>用户名重复 → 1062；外键引用不存在用户 → 1452；缺必填列 → 1364；重复收藏 → 1062，均为预期失败</td></tr>
+</tbody></table>
+<blockquote>结论：脚本语法与语义正确，可直接用于开发环境初始化。管理员初始密码为 <code>123456</code>（BCrypt 已校验），首次登录后请立即修改。</blockquote>
+<hr>
+<h2>11. 修订记录</h2>
+<table><thead><tr><th>版本</th><th>日期</th><th>变更</th></tr></thead><tbody>
+<tr><td>v0.01</td><td>2026-10-02</td><td>需求分析与概要设计初稿（角色、42 项功能清单、业务流程、目录规划）</td></tr>
+<tr><td>v0.18</td><td>2026-10-22</td><td><strong>需求对齐</strong>：① 新增双向评价模块 F43–F45（表 <code>evaluation</code>，9xxx 业务码）；② 订单状态机补齐 1 待交付 / 2 待收货 / 5 已退款（F46，TDD 实现，41 条状态机用例）；③ 更正 F07「发布后=待审核」为「直接上架在售」（v0.16 实测）；④ 同步用户故事 36 条、自动化用例 910 条、覆盖率 85.94%</td></tr>
+</tbody></table>
+<blockquote>相关文档：<a href="docs/user-stories.md"><code>docs/user-stories.md</code></a>（36 条用户故事与验收标准）、<br><a href="docs/tdd-demo-2.md"><code>docs/tdd-demo-2.md</code></a>（订单状态机的 TDD 过程）、<br><a href="docs/双向评价说明.md"><code>docs/双向评价说明.md</code></a>（评价模块设计）、<br><a href="docs/自动化测试报告.html"><code>docs/自动化测试报告.html</code></a>（158 条用例 + 59 张截图）。</blockquote></div></body></html>
