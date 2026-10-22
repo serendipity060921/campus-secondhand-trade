@@ -1,0 +1,70 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>本周进展摘要</title><style>
+:root{--ink:#1a1d19;--ink2:#4a4f47;--muted:#8a8f86;--rule:#d8dbd3;--paper:#f6f7f4;--card:#fff;--accent:#35603f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+     font:16px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:40px 28px 100px;background:var(--card);
+      min-height:100vh;box-shadow:0 0 0 1px var(--rule)}
+h1{font-size:30px;margin:0 0 8px;line-height:1.3}
+h2{font-size:22px;margin:36px 0 12px;padding-bottom:8px;border-bottom:1.5px solid var(--rule)}
+h3{font-size:18px;margin:26px 0 8px}
+h4{font-size:16px;margin:18px 0 6px;color:var(--ink2)}
+p{margin:10px 0}
+ul,ol{margin:10px 0;padding-left:26px}
+li{margin:4px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th,td{border:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper);font-weight:600}
+tr:nth-child(even) td{background:#fbfcfa}
+code{background:#f0f2ee;padding:1px 5px;border-radius:3px;font-size:13px;
+     font-family:Consolas,"Courier New",monospace}
+pre{background:#f0f2ee;padding:14px;border-radius:6px;overflow:auto;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0}
+blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--accent);
+           background:#f7f9f6;color:var(--ink2)}
+img{max-width:100%;border:1px solid var(--rule);border-radius:4px;margin:6px 0}
+hr{border:none;border-top:1px solid var(--rule);margin:28px 0}
+a{color:var(--accent)}
+.meta{color:var(--muted);font-size:13px;margin-bottom:24px}
+@media print{
+  body{background:#fff}
+  .wrap{box-shadow:none;max-width:none;padding:0}
+  h2{page-break-after:avoid}
+  table,pre,img{page-break-inside:avoid}
+}
+</style></head><body><div class="wrap"><div class="meta">来源：docs\会议材料\0-本周进展摘要.md　|　打印成 PDF：Ctrl+P → 目标选「另存为 PDF」</div><p>﻿# 本周进展摘要（2026-10-19 ~ 10-22）</p>
+<blockquote>用途：与导师开会时的 1 页速览。每条都对应仓库里的文档/命令，可现场复跑。</blockquote>
+<h2>一、会议三点要求 · 现在的状态</h2>
+<table><thead><tr><th>要求</th><th>状态</th><th>硬证据</th></tr></thead><tbody>
+<tr><td><strong>TDD</strong></td><td>✅</td><td>第二轮完整循环（新功能）：先写 41 条测试 → <strong>红 24 条</strong>（真实输出）→ 实现 → 绿 41/41；文档 <code>docs/tdd-demo-2.md</code></td></tr>
+<tr><td><strong>用户故事</strong></td><td>✅</td><td>36 条故事 + Given/When/Then 验收标准 + 需求→测试→缺陷追溯矩阵（<code>docs/user-stories.md</code>）</td></tr>
+<tr><td><strong>有截图的自动化测试报告</strong></td><td>✅</td><td><code>docs/自动化测试报告.html</code>：5 套件 158 条用例逐条（输入/预期/实际）+ 59 张截图按故事分组</td></tr>
+</tbody></table>
+<h2>二、这周新增的功能</h2>
+<ol>
+<li><strong>双向评价</strong>（v0.18）：买家评卖家 / 卖家评买家，每单每人一次；匿名只隐藏展示层；评分联动信用分（±1，夹 [0,150]）</li>
+<li><strong>订单 6 态状态机</strong>（TDD 实现）：待交易 → 待交付 → 待收货 → 已完成；1/2 阶段可退款回在售；<code>0→3</code> 一步完成保留</li>
+<li><strong>前端</strong>：商品评价区 + 评价弹窗；订单详情页按钮由状态机推导（卖家/买家看到的按钮不同）</li>
+</ol>
+<h2>三、质量数据</h2>
+<pre><code>后端单测      665 → 708 条（+43，含状态机 41 条）
+全量自动化    910 条（E2E 31 / 部署 28 / 安全 52 / 后端 708 / 前端 76 / 组件 15）
+覆盖率        85.94%（JaCoCo 棘轮阈值 0.83，只许上调）
+截图证据      59 张，覆盖 29 条用户故事
+接口实测      评价 28 条 + 界面 19 条 + 订单状态 12 条，全部通过</code></pre>
+<h2>四、TDD 过程中暴露的两次"需求理解错误"（最有价值的部分）</h2>
+<ol>
+<li>我把"确认收货"限定为只有买家 → 与 <code>US-ORDER-03</code>（"作为<strong>卖家</strong>…确认交易完成"）冲突 → <strong>改规则不改需求</strong></li>
+<li>我把 <code>0→3</code> 禁掉了 → 与 <code>US-ORDER-03</code> AC1（"待交易/卖家确认完成"，线下当面交易）冲突 → 补回一步完成</li>
+</ol>
+<blockquote>结论：先写测试时，红的是"我对需求的理解"，不是"代码实现"；先写实现再补测试永远发现不了这两点。</blockquote>
+<h2>五、剩余待办（如实）</h2>
+<table><thead><tr><th>项</th><th>状态</th></tr></thead><tbody>
+<tr><td>CI 部署验证（D1–D28 经 Nginx）</td><td>代码就绪，差最后一次绿色运行确认</td></tr>
+<tr><td>CI 端到端（31 条 Playwright 进 CI）</td><td>未做</td></tr>
+<tr><td>论文正文与排版（学院模板）</td><td>未开始</td></tr>
+<tr><td>中期检查材料</td><td>未整理</td></tr>
+</tbody></table>
+<h2>六、可以现场演示的路径</h2>
+<p>登录 <code>admin / 123456</code> → 订单 → 我卖出的 → 「全新文具套装」（待交易）→ 点「标记可交付」→「确认已交付」→ 换 <code>stu_demo / 123456</code> → 「确认收货」→ 商品变已售出。</p>
+<p>评价：切到 <code>stu_test01 / abc12345</code> → 已完成订单 → 详情页「评价这笔交易」→ 打分提交 → 回商品页看评价区。</p></div></body></html>

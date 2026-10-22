@@ -1,0 +1,422 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>用户故事与验收标准</title><style>
+:root{--ink:#1a1d19;--ink2:#4a4f47;--muted:#8a8f86;--rule:#d8dbd3;--paper:#f6f7f4;--card:#fff;--accent:#35603f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+     font:16px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:40px 28px 100px;background:var(--card);
+      min-height:100vh;box-shadow:0 0 0 1px var(--rule)}
+h1{font-size:30px;margin:0 0 8px;line-height:1.3}
+h2{font-size:22px;margin:36px 0 12px;padding-bottom:8px;border-bottom:1.5px solid var(--rule)}
+h3{font-size:18px;margin:26px 0 8px}
+h4{font-size:16px;margin:18px 0 6px;color:var(--ink2)}
+p{margin:10px 0}
+ul,ol{margin:10px 0;padding-left:26px}
+li{margin:4px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th,td{border:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper);font-weight:600}
+tr:nth-child(even) td{background:#fbfcfa}
+code{background:#f0f2ee;padding:1px 5px;border-radius:3px;font-size:13px;
+     font-family:Consolas,"Courier New",monospace}
+pre{background:#f0f2ee;padding:14px;border-radius:6px;overflow:auto;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0}
+blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--accent);
+           background:#f7f9f6;color:var(--ink2)}
+img{max-width:100%;border:1px solid var(--rule);border-radius:4px;margin:6px 0}
+hr{border:none;border-top:1px solid var(--rule);margin:28px 0}
+a{color:var(--accent)}
+.meta{color:var(--muted);font-size:13px;margin-bottom:24px}
+@media print{
+  body{background:#fff}
+  .wrap{box-shadow:none;max-width:none;padding:0}
+  h2{page-break-after:avoid}
+  table,pre,img{page-break-inside:avoid}
+}
+</style></head><body><div class="wrap"><div class="meta">来源：docs\user-stories.md　|　打印成 PDF：Ctrl+P → 目标选「另存为 PDF」</div><h1>用户故事与验收标准（User Stories &amp; Acceptance Criteria）</h1>
+<blockquote>校园二手交易平台 · 黎钟 · 2027 届软件工程<br>用途：把"功能清单"改写为<strong>用户视角的需求</strong>，并为每条用户故事给出可验证的验收标准（Acceptance Criteria），<br>同时关联到仓库中已有的自动化测试用例与缺陷编号，形成<strong>需求 → 测试 → 缺陷</strong>的可追溯链路。</blockquote>
+<h2>0. 使用说明</h2>
+<table><thead><tr><th>项</th><th>约定</th></tr></thead><tbody>
+<tr><td>故事编号</td><td><code>US-模块-序号</code>，如 <code>US-GOODS-03</code></td></tr>
+<tr><td>角色定义</td><td><strong>游客</strong>（未登录）、<strong>用户</strong>（已注册的学生）、<strong>卖家</strong>（发布商品的用户）、<strong>买家</strong>（下单的用户）、<strong>管理员</strong></td></tr>
+<tr><td>优先级（MoSCoW）</td><td><strong>必须</strong>（Must，MVP 闭环）、<strong>应该</strong>（Should，体验完整）、<strong>可以</strong>（Could，增强）</td></tr>
+<tr><td>验收标准格式</td><td><code>Given 前置条件 / When 操作 / Then 预期结果</code>，每条 AC 都必须可被测试验证</td></tr>
+<tr><td>可追溯</td><td>每条故事标注对应的自动化测试编号与相关缺陷编号；无自动化覆盖的标注"手工"</td></tr>
+</tbody></table>
+<hr>
+<h2>1. 用户与账号（US-USER）</h2>
+<h3>US-USER-01 注册账号 【必须】</h3>
+<p><strong>作为</strong> 一名在校学生，<strong>我希望</strong> 用学号/用户名和密码注册账号，<strong>以便</strong> 开始使用平台买卖闲置物品。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我填写的用户名未被占用、密码符合规则 / When 我提交注册 / Then 注册成功并自动登录，跳转到首页。</li>
+<li>AC2　Given 用户名已被占用 / When 我提交注册 / Then 提示"用户名已存在"，不创建账号。</li>
+<li>AC3　Given 两次输入的密码不一致或必填项为空 / When 我提交 / Then 前端拦截并提示，不发送请求。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.1、E2E 1.5　<strong>相关缺陷</strong>：无</p>
+<h3>US-USER-02 登录与登录态保持 【必须】</h3>
+<p><strong>作为</strong> 已注册用户，<strong>我希望</strong> 登录后在一段时间内保持登录状态，<strong>以便</strong> 不用每次操作都重新登录。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我已注册 / When 我输入正确的用户名和密码 / Then 登录成功，token 被保存，页面显示我的昵称。</li>
+<li>AC2　Given 我输入错误的密码 / When 提交 / Then 提示"用户名或密码错误"，不清空已填用户名。</li>
+<li>AC3　Given 我未登录 / When 我访问需要登录的页面（如发布商品、我的收藏）/ Then 被路由守卫拦截并跳转到登录页。</li>
+<li>AC4　Given 我连续多次输错密码 / When 超过限流阈值 / Then 提示请求过于频繁（限流生效）。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.2、权限越权 2.1、部署验证 D17（登录限流）　<strong>相关缺陷</strong>：无</p>
+<h3>US-USER-03 完善个人资料与上传头像 【应该】</h3>
+<p><strong>作为</strong> 用户，<strong>我希望</strong> 修改昵称、联系方式并上传头像，<strong>以便</strong> 让交易对方更容易信任我。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我已登录 / When 我上传一张合规头像并保存 / Then 头像立即更新并在顶栏显示。</li>
+<li>AC2　Given 我上传超过大小限制的图片 / When 提交 / Then 返回友好提示而非系统错误。</li>
+<li>AC3　Given 我未填写必填项 / When 保存 / Then 提示校验失败。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.3　<strong>相关缺陷</strong>：BUG-06（&gt;5MB 图片提示不友好，已修复）</p>
+<hr>
+<h2>2. 商品发布与管理（US-GOODS）</h2>
+<h3>US-GOODS-01 发布商品 【必须】</h3>
+<p><strong>作为</strong> 卖家，<strong>我希望</strong> 填写标题、价格、分类、描述并上传图片发布商品，<strong>以便</strong> 把闲置物品挂出来。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我已登录且填写了完整信息、上传 1 张图片 / When 我提交 / Then 商品创建成功，</li>
+</ul>
+<p>  状态为<strong>在售</strong>，并立即出现在首页商品列表（<strong>已用真实浏览器实测确认</strong>，见</p>
+<p>  <a href="测试报告-用户故事视角.md">用户故事视角测试报告</a> 的 US-GOODS-01 与 US-GOODS-01b）。</p>
+<ul>
+<li>AC2　Given 标题、价格或分类为空 / When 提交 / Then 前端提示，不发送请求。</li>
+<li>AC3　Given 价格填写非数字或负数 / When 提交 / Then 被校验拦截；售价输入框为</li>
+</ul>
+<p>  <code>el-input-number</code>（<code>:min=0.01</code>、<code>:precision=2</code>），组件层先做一道约束，</p>
+<p>  规则层（<code>utils/productRules.js</code>）再给出统一提示。</p>
+<blockquote><strong>修订说明</strong>：本条最初写作"创建后为待审核、前台不可见"，后经真实浏览器实测发现<br>当前版本的发布流程是<strong>直接上架在售</strong>，故按实测行为更正（详见上述测试报告）。</blockquote>
+<p><strong>对应测试</strong>：E2E 1.4、1.4b　<strong>相关缺陷</strong>：无</p>
+<h3>US-GOODS-02 商品卡片展示分类与编号 【应该】</h3>
+<p><strong>作为</strong> 买家，<strong>我希望</strong> 在商品卡片上看到分类名称与分类编号，<strong>以便</strong> 快速判断商品类别。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 首页已加载 / When 我查看任意商品卡片 / Then 显示正确的分类名称与分类编号（如"专业课教材 · G4-012"）。</li>
+<li>AC2　Given 分类数据来自接口（扁平结构 + parentId）/ When 页面渲染 / Then 子分类正确继承一级分类的编号，不出现兜底编号 <code>ZZ</code>。</li>
+</ul>
+<p><strong>对应测试</strong>：单元测试 31 条（分类索引/编号规则）、E2E 1.5b　<strong>相关缺陷</strong>：BUG-16-01（分类索引解析错误，33 个分类全部错乱，已修复）</p>
+<h3>US-GOODS-03 上架与下架自己的商品 【必须】</h3>
+<p><strong>作为</strong> 卖家，<strong>我希望</strong> 对自己已通过审核的商品执行下架，<strong>以便</strong> 不想卖时及时撤下。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我的商品处于"在售"状态 / When 我点击下架 / Then 商品变为"已下架"，首页列表不再显示。</li>
+<li>AC2　Given 商品属于<strong>其他用户</strong> / When 我尝试调用下架接口 / Then 返回 403/业务错误，商品状态不变（越权防护）。</li>
+</ul>
+<p><strong>对应测试</strong>：权限越权 2.2　<strong>相关缺陷</strong>：BUG-01（匿名可获取非上架商品，已修复）</p>
+<h3>US-GOODS-04 查看商品详情 【必须】</h3>
+<p><strong>作为</strong> 买家，<strong>我希望</strong> 点击卡片进入详情页查看完整信息，<strong>以便</strong> 决定是否联系卖家。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 商品处于"在售"状态 / When 我点击卡片 / Then 详情页正常渲染图片、价格、描述、卖家信息。</li>
+<li>AC2　Given 商品处于"待审核"状态且访问者不是卖家本人或管理员 / When 我直接访问详情 URL / Then 提示"商品不存在"或不可见（不泄漏未上架商品）。</li>
+<li>AC3　Given 我是卖家本人 / When 访问自己的待审核商品 / Then 可以看到详情（身份区分正确）。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.5b、权限越权 2.3　<strong>相关缺陷</strong>：BUG-02（待审核商品详情对任意访问者可见，已修复）</p>
+<hr>
+<h2>3. 审核与后台管理（US-ADMIN）</h2>
+<h3>US-ADMIN-01 管理员审核商品 【必须】</h3>
+<p><strong>作为</strong> 管理员，<strong>我希望</strong> 对"待审核"商品执行通过或驳回，<strong>以便</strong> 保证平台内容合规。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 存在待审核商品 / When 管理员点击"通过" / Then 商品状态变为"在售"，立即出现在首页列表。</li>
+<li>AC2　Given 存在待审核商品 / When 管理员点击"驳回" / Then 商品不上架，卖家侧可见驳回状态。</li>
+<li>AC3　Given 我是普通用户 / When 我访问后台审核页面或接口 / Then 被拦截（后台路由守卫 + 接口权限校验双层）。</li>
+</ul>
+<p><strong>对应测试</strong>：后台 E2E（e2e-v013-admin.py）、E2E 1.4b　<strong>相关缺陷</strong>：无</p>
+<h3>US-ADMIN-02 强制下架违规商品 【应该】</h3>
+<p><strong>作为</strong> 管理员，<strong>我希望</strong> 强制下架违规商品，<strong>以便</strong> 及时阻断不合规内容。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 某商品在售 / When 管理员强制下架 / Then 商品变为已下架，买家侧不再可见。</li>
+<li>AC2　Given 强制下架完成 / When 我查看操作记录 / Then 能看到该操作（可追溯）。</li>
+</ul>
+<p><strong>对应测试</strong>：后台 E2E　<strong>相关缺陷</strong>：无</p>
+<h3>US-ADMIN-03 用户启用/禁用 【可以】</h3>
+<p><strong>作为</strong> 管理员，<strong>我希望</strong> 禁用违规用户，<strong>以便</strong> 维护平台秩序。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 某用户存在 / When 管理员禁用该用户 / Then 该用户登录后无法进行发布等写操作。</li>
+</ul>
+<p><strong>对应测试</strong>：后台 E2E　<strong>相关缺陷</strong>：无</p>
+<h3>US-ADMIN-04 数据看板 【应该】</h3>
+<p><strong>作为</strong> 管理员，<strong>我希望</strong> 在后台看到核心运营数据（概览、7 天趋势、分类与状态分布），<strong>以便</strong> 了解平台运行情况。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 管理员已登录后台 / When 打开数据看板 / Then 图表正常渲染，无 JS 报错，数据与数据库一致。</li>
+</ul>
+<p><strong>对应测试</strong>：后台 E2E（页面 JS 错误 0）　<strong>相关缺陷</strong>：无</p>
+<hr>
+<h2>4. 检索与浏览（US-SEARCH）</h2>
+<h3>US-SEARCH-01 关键词搜索商品 【必须】</h3>
+<p><strong>作为</strong> 买家，<strong>我希望</strong> 输入关键词搜索商品，<strong>以便</strong> 快速找到想要的物品。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 首页已加载 / When 我输入"教材"并搜索 / Then 列表只显示名称包含"教材"的<strong>在售</strong>商品，URL 同步变化。</li>
+<li>AC2　Given 搜索无结果 / When 提交 / Then 显示空状态提示（而非空白页）。</li>
+<li>AC3　Given 我执行搜索、切换分类、翻页 / When 每次操作 / Then 同一接口<strong>只发送一次请求</strong>（不重复请求）。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.5、异常场景 4.2　<strong>相关缺陷</strong>：BUG-03（搜索页重复请求，已修复）</p>
+<h3>US-SEARCH-02 按分类筛选 【应该】</h3>
+<p><strong>作为</strong> 买家，<strong>我希望</strong> 点击分类查看该类商品，<strong>以便</strong> 按类别浏览。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 首页已加载 / When 我点击某分类 / Then 只显示该分类（含子分类）的在售商品，分页正确。</li>
+<li>AC2　Given 分类下无商品 / When 进入 / Then 显示空状态。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.5、部署验证 D23　<strong>相关缺陷</strong>：无</p>
+<h3>US-SEARCH-03 只看在售商品（数据隔离）【必须】</h3>
+<p><strong>作为</strong> 访问者，<strong>我希望</strong> 列表与搜索只展示在售商品，<strong>以便</strong> 不看到无效信息。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 数据库中同时存在待审核、已下架、交易中、已售出商品 / When 我访问列表接口或搜索 / Then 只返回状态为"在售"的商品。</li>
+<li>AC2　Given 我匿名访问列表接口 / When 查看返回结果 / Then 不包含任何非在售商品（接口级过滤，而非前端过滤）。</li>
+</ul>
+<p><strong>对应测试</strong>：权限越权 2.4、部署验证 D24　<strong>相关缺陷</strong>：BUG-01（接口越权泄漏，已修复）</p>
+<hr>
+<h2>5. 收藏（US-FAV）</h2>
+<h3>US-FAV-01 收藏与取消收藏 【应该】</h3>
+<p><strong>作为</strong> 买家，<strong>我希望</strong> 收藏感兴趣的商品，<strong>以便</strong> 之后回来查看。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我已登录并打开某商品详情 / When 我点击收藏 / Then 按钮变为已收藏，收藏记录写入数据库。</li>
+<li>AC2　Given 我已收藏该商品 / When 再次点击 / Then 取消收藏，记录删除。</li>
+<li>AC3　Given 我在两个窗口同时点击收藏同一商品 / When 并发提交 / Then 一个成功、另一个返回业务提示"已收藏该商品"，数据库<strong>收藏记录数恒为 1</strong>（无脏数据）。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.6a~1.6c、异常场景 4.4　<strong>相关缺陷</strong>：BUG-04（并发返回技术性错误码，已修复）</p>
+<h3>US-FAV-02 查看我的收藏 【应该】</h3>
+<p><strong>作为</strong> 买家，<strong>我希望</strong> 在"我的收藏"中分页查看收藏列表，<strong>以便</strong> 集中管理。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我有若干收藏 / When 我进入我的收藏 / Then 分页展示，可取消收藏。</li>
+<li>AC2　Given 我没有收藏 / When 进入 / Then 显示空状态。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.6b　<strong>相关缺陷</strong>：无</p>
+<hr>
+<h2>6. 站内私信（US-CHAT）</h2>
+<h3>US-CHAT-01 私聊卖家 【必须】</h3>
+<p><strong>作为</strong> 买家，<strong>我希望</strong> 在商品详情页直接私聊卖家，<strong>以便</strong> 询问细节并协商。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我已登录并打开他人商品详情 / When 我点击"私聊卖家"并发送消息 / Then 消息发送成功，卖家侧会话列表出现该会话。</li>
+<li>AC2　Given 卖家在线 / When 我发送消息 / Then 卖家<strong>无需刷新</strong>即可收到（WebSocket 推送）。</li>
+<li>AC3　Given 我打开自己的商品详情 / When 我尝试私聊自己 / Then 被拦截（不允许给自己发私信）。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.7a~1.7b、权限越权 2.6　<strong>相关缺陷</strong>：无</p>
+<h3>US-CHAT-02 消息已读回执 【应该】</h3>
+<p><strong>作为</strong> 买家，<strong>我希望</strong> 看到自己发出的消息是否已被对方阅读，<strong>以便</strong> 判断对方是否在线关注。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我发送了消息 / When 对方打开会话（后端标记已读）/ Then 我的消息下方显示"已读"状态。</li>
+<li>AC2　Given 对方未打开会话 / When 我查看消息 / Then 显示"未读"。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.7c~1.7e　<strong>相关缺陷</strong>：BUG-16-02（已读回执链路齐全但模板从未渲染，已修复）</p>
+<h3>US-CHAT-03 会话列表与未读数 【应该】</h3>
+<p><strong>作为</strong> 用户，<strong>我希望</strong> 在消息页看到所有会话与未读数量，<strong>以便</strong> 优先处理待回复的消息。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我有若干会话 / When 打开消息页 / Then 按最近消息时间排序，未读数准确。</li>
+<li>AC2　Given 我进入某会话 / When 返回列表 / Then 该会话未读数清零。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.7b、部署验证 D14~D16（WebSocket）　<strong>相关缺陷</strong>：无</p>
+<hr>
+<h2>7. 订单交易（US-ORDER）</h2>
+<h3>US-ORDER-01 买家下单 【必须】</h3>
+<p><strong>作为</strong> 买家，<strong>我希望</strong> 对在售商品下单，<strong>以便</strong> 锁定该商品并进入交易流程。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 商品处于"在售"且我不该商品的卖家 / When 我点击下单并确认 / Then 订单创建成功，商品状态变为"交易中"。</li>
+<li>AC2　Given 商品已是"交易中"或"已售出" / When 我下单 / Then 提示商品不可购买，<strong>不产生订单</strong>（防一物多卖）。</li>
+<li>AC3　Given 两人同时对同一在售商品下单（并发）/ When 两个请求同时提交 / Then <strong>只有一个成功</strong>，数据库订单数 +1，商品状态唯一。</li>
+<li>AC4　Given 我是该商品的卖家 / When 我尝试购买自己的商品 / Then 被拦截。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.8、异常场景 4.5（并发抢购）、权限越权 2.5　<strong>相关缺陷</strong>：无</p>
+<h3>US-ORDER-02 买卖双方订单视图 【必须】</h3>
+<p><strong>作为</strong> 买家/卖家，<strong>我希望</strong> 分别看到"我买到的"和"我卖出的"订单，<strong>以便</strong> 管理自己的交易。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我下单成功 / When 我打开"我买到的" / Then 能看到该订单及状态。</li>
+<li>AC2　Given 我的商品被别人下单 / When 我打开"我卖出的" / Then 能看到该订单及买家信息。</li>
+<li>AC3　Given 该订单与我无关（第三方）/ When 我尝试访问订单详情 / Then 被拒绝（越权防护）。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.9a~1.9b、权限越权 2.3　<strong>相关缺陷</strong>：无</p>
+<h3>US-ORDER-03 确认交易完成 【必须】</h3>
+<p><strong>作为</strong> 卖家，<strong>我希望</strong> 在完成线下交付后确认交易完成，<strong>以便</strong> 结束订单并标记商品已售出。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 订单处于"待交易" / When 卖家确认完成 / Then 订单变为"已完成"，商品变为"已售出"，买家侧同步可见。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.10a~1.10b、<code>OrderStatusFlowTest</code>（41 条状态机用例）+ 接口实测 5 步　<strong>相关缺陷</strong>：无</p>
+<blockquote><strong>v0.18 补充</strong>：本条只描述"确认完成"。完整状态机（含 1 待交付 / 2 待收货 / 5 已退款）已按 TDD 补齐，<br>见 <a href="tdd-demo-2.md"><code>tdd-demo-2.md</code></a>：0→1（卖家标记可交付）→ 2（卖家确认已交付）→ 3（双方确认完成），<br>1/2 阶段可退款回在售；<code>0→3</code> 的"一步完成"路径保留（线下当面交易）。<strong>前端按钮已接上</strong>，<code>tests/e2e/test-order-state-ui.py</code> 12 条界面验证全过。</blockquote>
+<h3>US-ORDER-04 取消订单并释放商品 【必须】</h3>
+<p><strong>作为</strong> 买家或卖家，<strong>我希望</strong> 取消未完成的订单，<strong>以便</strong> 商品重新回到在售状态。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 订单处于"待交易" / When 我取消订单 / Then 订单变为"已取消"，<strong>商品状态恢复为"在售"</strong>，可被其他人购买。</li>
+<li>AC2　Given 订单已完成 / When 我尝试取消 / Then 不允许取消。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.11（含商品释放断言）　<strong>相关缺陷</strong>：无</p>
+<hr>
+<h2>8. 推荐与运营（US-RECO）</h2>
+<h3>US-RECO-01 首页个性化推荐 【可以】</h3>
+<p><strong>作为</strong> 买家，<strong>我希望</strong> 首页看到"猜你喜欢"，<strong>以便</strong> 发现可能感兴趣的商品。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我有浏览/收藏行为 / When 打开首页 / Then "猜你喜欢"返回与行为相关的商品（Item-CF + 内容召回 + 热门三路融合）。</li>
+<li>AC2　Given 我没有任何行为（新用户）/ When 打开首页 / Then 返回热门商品作为兜底，不报错。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.5、部署验证 D26　<strong>相关缺陷</strong>：无</p>
+<h3>US-RECO-02 商品详情页相似商品 【可以】</h3>
+<p><strong>作为</strong> 买家，<strong>我希望</strong> 在详情页看到相似商品，<strong>以便</strong> 对比后决策。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我在某商品详情页 / When 页面加载 / Then 显示若干相似商品，点击可跳转。</li>
+</ul>
+<p><strong>对应测试</strong>：E2E 1.5b　<strong>相关缺陷</strong>：无</p>
+<h3>US-RECO-03 举报违规商品 【可以】</h3>
+<p><strong>作为</strong> 用户，<strong>我希望</strong> 举报违规商品，<strong>以便</strong> 平台及时处理。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我在商品详情页 / When 提交举报并填写原因 / Then 举报记录入库，管理员后台可见。</li>
+</ul>
+<p><strong>对应测试</strong>：后台 E2E、部署验证 D27　<strong>相关缺陷</strong>：无</p>
+<hr>
+<h2>9. 质量与非功能需求（US-QUALITY）</h2>
+<blockquote>这一组是<strong>跨功能的非功能需求</strong>，也是本项目测试与质量工程的主要对象。</blockquote>
+<h3>US-QUALITY-01 接口权限与越权防护 【必须】</h3>
+<p><strong>作为</strong> 平台方，<strong>我希望</strong> 任何写操作都必须校验身份与归属，<strong>以便</strong> 防止越权操作与信息泄漏。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我未登录 / When 调用任何写接口 / Then 返回 401，操作不生效。</li>
+<li>AC2　Given 我登录为普通用户 / When 调用管理员接口 / Then 返回 403。</li>
+<li>AC3　Given 我登录为普通用户 / When 操作<strong>他人</strong>的订单/商品 / Then 被拒绝，数据不变。</li>
+</ul>
+<p><strong>对应测试</strong>：权限越权 6 条 + 部署验证 D10/D24　<strong>相关缺陷</strong>：BUG-01、BUG-02（均已修复）</p>
+<h3>US-QUALITY-02 页面三态完备（加载/空/错误）【应该】</h3>
+<p><strong>作为</strong> 用户，<strong>我希望</strong> 每个页面在加载中、无数据、请求失败时都有明确反馈，<strong>以便</strong> 不会面对空白页不知所措。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 数据正在请求 / When 页面打开 / Then 显示加载态（骨架屏或加载提示）。</li>
+<li>AC2　Given 请求返回空列表 / When 页面渲染 / Then 显示空状态文案与引导。</li>
+<li>AC3　Given 请求失败（如后端未启动）/ When 页面渲染 / Then 显示错误态与重试入口，<strong>不是白屏</strong>。</li>
+<li>AC4　Givne 全部页面 / When 运行 <code>tools/check-states.py</code> / Then 20 个页面全部达标、缺失数为 0。</li>
+</ul>
+<p><strong>对应测试</strong>：<code>tools/check-states.py</code>（CI 中运行）、部署验证 D3~D5　<strong>相关缺陷</strong>：BUG-16-05（非法模板组合与失效绑定，已修复）</p>
+<h3>US-QUALITY-03 界面视觉一致（设计令牌）【可以】</h3>
+<p><strong>作为</strong> 平台方，<strong>我希望</strong> 所有颜色、间距来自统一的设计令牌，<strong>以便</strong> 视觉一致且便于统一调整。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 前端全部源码 / When 运行 <code>tools/check-tokens.py</code> / Then 裸色值数量为 0（CI 中锁定为 0）。</li>
+</ul>
+<p><strong>对应测试</strong>：<code>tools/check-tokens.py</code>　<strong>相关缺陷</strong>：无</p>
+<h3>US-QUALITY-04 可访问性与对比度 【应该】</h3>
+<p><strong>作为</strong> 有视觉或操作障碍的用户，<strong>我希望</strong> 文字对比度达标、键盘可操作、图片有替代文本，<strong>以便</strong> 正常使用平台。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 全部页面 / When 运行 <code>tools/ui-a11y.py</code> / Then 对比度不达标项为 0（装饰性文字除外）、焦点可见、图片均有 alt。</li>
+<li>AC2　Given 我只用键盘 / When 浏览并操作主要流程 / Then 所有可点击元素均可到达并触发（无鼠标独占元素）。</li>
+</ul>
+<p><strong>对应测试</strong>：<code>tools/ui-a11y.py</code>、<code>tools/check-states.py</code>（鼠标独占 0）　<strong>相关缺陷</strong>：BUG-16-04（对比度回归 3 → 15 处，已修复）</p>
+<h3>US-QUALITY-05 窄屏可用（手机浏览）【应该】</h3>
+<p><strong>作为</strong> 用手机浏览的同学，<strong>我希望</strong> 页面在 390px 宽度下不出现横向溢出，<strong>以便</strong> 正常查看与操作。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 前台页面 / When 视口宽度为 390px / Then 无横向滚动条，核心操作可完成。</li>
+<li>AC2　（已知例外）管理后台侧栏固定宽度，窄屏会溢出；<strong>经评估不做适配</strong>，已记录在测试报告的遗留问题中。</li>
+</ul>
+<p><strong>对应测试</strong>：<code>tools/capture-ui.py</code> + 人工走查　<strong>相关缺陷</strong>：无</p>
+<h3>US-QUALITY-06 热点数据缓存与限流 【应该】</h3>
+<p><strong>作为</strong> 平台方，<strong>我希望</strong> 热点接口有缓存、高频接口有限流，<strong>以便</strong> 保证系统在高并发下可用。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 商品列表/详情/分类/推荐接口 / When 重复请求 / Then 命中缓存（Redis），响应时间显著下降。</li>
+<li>AC2　Given 缓存中不存在的数据被反复请求 / When 请求 / Then 空值缓存生效，不压垮数据库（防穿透）。</li>
+<li>AC3　Given 同一 IP 高频调用登录接口 / When 超过阈值 / Then 返回限流提示（本项目对<strong>本机同样生效</strong>，需专门测试）。</li>
+</ul>
+<p><strong>对应测试</strong>：部署验证 D12/D17/D18、压测脚本 load-test.py　<strong>相关缺陷</strong>：无</p>
+<h3>US-QUALITY-07 缺陷可追溯与质量不退化 【必须】</h3>
+<p><strong>作为</strong> 项目维护者，<strong>我希望</strong> 每个缺陷都有记录、每次改版都不让质量指标倒退，<strong>以便</strong> 长期维护。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 发现任何缺陷 / When 登记 / Then 记录发现方式、复现步骤、根因、修复与验证结果。</li>
+<li>AC2　Given 代码推送 / When CI 运行 / Then 三类静态检查与三套测试自动执行；指标超过阈值则失败（棘轮机制）。</li>
+</ul>
+<p><strong>对应测试</strong>：<code>.github/workflows/ci.yml</code>、<code>docs/defect-log.md</code>　<strong>相关缺陷</strong>：全部 12 条缺陷均按此流程闭环</p>
+<hr>
+<h2>10. 双向评价（US-EVAL）</h2>
+<blockquote>v0.18 新增。前 9 组的评价能力是"举报（负向）"，缺少"口碑（正向）"，<br>导致信用分是注册时的固定值、商品页没有历史评价、卖家无法筛选买家。<br>本组故事把"双向评价"作为一个完整的用户价值补上，业务码段为 <strong>9xxx</strong>。</blockquote>
+<h3>US-EVAL-01 评价交易对方 【必须】</h3>
+<p><strong>作为</strong> 已完成的交易中的买家或卖家，<strong>我希望</strong> 给对方留一条评价（星级 + 标签 + 文字），<strong>以便</strong> 把这次交易的真实感受沉淀成口碑。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 一笔订单状态为"已完成"且我是买家 / When 我提交 5 星评价 / Then 评价入库，<code>role=1</code>（买家评卖家），被评价人是卖家。</li>
+<li>AC2　Given 订单已完成且我是卖家 / When 我提交评价 / Then <code>role=2</code>（卖家评买家），被评价人是买家。</li>
+<li>AC3　Given 我是<strong>第三方</strong>（非买卖双方）/ When 我调用评价接口 / Then 返回业务码 <strong>9002</strong>，不落库。</li>
+<li>AC4　Given 订单<strong>未完成</strong>（待交易/已取消/已退款）/ When 提交评价 / Then 返回 <strong>9003</strong>，不落库。</li>
+<li>AC5　Given 我已评价过该订单 / When 再次提交 / Then 返回 <strong>9004</strong>；并发重复提交由唯一索引 <code>uk_order_from</code> 兜底，同样返回 9004（不暴露通用的 1002）。</li>
+<li>AC6　Given 我提交 rating=0 或 6 / When 提交 / Then 被参数校验拦截（HTTP 400）。</li>
+<li>AC7　Given 我的评价内容为空白 / When 提交 / Then 允许提交，落库为 NULL（不存空串）。</li>
+<li>AC8　<strong>评价对象不可由前端指定</strong>：DTO 只接受 <code>orderId</code>，被评价人完全由订单的买卖双方推导 —— 防止把差评挂到任意用户身上。</li>
+</ul>
+<p><strong>对应测试</strong>：后端单测 25 条（<code>EvaluationModuleServiceImplTest</code>）、真实接口实测 7 项　<strong>相关缺陷</strong>：无</p>
+<h3>US-EVAL-02 查看商品口碑 【应该】</h3>
+<p><strong>作为</strong> 买家，<strong>我希望</strong> 在商品详情页看到平均分、好评率与历史评价，<strong>以便</strong> 判断这个卖家/这件商品是否可信。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 商品有评价 / When 打开详情页 / Then 评价区显示平均分（1 位小数）、好评率（4~5 星占比）、星级分布（5→1 五档）与评价列表。</li>
+<li>AC2　Given 商品无评价 / When 打开详情页 / Then 显示"还没有评价"空态，不是空白区域。</li>
+<li>AC3　Given 评价区加载失败 / When 页面渲染 / Then 显示错误态与重试入口（三态完备）。</li>
+<li>AC4　Given 我在未登录状态浏览评价 / When 查看列表 / Then 可以正常查看（读接口公开），但"这条是不是我写的"标记一律为 false（不泄漏归属）。</li>
+<li>AC5　Given 某个匿名评价 / When 我查看列表 / Then 显示"匿名同学"与首字头像兜底，<strong>但 <code>fromUserId</code> 在数据层保留</strong>以便追溯。</li>
+<li>AC6　Given 我只想知道"我评过这笔订单没有" / When 前端在打开评价弹窗前预检 / Then 只有买卖双方能查询该订单的评价（第三方被拒）。</li>
+</ul>
+<p><strong>对应测试</strong>：前端组件测试 6 条（<code>EvaluationSection.spec.js</code>）、真实接口实测　<strong>相关缺陷</strong>：无</p>
+<h3>US-EVAL-03 信用分联动与防刷 【应该】</h3>
+<p><strong>作为</strong> 平台方，<strong>我希望</strong> 评价结果能温和地影响信用分且无法被刷，<strong>以便</strong> 信用分真正反映交易口碑。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我收到 4 或 5 星 / When 评价生效 / Then 我的信用分 <strong>+1</strong>。</li>
+<li>AC2　Given 我收到 3 星 / When 评价生效 / Then 信用分<strong>不变</strong>。</li>
+<li>AC3　Given 我收到 1 或 2 星 / When 评价生效 / Then 信用分 <strong>−1</strong>。</li>
+<li>AC4　Given 任意加减 / When 执行 / Then 结果被夹在 <strong>[0, 150]</strong> 区间（一次差评不会把账号打死，一次好评也不能无限刷分）。</li>
+<li>AC5　Given 同一订单 / When 多次评价尝试 / Then 信用分<strong>只变动一次</strong>（唯一索引 + 先查再插双重保证）。</li>
+<li>AC6　Given 并发评价 / When 同时提交 / Then 用 SQL 表达式（<code>LEAST/GREATEST</code>）做原子更新，不是"先读后写"，不存在丢更新。</li>
+</ul>
+<p><strong>对应测试</strong>：后端单测（信用分边界与原子性断言 3 条）、真实接口实测（admin 123→124、stu_test01 101→100）　<strong>相关缺陷</strong>：无</p>
+<hr>
+<h2>11. 需求 → 测试 → 缺陷 追溯矩阵（摘要）</h2>
+<table><thead><tr><th>用户故事</th><th>对应自动化测试</th><th>相关缺陷</th></tr></thead><tbody>
+<tr><td>US-USER-01 注册</td><td>E2E 1.1 / 1.5</td><td>——</td></tr>
+<tr><td>US-USER-02 登录与登录态</td><td>E2E 1.2、越权 2.1、D17</td><td>——</td></tr>
+<tr><td>US-USER-03 资料与头像</td><td>E2E 1.3</td><td>BUG-06</td></tr>
+<tr><td>US-GOODS-01 发布商品</td><td>E2E 1.4 / 1.4b</td><td>——</td></tr>
+<tr><td>US-GOODS-02 分类与编号展示</td><td>单元测试 31 条、E2E 1.5b</td><td>BUG-16-01</td></tr>
+<tr><td>US-GOODS-03 上下架与越权</td><td>越权 2.2</td><td>BUG-01</td></tr>
+<tr><td>US-GOODS-04 商品详情与可见性</td><td>E2E 1.5b、越权 2.3</td><td>BUG-02</td></tr>
+<tr><td>US-ADMIN-01 审核商品</td><td>后台 E2E、E2E 1.4b</td><td>——</td></tr>
+<tr><td>US-SEARCH-01 关键词搜索</td><td>E2E 1.5、异常 4.2</td><td>BUG-03</td></tr>
+<tr><td>US-SEARCH-03 只在售可见</td><td>越权 2.4、D24</td><td>BUG-01</td></tr>
+<tr><td>US-FAV-01 收藏与并发</td><td>E2E 1.6a~c、异常 4.4</td><td>BUG-04</td></tr>
+<tr><td>US-CHAT-01 私聊卖家</td><td>E2E 1.7a~b、越权 2.6</td><td>——</td></tr>
+<tr><td>US-CHAT-02 已读回执</td><td>E2E 1.7c~e</td><td>BUG-16-02</td></tr>
+<tr><td>US-ORDER-01 下单与防一物多卖</td><td>E2E 1.8、异常 4.5、越权 2.5</td><td>——</td></tr>
+<tr><td>US-ORDER-02 买卖双方订单视图</td><td>E2E 1.9a~b、越权 2.3</td><td>——</td></tr>
+<tr><td>US-ORDER-03 确认完成</td><td>E2E 1.10a~b</td><td>——</td></tr>
+<tr><td>US-ORDER-04 取消并释放商品</td><td>E2E 1.11</td><td>——</td></tr>
+<tr><td>US-RECO-01 个性化推荐</td><td>E2E 1.5、D26</td><td>——</td></tr>
+<tr><td>US-QUALITY-01 越权防护</td><td>越权 6 条、D10/D24</td><td>BUG-01、BUG-02</td></tr>
+<tr><td>US-QUALITY-02 页面三态</td><td>check-states.py、D3~D5</td><td>BUG-16-05</td></tr>
+<tr><td>US-QUALITY-04 可访问性</td><td>ui-a11y.py、check-states.py</td><td>BUG-16-04</td></tr>
+<tr><td>US-QUALITY-07 质量不退化</td><td>ci.yml、defect-log.md</td><td>全部 12 条</td></tr>
+<tr><td><strong>US-EVAL-01 评价交易对方</strong></td><td>后端单测 25 条、实测 7 项</td><td>——</td></tr>
+<tr><td><strong>US-EVAL-02 查看商品口碑</strong></td><td>组件测试 6 条、实测</td><td>——</td></tr>
+<tr><td><strong>US-EVAL-03 信用分与防刷</strong></td><td>后端单测 3 条、实测</td><td>——</td></tr>
+</tbody></table>
+<p><strong>统计</strong>：共 <strong>36 条</strong>用户故事（<strong>必须 16</strong>、<strong>应该 15</strong>、<strong>可以 5</strong>），其中 <strong>35 条</strong>有自动化测试覆盖，覆盖率 <strong>97%</strong>；</p>
+<p>仅 US-QUALITY-05（390px 窄屏）依赖人工走查，已在测试报告的遗留问题中标注。</p>
+<blockquote><strong>修订说明（v0.18）</strong>：本节原先写作"30 条（必须 14、应该 11）"，与正文标题的实际条数不符 ——<br>按 <code>### US-</code> 标题逐条点算，第 1~9 组本来就是 <strong>33 条（必须 15、应该 13、可以 5）</strong>，<br>加上 v0.18 新增的 US-EVAL 3 条后为 <strong>36 条（必须 16、应该 15、可以 5）</strong>。<br>统计口径已按实际标题更正，避免论文里"说 30 条、列了 36 条"这种硬伤。</blockquote>
+<hr>
+<p><em>本文件与 <code>docs/test-report-v0.16.md</code>、<code>docs/defect-log.md</code> 配套使用：</em></p>
+<p><em>用户故事描述"要什么"，测试报告说明"验证结果"，缺陷跟踪表记录"过程中发现并解决了什么"。</em></p></div></body></html>
