@@ -32,7 +32,9 @@
 > [测试覆盖率说明](docs/测试覆盖率说明.md) ·
 > [机审效果统计](docs/机审效果统计.md) ·
 > [内容治理说明](docs/内容治理说明.md) ·
-> [测试报告（用户故事视角）](docs/测试报告-用户故事视角.md)
+> [测试报告（用户故事视角）](docs/测试报告-用户故事视角.md) ·
+> [**工作日志**](docs/工作日志.md)（按日期记录每次改动与证据） ·
+> [自动化测试报告（HTML，含截图）](docs/自动化测试报告.html)
 
 各版本实现内容见 [docs/milestones/](./docs/milestones/) 与 [CHANGELOG.md](./CHANGELOG.md)；
 测试结论与缺陷记录见 [v0.16 测试报告](docs/test-report-v0.16.md) 与 [缺陷跟踪表](docs/defect-log.md)。
