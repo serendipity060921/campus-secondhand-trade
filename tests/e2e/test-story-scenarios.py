@@ -248,6 +248,56 @@ def run(browser, base, only):
             check(False, 'US-GOODS-05 机审拦截证据存在', '缺少 US-GOODS-01-4 截图')
     c.close()
 
+    if want('US-ORDER-04'):
+        import json as _js
+        import urllib.request as _ur
+
+        api = 'http://127.0.0.1:8080/api'
+
+        def call(path, method='GET', token=None, body=None):
+            data = _js.dumps(body).encode() if body is not None else None
+            req = _ur.Request(api + path, data=data, method=method)
+            req.add_header('Content-Type', 'application/json')
+            if token:
+                req.add_header('Authorization', 'Bearer ' + token)
+            with _ur.urlopen(req, timeout=20) as r:
+                return _js.loads(r.read().decode())
+
+        # 单独造一笔订单（避免与 US-ORDER-03 争用订单 4 这笔演示数据）
+        tok = call('/user/login', 'POST', body={'username': BUYER[0], 'password': BUYER[1]})['data']['token']
+        rows = call('/product/list?page=1&size=30')['data']['records']
+        cand = [x for x in rows if x.get('status') == 1 and x.get('sellerId') != 5]
+        if not cand:
+            check(False, 'US-ORDER-04 取消订单并释放商品', '没有可用于下单的在售商品')
+        else:
+            pid = cand[0]['id']
+            created = call('/order/create', 'POST', tok, {'productId': pid, 'deliveryType': 1})
+            oid = (created.get('data') or {}).get('id')
+            check(bool(oid), 'US-ORDER-04 可创建一笔待交易订单', f'orderId={oid} productId={pid}')
+            if oid:
+                c, p = ctx()
+                login(p, base, BUYER)
+                goto(p, base, f'/orders/{oid}')
+                check('待交易' in body(p), 'US-ORDER-04 订单初始为待交易')
+                shot(p, 'US-ORDER-04-S1-待交易订单（取消前）', '买家视角')
+                try:
+                    p.locator('button:visible').filter(has_text='取消订单').first.click(timeout=8000)
+                    p.wait_for_timeout(700)
+                    for txt in ('确定', '确认'):
+                        btn = p.locator('.el-message-box__btns button:visible').filter(has_text=txt)
+                        if btn.count():
+                            btn.first.click()
+                            break
+                    p.wait_for_timeout(1800)
+                except Exception as e:
+                    print(f'    ⚠️ 取消操作异常: {str(e)[:60]}')
+                after = body(p)
+                check('已取消' in after, 'US-ORDER-04 取消后订单变为已取消', after.replace('\n', '|')[-70:])
+                shot(p, 'US-ORDER-04-S2-取消后订单已取消', '终态提示')
+                st = call(f'/product/{pid}')['data']
+                check(st.get('status') == 1, 'US-ORDER-04 取消后商品重新上架（status=1）', f'status={st.get("status")}')
+                c.close()
+
     print('\n五、评价（US-EVAL-01 / US-EVAL-02）')
     if want('US-EVAL-01'):
         c, p = ctx()
