@@ -42,7 +42,8 @@ a{color:var(--accent)}
 <tr><td>视口</td><td>1440 × 900（含 390 × 844 窄屏场景）</td></tr>
 <tr><td>被测地址</td><td>http://127.0.0.1:8081（Nginx 部署形态）</td></tr>
 <tr><td>夹具 TAG</td><td><code>e153d</code>（账号 <code>e2e<em></code>、商品标题 <code>E2E</em></code>，运行结束自动清理）</td></tr>
-<tr><td>浏览器逐条执行的用户故事</td><td><strong>13 条</strong></td></tr>
+<tr><td>浏览器逐条执行的<strong>场景</strong></td><td><strong>13 个</strong></td></tr>
+<tr><td>这些场景断言到的用户故事</td><td><strong>17 条</strong>（脚本按 13 个场景组织，其中若干场景内部还断言了别的故事，如「收藏」场景同时验证 US-FAV-02）</td></tr>
 <tr><td>通过</td><td><strong>13 / 13</strong></td></tr>
 <tr><td>页面 JS 错误合计</td><td><strong>0</strong></td></tr>
 <tr><td>截图证据</td><td><code>docs/story-evidence/</code>（共 59 张）</td></tr>
@@ -266,6 +267,18 @@ a{color:var(--accent)}
 <tr><td>36</td><td><strong>US-EVAL-02</strong> 查看商品口碑</td><td>应该</td><td>6</td><td>组件测试 6 条（前端）+ 界面验证</td><td>✅ 2 张</td><td>—</td></tr>
 <tr><td>37</td><td><strong>US-EVAL-03</strong> 信用分联动与防刷</td><td>应该</td><td>6</td><td>后端单测（边界与原子性）+ 接口实测</td><td>—</td><td>—</td></tr>
 </tbody></table>
+<h3>五之二、覆盖手段分布（一条故事可被多种手段覆盖，故合计 &gt; 37）</h3>
+<table><thead><tr><th>验证手段</th><th>覆盖故事数</th><th>故事</th></tr></thead><tbody>
+<tr><td>端到端 E2E</td><td>22</td><td>US-USER-03、US-GOODS-01、US-GOODS-02、US-GOODS-03、US-GOODS-05、US-ADMIN-01、US-ADMIN-02、US-ADMIN-03、US-ADMIN-04、US-SEARCH-02、US-SEARCH-03、US-FAV-01、US-CHAT-01、US-CHAT-02、US-ORDER-01、US-ORDER-02、US-ORDER-03、US-ORDER-04、US-RECO-01、US-RECO-02、US-RECO-03、US-QUALITY-01</td></tr>
+<tr><td>浏览器逐条</td><td>17</td><td>US-USER-01、US-USER-02、US-GOODS-01、US-GOODS-04、US-ADMIN-04、US-SEARCH-01、US-FAV-01、US-FAV-02、US-CHAT-01、US-CHAT-02、US-CHAT-03、US-ORDER-01、US-ORDER-02、US-ORDER-03、US-RECO-01、US-QUALITY-01、US-QUALITY-05</td></tr>
+<tr><td>后台 E2E</td><td>6</td><td>US-GOODS-05、US-ADMIN-01、US-ADMIN-02、US-ADMIN-03、US-ADMIN-04、US-RECO-03</td></tr>
+<tr><td>静态检查/CI 门禁</td><td>5</td><td>US-GOODS-05、US-QUALITY-02、US-QUALITY-03、US-QUALITY-04、US-QUALITY-07</td></tr>
+<tr><td>部署验证</td><td>4</td><td>US-SEARCH-03、US-RECO-03、US-QUALITY-02、US-QUALITY-06</td></tr>
+<tr><td>后端单测</td><td>3</td><td>US-GOODS-02、US-EVAL-01、US-EVAL-03</td></tr>
+<tr><td>压测脚本</td><td>1</td><td>US-QUALITY-06</td></tr>
+<tr><td>前端组件</td><td>1</td><td>US-EVAL-02</td></tr>
+</tbody></table>
+<blockquote>⚠️ 注意区分"<strong>用例条数</strong>"与"<strong>故事条数</strong>"：<br>端到端 31 条、部署验证 28 条、安全 52 条、后端单测 708 条、前端纯函数 76 条、组件 15 条<br>都是<strong>用例</strong>数量；一条故事通常由多套件的多条用例共同覆盖，所以不能把用例数相加当作覆盖的故事数。</blockquote>
 <h3>五之一、各套件条数（改动测试后请同步本脚本的 SUITE_TOTALS）</h3>
 <table><thead><tr><th>套件</th><th>条数</th><th>复跑命令</th></tr></thead><tbody>
 <tr><td>浏览器逐条（AI 驱动）</td><td>13</td><td><code>tools/story-browser-report.py</code></td></tr>
