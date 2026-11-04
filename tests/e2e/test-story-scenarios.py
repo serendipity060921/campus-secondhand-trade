@@ -248,6 +248,47 @@ def run(browser, base, only):
             check(False, 'US-GOODS-05 机审拦截证据存在', '缺少 US-GOODS-01-4 截图')
     c.close()
 
+    print('\n五、评价（US-EVAL-01 / US-EVAL-02）')
+    if want('US-EVAL-01'):
+        c, p = ctx()
+        login(p, base, BUYER)
+        goto(p, base, '/orders/1')
+        check('已完成' in body(p), 'US-EVAL-01 已完成订单可发起评价')
+        try:
+            p.get_by_role('button', name=re.compile('评价这笔交易')).first.click()
+            p.wait_for_selector('.el-dialog', state='attached', timeout=8000)
+            p.wait_for_timeout(800)
+            shot(p, 'US-EVAL-01-S1-评价弹窗（星级/标签/匿名）', '提交前')
+            dlg = p.locator('.el-dialog').last
+            try:
+                dlg.locator('.el-rate__item').nth(4).click()
+            except Exception:
+                pass
+            dlg.locator('textarea').first.fill('场景验证：书很新，沟通顺利')
+            dlg.get_by_role('button', name=re.compile('提交评价')).first.click()
+            after, waited, dopen = '', 0, True
+            while waited < 9000:
+                after = body(p)
+                dopen = p.locator('.el-dialog').count() > 0 and p.locator('.el-dialog').last.is_visible()
+                if ('评价成功' in after) or ('已评价' in after) or (not dopen):
+                    break
+                p.wait_for_timeout(300); waited += 300
+            check(('评价成功' in after) or ('已评价' in after) or (not dopen),
+                  'US-EVAL-01 提交评价成功', f'等待 {waited}ms')
+            shot(p, 'US-EVAL-01-S2-评价提交后', '成功提示或弹窗关闭')
+        except Exception as e:
+            check(False, 'US-EVAL-01 评价流程可完成', str(e)[:70])
+        c.close()
+
+    if want('US-EVAL-02'):
+        c, p = ctx()
+        goto(p, base, '/product/8')
+        tt = body(p)
+        check('交易评价' in tt or '评价' in tt, 'US-EVAL-02 详情页有「交易评价」区')
+        check(bool(re.search(r'好评率|星级分布|平均分', tt)), 'US-EVAL-02 有平均分/好评率/星级分布')
+        shot(p, 'US-EVAL-02-S1-商品口碑区', '平均分/好评率/星级分布')
+        c.close()
+
     print('\n（质量型故事不在本套件范围：断言对象不在界面上）')
 
 
