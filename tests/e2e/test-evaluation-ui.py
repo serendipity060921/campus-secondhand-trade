@@ -21,6 +21,7 @@ import json
 import os
 import pathlib
 import re
+import os
 import sys
 import tempfile
 
@@ -82,7 +83,7 @@ def main():
     BASE = args.base
 
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(channel='msedge', headless=True)
+        browser = pw.chromium.launch(channel=(os.environ.get('PW_CHANNEL', 'msedge') or None), headless=True)
         ctx = browser.new_context(locale='zh-CN', viewport={'width': 1440, 'height': 1000})
         page = ctx.new_page()
         page.set_default_timeout(20000)

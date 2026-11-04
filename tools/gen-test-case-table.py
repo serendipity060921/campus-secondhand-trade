@@ -179,6 +179,25 @@ def collect_component():
     return rows
 
 
+def collect_ui_verify():
+    """界面验证套件（v0.18）：双向评价 19 条 + 订单状态机 12 条
+
+    这两个套件原本只在本地跑（README 里也记着"端到端未接入 CI"），
+    v0.18 已接进 CI 的 deploy job，因此纳入总表。
+    """
+    rows = []
+    for fname, label in [('evaluation_ui_result.json', '评价界面'),
+                         ('order_state_ui_result.json', '订单状态界面')]:
+        data = read_json(TEMP / fname)
+        if not data:
+            continue
+        for i, r in enumerate(data.get('results') or [], 1):
+            rows.append(dict(suite='界面验证（评价+订单状态）', id=f'{label}{i}',
+                             name=r.get('name', ''), detail='通过' if r.get('ok') else '失败',
+                             ok=bool(r.get('ok')), evidence='Playwright 真点按钮（与 CI 同一环境变量）'))
+    return rows
+
+
 def collect_extra():
     """其它接口套件（推荐/缓存/管理端/WebSocket 等），不计入总数，单独列一节"""
     data = read_json(TEMP / 'api_extra_result.json')
@@ -224,6 +243,7 @@ def main():
         ('后端单元测试', collect_backend()),
         ('前端纯函数测试', collect_frontend(run=not args.no_run)),
     ('前端组件测试', collect_component()),
+    ('界面验证（评价+订单状态）', collect_ui_verify()),
     ]
     extra = collect_extra()
 

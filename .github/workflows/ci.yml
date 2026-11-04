@@ -618,3 +618,30 @@ jobs:
             /tmp/dsh-sqlval/v015_result.json
             **/v015_result.json
           if-no-files-found: warn
+
+      # ===== v0.18：把 UI 套件接进 CI（此前只有本地跑，CI 从不执行）=====
+      # 顺序很关键：必须排在「部署验证 D1–D28」之后 —— 那些用例会断言演示数据的完整性，
+      # 而下面的 UI 套件会真实写数据（评价、订单状态流转）。
+      - name: 安装 Playwright 与 Chromium（UI 套件用）
+        run: |
+          (pip install -q playwright || pip install -q --break-system-packages playwright)
+          python -m playwright install --with-deps chromium
+          python -c "import playwright; print('playwright ok')"
+
+      # PW_CHANNEL 留空 → 用 Playwright 自带 Chromium；本地默认走系统 Edge。
+      - name: 端到端（31 条，真实浏览器）
+        env:
+          PW_CHANNEL: ""
+          E2E_BASE: http://127.0.0.1:8081
+          API_BASE: http://127.0.0.1:8080/api
+        run: python3 tests/e2e/e2e-browser-test.py
+
+      - name: 双向评价界面验证（19 条）
+        env:
+          PW_CHANNEL: ""
+        run: python3 tests/e2e/test-evaluation-ui.py
+
+      - name: 订单状态机界面验证（12 条）
+        env:
+          PW_CHANNEL: ""
+        run: python3 tests/e2e/test-order-state-ui.py

@@ -16,6 +16,7 @@
 
 # ★ Windows 控制台的默认编码是 GBK，而本脚本会输出 ✓/✗/✅ 等字符 ——
 #   不重新配置 stdout 的话，手动执行会直接抛 UnicodeEncodeError 中断。
+import os
 import sys as _sys
 try:
     _sys.stdout.reconfigure(encoding='utf-8')
@@ -27,6 +28,7 @@ import datetime
 import pathlib
 import re
 import subprocess
+import os
 import sys
 import time
 import uuid
@@ -546,6 +548,10 @@ MATRIX = [
     ('US-QUALITY-05', '窄屏可用（390px）', '本报告（浏览器）', '—'),
     ('US-QUALITY-06', '缓存与限流', '部署验证 D12/D17/D18 + 压测脚本', '—'),
     ('US-QUALITY-07', '缺陷可追溯与质量不退化', 'ci.yml（棘轮门禁）+ defect-log.md', '全部 12 条'),
+('US-GOODS-05', '机审把关与转人工审核', 'ContentModeratorTest + check-content-moderation.py + 后台 E2E（8003）', '—'),
+    ('US-EVAL-01', '评价交易对方', '后端单测 25 条 + 接口验证 28 条 + 界面验证 19 条', '—'),
+    ('US-EVAL-02', '查看商品口碑', '组件测试 6 条（前端）+ 界面验证', '—'),
+    ('US-EVAL-03', '信用分联动与防刷', '后端单测（边界与原子性）+ 接口实测', '—'),
 ]
 
 
@@ -571,7 +577,7 @@ def main():
                         'notes': notes, 'shots': shots, 'js': js})
 
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(channel='msedge', headless=True)
+        browser = pw.chromium.launch(channel=(os.environ.get('PW_CHANNEL', 'msedge') or None), headless=True)
         print(f'AI 驱动浏览器用户故事测试报告   浏览器=系统 Edge   夹具 TAG={TAG}')
         run('US-USER-02', '登录与登录态保持', 'AC1 登录成功 / AC3 未登录被路由守卫拦截', us_user_02)
         run('US-USER-01', '注册账号（校验 + 真实注册）', 'AC1 注册成功 / AC3 空值拦截', us_user_01)
@@ -616,7 +622,7 @@ def main():
     L.append(f'| 通过 | **{passed} / {len(results)}** |')
     L.append(f'| 页面 JS 错误合计 | **{total_js}** |')
     L.append(f'| 截图证据 | `docs/story-evidence/`（共 {shots_total} 张） |')
-    L.append('| 用户故事总覆盖 | **33 / 33**（浏览器逐条执行 + 三套自动化测试，见第三节矩阵） |')
+    L.append(f'| 用户故事总覆盖 | **{_story_count()} / {_story_count()}**（浏览器逐条执行 + 六套自动化测试，见第三节矩阵） |')
     L.append('')
     L.append('## 二、浏览器逐条执行结果\n')
     L.append('| 用户故事 | 验收标准 | 结论 | 页面 JS 错误 |')
@@ -643,7 +649,7 @@ def main():
         L.append(f'| {sid} | {name} | {mark} | {bug} |')
     L.append('')
     L.append(f'> 其中加粗的 **{len(results)} 条**由本报告以「AI 驱动真实浏览器逐条操作 + 截图」执行；'
-             f'其余场景由三套自动化测试覆盖（端到端 31 条、部署验证 28 条、单元测试 76 条），'
+             f'其余场景由六套自动化测试覆盖（端到端 31 条、部署验证 28 条、安全 52 条、后端单测 708 条、前端纯函数 76 条、组件 15 条），'
              f'详见 [v0.16 测试报告](test-report-v0.16.md) 与 [缺陷跟踪表](defect-log.md)。')
     L.append('')
     L.append('## 四、本次执行中发现并修正的断言问题（方法论）\n')

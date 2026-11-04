@@ -19,6 +19,7 @@ import json
 import os
 import pathlib
 import re
+import os
 import sys
 import tempfile
 
@@ -102,7 +103,7 @@ def main():
     BASE = args.base
 
     with sync_playwright() as pw:
-        b = pw.chromium.launch(channel='msedge', headless=True)
+        b = pw.chromium.launch(channel=(os.environ.get('PW_CHANNEL', 'msedge') or None), headless=True)
 
         print('一、卖家视角：待交易 → 待交付 → 待收货')
         ctx = b.new_context(locale='zh-CN', viewport={'width': 1440, 'height': 1000})

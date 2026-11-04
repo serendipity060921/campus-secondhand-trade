@@ -16,6 +16,7 @@ import os
 import pathlib
 import re
 import subprocess
+import os
 import sys
 import time
 import uuid
@@ -287,7 +288,7 @@ print(f'v0.10 浏览器端到端测试   账号A(卖家)={A_USER}   账号B(买�
 print('=' * 108)
 
 with sync_playwright() as pw:
-    browser = pw.chromium.launch(channel='msedge', headless=True)
+    browser = pw.chromium.launch(channel=(os.environ.get('PW_CHANNEL', 'msedge') or None), headless=True)
     # 两个完全独立的浏览器上下文 = 两个浏览器/无痕窗口，localStorage 互不影响
     ctx_a = browser.new_context(viewport={'width': 1440, 'height': 900}, locale='zh-CN')
     ctx_b = browser.new_context(viewport={'width': 1440, 'height': 900}, locale='zh-CN')
