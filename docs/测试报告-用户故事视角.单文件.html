@@ -267,6 +267,25 @@ a{color:var(--accent)}
 <tr><td>36</td><td><strong>US-EVAL-02</strong> 查看商品口碑</td><td>应该</td><td>6</td><td>组件测试 6 条（前端）+ 界面验证</td><td>✅ 2 张</td><td>—</td></tr>
 <tr><td>37</td><td><strong>US-EVAL-03</strong> 信用分联动与防刷</td><td>应该</td><td>6</td><td>后端单测（边界与原子性）+ 接口实测</td><td>—</td><td>—</td></tr>
 </tbody></table>
+<h3>五之三、故事类型分组（为什么有的故事没有浏览器场景）</h3>
+<p>37 条故事里，<strong>28 条是功能型</strong>（有用户可见的界面旅程），<strong>9 条是质量/非功能型</strong>（断言对象不在界面上）。</p>
+<table><thead><tr><th>类型</th><th>条数</th><th>验证方式</th><th>能否"一条故事一个场景"</th></tr></thead><tbody>
+<tr><td>功能型</td><td>28</td><td>浏览器逐条操作 / 端到端 E2E / 组件测试</td><td>✅ 应该做，且是补齐重点</td></tr>
+<tr><td>质量/非功能型</td><td>9</td><td>安全套件 / 部署验证 / 静态检查 / 压测 / CI 门禁</td><td>➖ 不适用（界面看不到断言对象）</td></tr>
+</tbody></table>
+<p><strong>质量型的逐条依据</strong>：</p>
+<table><thead><tr><th>故事</th><th>断言对象</th><th>由什么覆盖</th></tr></thead><tbody>
+<tr><td>US-SEARCH-03 只看在售商品（数据隔离）</td><td>只在售可见（断言接口返回集合，界面看不出过滤层级）</td><td>见第三节矩阵</td></tr>
+<tr><td>US-QUALITY-01 接口权限与越权防护</td><td>接口权限与越权（断言 HTTP 401/403 与数据不变）</td><td>见第三节矩阵</td></tr>
+<tr><td>US-QUALITY-02 页面三态完备（加载/空/错误）</td><td>页面三态（需人为断链，静态检查 + 接口模拟）</td><td>见第三节矩阵</td></tr>
+<tr><td>US-QUALITY-03 界面视觉一致（设计令牌）</td><td>设计令牌（源码静态属性，check-tokens 门禁）</td><td>见第三节矩阵</td></tr>
+<tr><td>US-QUALITY-04 可访问性与对比度</td><td>可访问性（对比度/alt/键盘可达，脚本计算）</td><td>见第三节矩阵</td></tr>
+<tr><td>US-QUALITY-05 窄屏可用（手机浏览）</td><td>窄屏可用（这条<strong>可以</strong>截图，已有 390px 截图）</td><td>见第三节矩阵</td></tr>
+<tr><td>US-QUALITY-06 热点数据缓存与限流</td><td>缓存与限流（接口/压测层，仅限流提示可见）</td><td>见第三节矩阵</td></tr>
+<tr><td>US-QUALITY-07 缺陷可追溯与质量不退化</td><td>质量不退化（CI 棘轮门禁）</td><td>见第三节矩阵</td></tr>
+<tr><td>US-EVAL-03 信用分联动与防刷</td><td>信用分联动（数据层 ±1 与 [0,150] 夹紧）</td><td>见第三节矩阵</td></tr>
+</tbody></table>
+<blockquote>说明：这不是"漏做场景"，而是<strong>这类需求的验收本来就落在接口/源码/CI 上</strong>。<br>用用户故事格式写它们，是为了让 MoSCoW 优先级与追溯矩阵连续；<br>但如果按"一条故事一个浏览器场景"去要求，就会得到一堆拍不出东西的场景。</blockquote>
 <h3>五之二、覆盖手段分布（一条故事可被多种手段覆盖，故合计 &gt; 37）</h3>
 <table><thead><tr><th>验证手段</th><th>覆盖故事数</th><th>故事</th></tr></thead><tbody>
 <tr><td>端到端 E2E</td><td>22</td><td>US-USER-03、US-GOODS-01、US-GOODS-02、US-GOODS-03、US-GOODS-05、US-ADMIN-01、US-ADMIN-02、US-ADMIN-03、US-ADMIN-04、US-SEARCH-02、US-SEARCH-03、US-FAV-01、US-CHAT-01、US-CHAT-02、US-ORDER-01、US-ORDER-02、US-ORDER-03、US-ORDER-04、US-RECO-01、US-RECO-02、US-RECO-03、US-QUALITY-01</td></tr>
