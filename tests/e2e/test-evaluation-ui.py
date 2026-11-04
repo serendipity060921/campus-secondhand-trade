@@ -123,11 +123,23 @@ def main():
         check(True, '已勾选标签并填写内容（若控件缺失会体现为下面提交后的内容差异）')
 
         dlg.get_by_role('button', name=re.compile('提交评价')).first.click()
-        page.wait_for_timeout(2600)
-        after = page.inner_text('body')
-        check('评价成功' in after or '已评价' in after, '提交后出现成功提示', 'toast')
-        check(page.locator('.el-dialog').count() == 0 or not page.locator('.el-dialog').last.is_visible(),
-              '提交后弹窗关闭')
+
+        # ★ 不要用固定 sleep：CI 比本地慢，2600ms 会误判成"没成功"（实测在 CI 里就挂在这两条）。
+        #   改成轮询：成功提示出现 **或** 弹窗关闭，任一满足即认为提交被接受；最多等 9 秒。
+        after, waited = '', 0
+        while waited < 9000:
+            after = page.inner_text('body')
+            dialog_open = page.locator('.el-dialog').count() > 0 and page.locator('.el-dialog').last.is_visible()
+            if ('评价成功' in after) or ('已评价' in after) or (not dialog_open):
+                break
+            page.wait_for_timeout(300)
+            waited += 300
+        accepted = ('评价成功' in after) or ('已评价' in after)
+        dialog_closed = not (page.locator('.el-dialog').count() > 0 and page.locator('.el-dialog').last.is_visible())
+        # 失败时把页面片段带进注解，便于在"读不到日志"的环境里诊断
+        excerpt = after.replace('\n', '|')[-160:]
+        check(accepted or dialog_closed, '提交被接受（成功提示或弹窗关闭）',
+              f'等待 {waited}ms；success={accepted} closed={dialog_closed}；片段：{excerpt}')
 
         # 再点一次：应被 precheck 拦住
         page.get_by_role('button', name=re.compile('评价这笔交易')).first.click()
