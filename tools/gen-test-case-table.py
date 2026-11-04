@@ -223,6 +223,7 @@ SKILL_REPRO = {
     '后端单元测试': 'cd backend && ./mvnw -B test',
     '前端纯函数测试': 'node tests/unit/catalogue.test.mjs && node tests/unit/product-rules.test.mjs',
     '前端组件测试': 'cd frontend && pnpm test:component:coverage',
+    '界面验证（评价+订单状态）': 'python tests/e2e/test-evaluation-ui.py && python tests/e2e/test-order-state-ui.py',
     '其它接口套件': 'python tests/api/api-extra-test.py',
 }
 
