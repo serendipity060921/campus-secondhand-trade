@@ -138,8 +138,9 @@ def main():
         dialog_closed = not (page.locator('.el-dialog').count() > 0 and page.locator('.el-dialog').last.is_visible())
         # 失败时把页面片段带进注解，便于在"读不到日志"的环境里诊断
         excerpt = after.replace('\n', '|')[-160:]
-        check(accepted or dialog_closed, '提交被接受（成功提示或弹窗关闭）',
-              f'等待 {waited}ms；success={accepted} closed={dialog_closed}；片段：{excerpt}')
+        # 保持两条独立断言（用例数口径 19 不变），但都基于上面的轮询结果，不再依赖固定 sleep
+        check(accepted, '提交后出现成功提示', f'等待 {waited}ms；片段：{excerpt}')
+        check(dialog_closed, '提交后弹窗关闭', f'等待 {waited}ms；closed={dialog_closed}')
 
         # 再点一次：应被 precheck 拦住
         page.get_by_role('button', name=re.compile('评价这笔交易')).first.click()
