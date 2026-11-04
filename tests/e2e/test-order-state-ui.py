@@ -40,6 +40,9 @@ results = []
 def check(ok, name, detail=''):
     results.append({'name': name, 'ok': ok, 'detail': detail})
     print(f'  {"✓" if ok else "✗"} {name}' + (f'  {detail}' if detail else ''))
+    # GitHub Actions 会把 ::error:: 渲染成可读注解 —— 这是"看不到日志"时唯一能拿到失败原因的通道
+    if not ok:
+        print(f'::error::[{name}] {detail or "断言失败"}')
 
 
 def snap(page, name, note=''):

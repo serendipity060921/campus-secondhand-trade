@@ -641,6 +641,22 @@ jobs:
           PW_CHANNEL: ""
         run: python3 tests/e2e/test-evaluation-ui.py
 
+      - name: 界面套件结果注入注解（无论成败）
+        if: always()
+        run: |
+          for f in /tmp/dsh-sqlval/evaluation_ui_result.json /tmp/dsh-sqlval/order_state_ui_result.json; do
+            [ -f "$f" ] || continue
+            python3 - "$f" <<'PY'
+          import json,sys
+          d=json.load(open(sys.argv[1],encoding='utf-8'))
+          for r in d.get('results',[]):
+              if not r.get('ok'):
+                  print('::error::[%s] %s' % (sys.argv[1].split('/')[-1], r.get('name')))
+          print('::notice::%s 共 %d 条，失败 %d 条' % (sys.argv[1].split('/')[-1], len(d.get('results',[])),
+                sum(1 for r in d.get('results',[]) if not r.get('ok'))))
+          PY
+          done
+
       - name: 订单状态机界面验证（12 条）
         env:
           PW_CHANNEL: ""
