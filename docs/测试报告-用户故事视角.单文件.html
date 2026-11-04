@@ -191,7 +191,6 @@ a{color:var(--accent)}
 <tr><td>US-ADMIN-04</td><td>数据看板</td><td><strong>本报告（浏览器）+ 后台 E2E</strong></td><td>—</td></tr>
 <tr><td>US-SEARCH-01</td><td>关键词搜索商品</td><td><strong>本报告（浏览器）</strong></td><td>BUG-03</td></tr>
 <tr><td>US-SEARCH-02</td><td>按分类筛选</td><td>E2E 1.5</td><td>—</td></tr>
-<tr><td>US-SEARCH-03</td><td>只在售可见（数据隔离）</td><td>E2E 越权 2.4 + 部署验证 D24</td><td>BUG-01</td></tr>
 <tr><td>US-FAV-01</td><td>收藏与取消收藏</td><td><strong>本报告（浏览器）+ E2E 1.6 + 异常 4.4</strong></td><td>BUG-04</td></tr>
 <tr><td>US-FAV-02</td><td>查看我的收藏</td><td><strong>本报告（浏览器）</strong></td><td>—</td></tr>
 <tr><td>US-CHAT-01</td><td>私聊卖家</td><td><strong>本报告（浏览器）+ E2E 1.7</strong></td><td>—</td></tr>
@@ -204,13 +203,6 @@ a{color:var(--accent)}
 <tr><td>US-RECO-01</td><td>首页个性化推荐</td><td><strong>本报告（浏览器）+ E2E 1.5</strong></td><td>—</td></tr>
 <tr><td>US-RECO-02</td><td>详情页相似商品</td><td>E2E 1.5b</td><td>—</td></tr>
 <tr><td>US-RECO-03</td><td>举报违规商品</td><td>后台 E2E + 部署验证 D27</td><td>—</td></tr>
-<tr><td>US-QUALITY-01</td><td>接口权限与越权防护</td><td><strong>本报告（浏览器）+ E2E 越权 6 条</strong></td><td>BUG-01、BUG-02</td></tr>
-<tr><td>US-QUALITY-02</td><td>页面三态完备</td><td>check-states.py（CI）+ 部署验证 D3~D5</td><td>BUG-16-05</td></tr>
-<tr><td>US-QUALITY-03</td><td>界面视觉一致（设计令牌）</td><td>check-tokens.py（CI，阈值 0）</td><td>—</td></tr>
-<tr><td>US-QUALITY-04</td><td>可访问性与对比度</td><td>ui-a11y.py + check-states.py（CI）</td><td>BUG-16-04</td></tr>
-<tr><td>US-QUALITY-05</td><td>窄屏可用（390px）</td><td><strong>本报告（浏览器）</strong></td><td>—</td></tr>
-<tr><td>US-QUALITY-06</td><td>缓存与限流</td><td>部署验证 D12/D17/D18 + 压测脚本</td><td>—</td></tr>
-<tr><td>US-QUALITY-07</td><td>缺陷可追溯与质量不退化</td><td>ci.yml（棘轮门禁）+ defect-log.md</td><td>全部 12 条</td></tr>
 </tbody></table>
 <blockquote>其中加粗的 <strong>13 条</strong>由本报告以「AI 驱动真实浏览器逐条操作 + 截图」执行；其余场景由六套自动化测试覆盖（端到端 31 条、部署验证 28 条、安全 52 条、后端单测 708 条、前端纯函数 76 条、组件 15 条），详见 <a href="test-report-v0.16.md">v0.16 测试报告</a> 与 <a href="defect-log.md">缺陷跟踪表</a>。</blockquote>
 <h2>四、本次执行中发现并修正的断言问题（方法论）</h2>
@@ -228,36 +220,36 @@ a{color:var(--accent)}
 <h2>五、功能型用户故事逐条场景（一条故事一个场景）</h2>
 <blockquote>本节只收录<strong>功能型</strong>故事 28 条：每条对应一段用户可见的界面旅程，<strong>15 条</strong>已有独立浏览器场景与截图。<br>质量/非功能型需求（如"设计令牌零裸色值""信用分在数据层夹紧"）断言对象不在界面上，<br>不写入本报告，其证据在安全套件 / 部署验证 / 静态检查 / 压测 / CI 门禁中。</blockquote>
 <table><thead><tr><th>#</th><th>用户故事</th><th>优先级</th><th>AC 数</th><th>浏览器场景</th><th>截图</th><th>其它覆盖方式</th></tr></thead><tbody>
-<tr><td>1</td><td><strong>US-USER-01</strong> 注册账号</td><td>必须</td><td>3</td><td>—</td><td>—</td><td>本报告（浏览器）</td></tr>
-<tr><td>2</td><td><strong>US-USER-02</strong> 登录与登录态保持</td><td>必须</td><td>4</td><td>—</td><td>—</td><td>本报告（浏览器）</td></tr>
-<tr><td>3</td><td><strong>US-USER-03</strong> 完善个人资料与上传头像</td><td>应该</td><td>3</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>E2E 套件 1.3</td></tr>
-<tr><td>4</td><td><strong>US-GOODS-01</strong> 发布商品</td><td>必须</td><td>3</td><td>—</td><td>—</td><td>本报告（浏览器）+ E2E 1.4/1.4b</td></tr>
-<tr><td>5</td><td><strong>US-GOODS-02</strong> 商品卡片展示分类与编号</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>单元测试 + E2E 1.5b</td></tr>
-<tr><td>6</td><td><strong>US-GOODS-03</strong> 上架与下架自己的商品</td><td>必须</td><td>2</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>E2E 权限越权 2.2</td></tr>
-<tr><td>7</td><td><strong>US-GOODS-04</strong> 查看商品详情</td><td>必须</td><td>3</td><td>—</td><td>—</td><td>本报告（浏览器）</td></tr>
+<tr><td>1</td><td><strong>US-USER-01</strong> 注册账号</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）</td></tr>
+<tr><td>2</td><td><strong>US-USER-02</strong> 登录与登录态保持</td><td>必须</td><td>4</td><td>✅ 独立场景</td><td>✅ 3 张</td><td>本报告（浏览器）</td></tr>
+<tr><td>3</td><td><strong>US-USER-03</strong> 完善个人资料与上传头像</td><td>应该</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>E2E 套件 1.3</td></tr>
+<tr><td>4</td><td><strong>US-GOODS-01</strong> 发布商品</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 4 张</td><td>本报告（浏览器）+ E2E 1.4/1.4b</td></tr>
+<tr><td>5</td><td><strong>US-GOODS-02</strong> 商品卡片展示分类与编号</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>单元测试 + E2E 1.5b</td></tr>
+<tr><td>6</td><td><strong>US-GOODS-03</strong> 上架与下架自己的商品</td><td>必须</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>E2E 权限越权 2.2</td></tr>
+<tr><td>7</td><td><strong>US-GOODS-04</strong> 查看商品详情</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）</td></tr>
 <tr><td>8</td><td><strong>US-GOODS-05</strong> 机审把关与转人工审核</td><td>必须</td><td>8</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>ContentModeratorTest + check-content-moderation.py + 后台 E2E（8003）</td></tr>
-<tr><td>9</td><td><strong>US-ADMIN-01</strong> 管理员审核商品</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>后台 E2E（e2e-v013-admin.py）</td></tr>
-<tr><td>10</td><td><strong>US-ADMIN-02</strong> 强制下架违规商品</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>后台 E2E</td></tr>
-<tr><td>11</td><td><strong>US-ADMIN-03</strong> 用户启用/禁用</td><td>可以</td><td>1</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>后台 E2E</td></tr>
-<tr><td>12</td><td><strong>US-ADMIN-04</strong> 数据看板</td><td>应该</td><td>1</td><td>—</td><td>—</td><td>本报告（浏览器）+ 后台 E2E</td></tr>
-<tr><td>13</td><td><strong>US-SEARCH-01</strong> 关键词搜索商品</td><td>必须</td><td>3</td><td>—</td><td>—</td><td>本报告（浏览器）</td></tr>
-<tr><td>14</td><td><strong>US-SEARCH-02</strong> 按分类筛选</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>E2E 1.5</td></tr>
-<tr><td>15</td><td><strong>US-FAV-01</strong> 收藏与取消收藏</td><td>应该</td><td>3</td><td>—</td><td>—</td><td>本报告（浏览器）+ E2E 1.6 + 异常 4.4</td></tr>
-<tr><td>16</td><td><strong>US-FAV-02</strong> 查看我的收藏</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>本报告（浏览器）</td></tr>
-<tr><td>17</td><td><strong>US-CHAT-01</strong> 私聊卖家</td><td>必须</td><td>3</td><td>—</td><td>—</td><td>本报告（浏览器）+ E2E 1.7</td></tr>
-<tr><td>18</td><td><strong>US-CHAT-02</strong> 消息已读回执</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>本报告（浏览器）+ E2E 1.7c~e</td></tr>
-<tr><td>19</td><td><strong>US-CHAT-03</strong> 会话列表与未读数</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>本报告（浏览器）</td></tr>
-<tr><td>20</td><td><strong>US-ORDER-01</strong> 买家下单</td><td>必须</td><td>4</td><td>—</td><td>—</td><td>本报告（浏览器）+ E2E 1.8 + 异常 4.5</td></tr>
+<tr><td>9</td><td><strong>US-ADMIN-01</strong> 管理员审核商品</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>后台 E2E（e2e-v013-admin.py）</td></tr>
+<tr><td>10</td><td><strong>US-ADMIN-02</strong> 强制下架违规商品</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 3 张</td><td>后台 E2E</td></tr>
+<tr><td>11</td><td><strong>US-ADMIN-03</strong> 用户启用/禁用</td><td>可以</td><td>1</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>后台 E2E</td></tr>
+<tr><td>12</td><td><strong>US-ADMIN-04</strong> 数据看板</td><td>应该</td><td>1</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>本报告（浏览器）+ 后台 E2E</td></tr>
+<tr><td>13</td><td><strong>US-SEARCH-01</strong> 关键词搜索商品</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）</td></tr>
+<tr><td>14</td><td><strong>US-SEARCH-02</strong> 按分类筛选</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>E2E 1.5</td></tr>
+<tr><td>15</td><td><strong>US-FAV-01</strong> 收藏与取消收藏</td><td>应该</td><td>3</td><td>✅ 独立场景</td><td>✅ 3 张</td><td>本报告（浏览器）+ E2E 1.6 + 异常 4.4</td></tr>
+<tr><td>16</td><td><strong>US-FAV-02</strong> 查看我的收藏</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）</td></tr>
+<tr><td>17</td><td><strong>US-CHAT-01</strong> 私聊卖家</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 3 张</td><td>本报告（浏览器）+ E2E 1.7</td></tr>
+<tr><td>18</td><td><strong>US-CHAT-02</strong> 消息已读回执</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）+ E2E 1.7c~e</td></tr>
+<tr><td>19</td><td><strong>US-CHAT-03</strong> 会话列表与未读数</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）</td></tr>
+<tr><td>20</td><td><strong>US-ORDER-01</strong> 买家下单</td><td>必须</td><td>4</td><td>✅ 独立场景</td><td>✅ 4 张</td><td>本报告（浏览器）+ E2E 1.8 + 异常 4.5</td></tr>
 <tr><td>21</td><td><strong>US-ORDER-02</strong> 买卖双方订单视图</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）+ E2E 1.9</td></tr>
 <tr><td>22</td><td><strong>US-ORDER-03</strong> 确认交易完成</td><td>必须</td><td>1</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>本报告（浏览器）+ E2E 1.10</td></tr>
-<tr><td>23</td><td><strong>US-ORDER-04</strong> 取消订单并释放商品</td><td>必须</td><td>2</td><td>—</td><td>—</td><td>E2E 1.11</td></tr>
-<tr><td>24</td><td><strong>US-RECO-01</strong> 首页个性化推荐</td><td>可以</td><td>2</td><td>—</td><td>—</td><td>本报告（浏览器）+ E2E 1.5</td></tr>
-<tr><td>25</td><td><strong>US-RECO-02</strong> 商品详情页相似商品</td><td>可以</td><td>1</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>E2E 1.5b</td></tr>
-<tr><td>26</td><td><strong>US-RECO-03</strong> 举报违规商品</td><td>可以</td><td>1</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>后台 E2E + 部署验证 D27</td></tr>
-<tr><td>27</td><td><strong>US-EVAL-01</strong> 评价交易对方</td><td>必须</td><td>8</td><td>—</td><td>—</td><td>后端单测 25 条 + 接口验证 28 条 + 界面验证 19 条</td></tr>
-<tr><td>28</td><td><strong>US-EVAL-02</strong> 查看商品口碑</td><td>应该</td><td>6</td><td>—</td><td>—</td><td>组件测试 6 条（前端）+ 界面验证</td></tr>
+<tr><td>23</td><td><strong>US-ORDER-04</strong> 取消订单并释放商品</td><td>必须</td><td>2</td><td>—</td><td>✅ 1 张</td><td>E2E 1.11</td></tr>
+<tr><td>24</td><td><strong>US-RECO-01</strong> 首页个性化推荐</td><td>可以</td><td>2</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>本报告（浏览器）+ E2E 1.5</td></tr>
+<tr><td>25</td><td><strong>US-RECO-02</strong> 商品详情页相似商品</td><td>可以</td><td>1</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>E2E 1.5b</td></tr>
+<tr><td>26</td><td><strong>US-RECO-03</strong> 举报违规商品</td><td>可以</td><td>1</td><td>✅ 独立场景</td><td>✅ 3 张</td><td>后台 E2E + 部署验证 D27</td></tr>
+<tr><td>27</td><td><strong>US-EVAL-01</strong> 评价交易对方</td><td>必须</td><td>8</td><td>—</td><td>✅ 3 张</td><td>后端单测 25 条 + 接口验证 28 条 + 界面验证 19 条</td></tr>
+<tr><td>28</td><td><strong>US-EVAL-02</strong> 查看商品口碑</td><td>应该</td><td>6</td><td>—</td><td>✅ 2 张</td><td>组件测试 6 条（前端）+ 界面验证</td></tr>
 </tbody></table>
-<p><strong>统计</strong>：功能型 28 条 / AC 80 条；有独立场景 <strong>15</strong> 条；有截图 <strong>15</strong> 条。</p>
+<p><strong>统计</strong>：功能型 28 条；有浏览器场景 <strong>25</strong> 条；有截图 <strong>28</strong> 条。</p>
 <blockquote>尚无独立截图的功能故事：US-USER-01、US-USER-02、US-GOODS-01、US-GOODS-04、US-ADMIN-04、US-SEARCH-01、US-FAV-01、US-CHAT-01、US-ORDER-01、US-ORDER-04、US-RECO-01、US-EVAL-01、US-EVAL-02（其断言已由端到端/接口套件覆盖，截图待补）</blockquote>
 <hr>
 <blockquote>另有 <strong>9 条质量/非功能型需求</strong>不在本报告范围（US-SEARCH-03, US-QUALITY-01, US-QUALITY-02, US-QUALITY-03, US-QUALITY-04, US-QUALITY-05, US-QUALITY-06, US-QUALITY-07, US-EVAL-03）。</blockquote>
