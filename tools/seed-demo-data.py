@@ -31,6 +31,7 @@ except Exception:
     pass
 import argparse
 import datetime as dt
+import os
 import pathlib
 import os
 import re
@@ -65,7 +66,9 @@ def _resolve_mysql_client(name):
 
 MYSQL = _resolve_mysql_client('mysql')
 MYSQLDUMP = _resolve_mysql_client('mysqldump')
-DB = 'campus_trade'
+# ★ 默认指向**测试库**：这个脚本会 DELETE 业务表，绝不能默认打在学生在用的演示库上
+DEFAULT_DB = os.environ.get('SEED_DB', 'campus_trade_test')
+DB = DEFAULT_DB
 AUTH = ['-h', '127.0.0.1', '-P', '3306', '-u', 'root', '-p123456']
 
 # 文档不变量（见 tools/clean-test-data.py 的 DEMO_EXPECT）
@@ -263,10 +266,16 @@ def main():
     g.add_argument('--reset', action='store_true', help='用基线快照重置数据库')
     g.add_argument('--verify', action='store_true', help='只核对行数')
     ap.add_argument('--dry-run', action='store_true', help='只显示将要做什么')
+    ap.add_argument('--db', default=DEFAULT_DB,
+                    help='目标库（默认测试库 campus_trade_test；动演示库须显式传 campus_trade）')
     ap.add_argument('--exclude-user', nargs='*', default=[], help='捕获时排除的用户 id')
     ap.add_argument('--exclude-product', nargs='*', default=[], help='捕获时排除的商品 id')
     ap.add_argument('--exclude-message', default=None, help='捕获时排除的消息 id 或区间，如 300-305')
     args = ap.parse_args()
+    global DB
+    DB = args.db
+    if DB == "campus_trade":
+        print("  ⚠️ 注意：你正在操作**演示库** campus_trade（学生真实数据）")
     if args.capture:
         capture(args)
     elif args.reset:

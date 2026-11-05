@@ -148,3 +148,29 @@
   ② 验收标准要写"用户能看到什么"，不能写"接口返回什么"
 
 ---
+
+### BUG-19【严重 · 数据安全】schema 脚本里的 USE 把「测试库操作」带回演示库，再次清空
+
+- **发现方式**：BUG-18 恢复后，我为做"测试库隔离"执行
+  `Get-Content db\schema\01-schema.sql | mysql campus_trade_test`，
+  响应里出现 `Failed to open the referenced table 'user'`，随后演示库商品数变成 0
+- **根因**：`db/schema/01-schema.sql` 开头有 `CREATE DATABASE ... campus_trade` 与 `USE campus_trade;`，
+  即使命令行指定了 `campus_trade_test`，执行到 `USE` 就切回演示库；
+  而该文件含 `DROP TABLE IF EXISTS` → **演示库表被删重建**
+- **影响**：演示库第二次被清空，学生商品 #277 再次丢失
+- **恢复**：从 `deploy/windows/backups/campus_trade-20261105-160224.sql` 完整恢复，
+  再从 `db/demo-data/backup-20261105-152152.sql` 回灌商品 #277 →
+  user 4 / product 18 / orders 4 / favorite 4，商品 277 在售 ✓
+  （恢复时又踩一坑：PowerShell `>` 把备份写成 UTF-16，mysql 报 `ASCII '\0' appeared`，
+   需转 UTF-8 并加 `--binary-mode` 才能导入）
+- **修复**：
+  1. 新增 `tools/apply-schema.py`：应用前**剥掉** `USE` / `CREATE DATABASE`，强制落到目标库
+  2. `seed-demo-data.py` 默认库改为 **`campus_trade_test`**，动演示库必须显式 `--db campus_trade`
+  3. 测试后端独立：8082 → `campus_trade_test` + Redis db1 + `uploads-test` 目录
+  4. 保留 `--force` 保护与自动备份
+- **教训**：
+  ① 任何"看起来只作用于指定库"的 SQL 文件，先确认里面没有 `USE`
+  ② 备份/恢复链路本身也要验证（UTF-16 的坑）
+  ③ 连续两次动到学生数据，说明"靠自觉"不够 —— 必须靠**工具默认值**（默认测试库）
+
+---
