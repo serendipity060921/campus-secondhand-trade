@@ -1,0 +1,164 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>缺陷日志 · 校园二手交易平台</title><style>
+:root{--ink:#1a1d19;--ink2:#4a4f47;--muted:#8a8f86;--rule:#d8dbd3;--paper:#f6f7f4;--card:#fff;--accent:#35603f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+     font:16px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:40px 28px 100px;background:var(--card);
+      min-height:100vh;box-shadow:0 0 0 1px var(--rule)}
+h1{font-size:30px;margin:0 0 8px;line-height:1.3}
+h2{font-size:22px;margin:36px 0 12px;padding-bottom:8px;border-bottom:1.5px solid var(--rule)}
+h3{font-size:18px;margin:26px 0 8px}
+h4{font-size:16px;margin:18px 0 6px;color:var(--ink2)}
+p{margin:10px 0}
+ul,ol{margin:10px 0;padding-left:26px}
+li{margin:4px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th,td{border:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper);font-weight:600}
+tr:nth-child(even) td{background:#fbfcfa}
+code{background:#f0f2ee;padding:1px 5px;border-radius:3px;font-size:13px;
+     font-family:Consolas,"Courier New",monospace}
+pre{background:#f0f2ee;padding:14px;border-radius:6px;overflow:auto;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0}
+blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--accent);
+           background:#f7f9f6;color:var(--ink2)}
+img{max-width:100%;border:1px solid var(--rule);border-radius:4px;margin:6px 0}
+hr{border:none;border-top:1px solid var(--rule);margin:28px 0}
+a{color:var(--accent)}
+.meta{color:var(--muted);font-size:13px;margin-bottom:24px}
+@media print{
+  body{background:#fff}
+  .wrap{box-shadow:none;max-width:none;padding:0}
+  h2{page-break-after:avoid}
+  table,pre,img{page-break-inside:avoid}
+}
+</style></head><body><div class="wrap"><div class="meta">来源：docs\defect-log.md　|　打印成 PDF：Ctrl+P → 目标选「另存为 PDF」</div><h1>缺陷跟踪表（Defect Log）</h1>
+<blockquote>本项目所有已发现缺陷的统一登记。缺陷随测试报告一并归档：<br>功能与安全类见 <a href="test-report-v0.10.md">v0.10 测试报告</a>，界面与工程质量类见 <a href="test-report-v0.16.md">v0.16 测试报告</a>。</blockquote>
+<h2>一、编号规则</h2>
+<table><thead><tr><th>编号区间</th><th>含义</th></tr></thead><tbody>
+<tr><td><code>BUG-01</code> ~ <code>BUG-06</code></td><td>v0.05 ~ v0.10 阶段的功能与安全缺陷（编号沿用当时的测试报告）</td></tr>
+<tr><td><code>BUG-16-NN</code></td><td>v0.16 阶段（全站 UI 改版与质量工程）发现的缺陷</td></tr>
+</tbody></table>
+<p>严重级别：<strong>高</strong>（功能不可用 / 数据错误 / 安全越权）、<strong>中</strong>（功能缺失或体验显著受损）、<strong>低</strong>（文案、兼容性、工程效率）。</p>
+<h2>二、汇总统计</h2>
+<table><thead><tr><th>维度</th><th>分布</th></tr></thead><tbody>
+<tr><td>总数</td><td>12 条（历史 6 + v0.16 阶段 6）</td></tr>
+<tr><td>按严重级别</td><td>高 3 · 中 4 · 低 5</td></tr>
+<tr><td>按状态</td><td><strong>全部已修复并验证</strong>（0 条遗留）</td></tr>
+<tr><td>按类型</td><td>逻辑缺陷 4 · 安全与权限 2 · 界面与可访问性 2 · 并发与边界 1 · 构建与工程 3</td></tr>
+<tr><td>按发现方式</td><td>自动化用例 5 · 静态检查 3 · 人工走查与评审 2 · 构建/运行报错 2</td></tr>
+</tbody></table>
+<h2>三、历史缺陷（v0.05 ~ v0.10，来源：v0.10 测试报告）</h2>
+<table><thead><tr><th>编号</th><th>严重</th><th>缺陷</th><th>根因摘要</th><th>状态</th></tr></thead><tbody>
+<tr><td>BUG-01</td><td>高</td><td>匿名可获取非上架商品数据（接口越权泄漏）</td><td>脚手架演示接口分页查询未加 <code>status</code> 条件</td><td>v0.10 已修复</td></tr>
+<tr><td>BUG-02</td><td>中</td><td>待审核商品详情对任意访问者可见</td><td>详情接口只判断"是否存在"，未区分状态与访问者身份</td><td>v0.10 已修复</td></tr>
+<tr><td>BUG-03</td><td>低</td><td>搜索页每次操作发送两次相同请求</td><td>既 <code>router.replace</code> 又手动加载，触发双份请求</td><td>v0.10 已修复</td></tr>
+<tr><td>BUG-04</td><td>低</td><td>并发收藏返回通用错误码 1002 而非业务码 4001</td><td>并发下查重与唯一索引兜底之间缺少异常转换</td><td>v0.10 已修复</td></tr>
+<tr><td>BUG-05</td><td>低</td><td>分类更新接口 <code>name</code> 强制必填，导致"只改上级分类"被 400 拦截</td><td>校验规则未区分"新增"与"部分更新"</td><td>v0.09 已修复</td></tr>
+<tr><td>BUG-06</td><td>低</td><td>上传 &gt;5MB 图片返回 500 而非友好提示 3007</td><td>缺少文件大小前置校验与异常映射</td><td>v0.05 已修复</td></tr>
+</tbody></table>
+<h2>四、v0.16 阶段缺陷（本表详列）</h2>
+<h3>BUG-16-01【高 · 逻辑缺陷】分类索引解析错误，33 个分类编号全部错乱</h3>
+<table><thead><tr><th>项</th><th>内容</th></tr></thead><tbody>
+<tr><td>发现方式</td><td>补充"扁平结构"形态的单元测试时暴露</td></tr>
+<tr><td>现象</td><td>首页分类色带渲染出 33 段（预期 8 段）；所有商品的分类编号全部落到兜底值 <code>ZZ</code>，与分类完全对不上</td></tr>
+<tr><td>复现步骤</td><td>1) 打开首页 → 观察色带段数；2) 查看任意目录卡的分类编号；3) 用分类接口返回值做单测即可稳定复现</td></tr>
+<tr><td>根因</td><td>前端分类索引函数只兼容"带 <code>children</code> 的树形结构"，而分类接口实际返回<strong>扁平列表 + <code>parentId</code></strong>（一级分类 <code>parentId=0</code>）。于是 33 个节点全部被当成一级分类，子分类无法继承父级分类号</td></tr>
+<tr><td>影响</td><td>全部商品的分类号与色带错误，属于界面信息正确性问题（不影响交易数据）</td></tr>
+<tr><td>修复</td><td>索引函数同时兼容树形与扁平两种形态：<code>parentId</code> 为 <code>0</code> / <code>null</code> / 缺省均视为一级分类，并按 <code>sortOrder</code> 排序</td></tr>
+<tr><td>验证</td><td>新增 8 条"扁平结构"断言（单元测试 20 → 31 条）；页面恢复 8 段色带，子分类编号正确继承（如专业课教材 → G4）</td></tr>
+<tr><td>预防</td><td>接口返回结构的两种形态均纳入单元测试；后续接口结构调整需同步补测</td></tr>
+<tr><td>状态</td><td>✅ 已修复并验证</td></tr>
+</tbody></table>
+<h3>BUG-16-02【中 · 功能缺失】聊天页已读回执从未渲染</h3>
+<table><thead><tr><th>项</th><th>内容</th></tr></thead><tbody>
+<tr><td>发现方式</td><td>功能走查 + 评审意见核实</td></tr>
+<tr><td>现象</td><td>自己发出的消息看不到"已读/未读"状态，用户无法判断对方是否看过</td></tr>
+<tr><td>复现步骤</td><td>A 给 B 发消息 → B 打开会话（后端已标记已读）→ A 侧消息仍无任何已读标识</td></tr>
+<tr><td>根因</td><td>数据与链路完全正常：消息表有 <code>is_read</code> 字段、后端有标记已读接口、前端也订阅了已读回执 —— <strong>但模板中从未渲染这块状态</strong>，链路齐全却不出结果</td></tr>
+<tr><td>影响</td><td>功能等于不存在；用户对"对方是否看到"无反馈</td></tr>
+<tr><td>修复</td><td>在我发出的最后一条消息下渲染"已读/未读"，并补充无障碍标签</td></tr>
+<tr><td>验证</td><td>浏览器实测消息列表读出已读状态为「已读」；按同一商品连发多条消息时，商品引用条由 3 条去重为 1 条（顺带修复的重复展示问题）</td></tr>
+<tr><td>预防</td><td>此类"链路齐全但缺一环"的缺陷靠读代码或看接口返回都发现不了，必须走真实界面；已纳入功能走查清单</td></tr>
+<tr><td>状态</td><td>✅ 已修复并验证</td></tr>
+</tbody></table>
+<h3>BUG-16-03【高 · 逻辑缺陷】站内跳转后整页空白</h3>
+<table><thead><tr><th>项</th><th>内容</th></tr></thead><tbody>
+<tr><td>发现方式</td><td>端到端回归（31 条中失败 4 条）</td></tr>
+<tr><td>现象</td><td>站内点击商品卡片跳转详情页后，页面完全不渲染：浏览器地址已变化，内容空白；手动刷新后又正常</td></tr>
+<tr><td>复现步骤</td><td>首页 → 点击任意商品卡片 → 页面空白</td></tr>
+<tr><td>定位过程</td><td>回归失败集中在"站内跳转"用例；用版本 A/B 对照（暂存本轮改动后复跑）确认是本轮引入，而非既有问题；再逐层排除数据加载（接口返回 200）后定位到渲染层</td></tr>
+<tr><td>根因</td><td>路由过渡动画要求每个页面组件<strong>只有一个根节点</strong>，而错误态被写成了与内容并列的根级兄弟节点，导致组件变成多根 —— 过渡动画无法接管，页面停在"未渲染"状态</td></tr>
+<tr><td>影响</td><td>站内所有跳转均不可用（高危，用户无法进入详情页）</td></tr>
+<tr><td>修复</td><td>错误态与内容改为互斥分支（同一根节点下 <code>if / else</code>），恢复单根结构</td></tr>
+<tr><td>验证</td><td>端到端恢复 31/31 全部通过</td></tr>
+<tr><td>预防</td><td>把"路由组件必须单根"写入项目设计规范（<code>DESIGN.md</code> 的 Single Root Rule），避免同类问题再次引入</td></tr>
+<tr><td>状态</td><td>✅ 已修复并验证</td></tr>
+</tbody></table>
+<h3>BUG-16-04【中 · 界面与可访问性】正文小字误用装饰性色值，对比度回归</h3>
+<table><thead><tr><th>项</th><th>内容</th></tr></thead><tbody>
+<tr><td>发现方式</td><td>自动化可访问性审计</td></tr>
+<tr><td>现象</td><td>正文对比度不达标项由 3 处升至 15 处；目录卡的分类小字实测对比度仅 3.31:1（AA 要求 4.5:1）</td></tr>
+<tr><td>根因</td><td>重构中使用了两级灰色令牌，其中 <code>--ct-text-faint</code> 按设计规范<strong>仅用于装饰性文字、不得用于正文</strong>，却被用于 11px 的正文小字</td></tr>
+<tr><td>影响</td><td>低视力用户难以辨识该文字；同时违反项目自身的设计规范</td></tr>
+<tr><td>修复</td><td>改用 <code>--ct-text-muted</code>（实测 5.85:1），并保留原令牌的适用范围说明</td></tr>
+<tr><td>验证</td><td>对比度不达标项回到 3 处（均为装饰性文字），不达标率 0%</td></tr>
+<tr><td>预防</td><td>令牌的适用范围写入 <code>DESIGN.md</code>；可访问性审计纳入 CI</td></tr>
+<tr><td>状态</td><td>✅ 已修复并验证</td></tr>
+</tbody></table>
+<h3>BUG-16-05【低 · 构建与工程】非法模板组合与失效事件绑定</h3>
+<table><thead><tr><th>项</th><th>内容</th></tr></thead><tbody>
+<tr><td>发现方式</td><td>静态检查 + 构建报错</td></tr>
+<tr><td>现象</td><td>同一元素上同时使用互斥指令；事件绑定指向已不存在的函数（点击无反应）</td></tr>
+<tr><td>根因</td><td>批量重构脚本改动后未逐一复核，遗留了互斥指令组合与失效绑定</td></tr>
+<tr><td>影响</td><td>局部交互失效；构建阶段即报错，不会进入生产</td></tr>
+<tr><td>修复</td><td>移除互斥指令组合，事件绑定改为指向实际存在的处理函数</td></tr>
+<tr><td>验证</td><td>构建通过、静态检查 0 错误、相关交互实测正常</td></tr>
+<tr><td>预防</td><td>禁止脚本化批量改写后不复核；改动后必须构建 + 静态检查 + 实测三步走</td></tr>
+<tr><td>状态</td><td>✅ 已修复并验证</td></tr>
+</tbody></table>
+<h3>BUG-16-06【中 · 构建与工程】CI 流水线失败</h3>
+<table><thead><tr><th>项</th><th>内容</th></tr></thead><tbody>
+<tr><td>发现方式</td><td>推送后在 GitHub 仓库页观察到 CI 失败状态</td></tr>
+<tr><td>现象</td><td>三个作业中前端作业失败，仓库页显示红色叉号；而本地逐条复现全部通过</td></tr>
+<tr><td>根因</td><td>① <strong>Node 20 与 pnpm 11 不兼容</strong>（pnpm 11 要求 Node ≥ 22），而工作流写的是 <code>node-version: 20</code>；② <code>pnpm/action-setup</code> 排在 <code>setup-node</code> 之前，会在 runner 默认的旧 Node 上安装 pnpm 并自检失败；③ <code>backend/mvnw</code> 在 git 中权限位为 <code>100644</code>（不可执行），改用 <code>./mvnw</code> 后会 <code>Permission denied</code></td></tr>
+<tr><td>影响</td><td>流水线不可用，质量门禁形同虚设；对外呈现为"CI 失败的项目"</td></tr>
+<tr><td>修复</td><td>① Node 版本对齐到本地验证过的 24；② 调整步骤顺序为"先 setup-node、再 action-setup"（放弃 pnpm 缓存以换取正确顺序）；③ <code>mvnw</code> 权限位改为 <code>100755</code>，后端作业改用仓库自带的 Maven Wrapper</td></tr>
+<tr><td>验证</td><td>修复后三个作业全部通过；另用全新克隆复核 <code>pnpm install --frozen-lockfile</code> 与后端打包均成功</td></tr>
+<tr><td>预防</td><td>"本地全过、CI 全挂"应优先怀疑版本与权限假设；工作流改动后在全新克隆中复现一遍</td></tr>
+<tr><td>状态</td><td>✅ 已修复并验证</td></tr>
+</tbody></table>
+<h2>五、根因分析与预防措施</h2>
+<table><thead><tr><th>根因类型</th><th>涉及缺陷</th><th>已落地的预防措施</th></tr></thead><tbody>
+<tr><td>只覆盖单一输入形态</td><td>BUG-16-01</td><td>接口返回结构的多种形态（树形/扁平/缺省）均纳入单元测试</td></tr>
+<tr><td>"链路齐全但缺一环"</td><td>BUG-16-02</td><td>功能走查清单化：数据层、接口层、渲染层逐层确认</td></tr>
+<tr><td>框架隐性约束未文档化</td><td>BUG-16-03</td><td>写入设计规范（Single Root Rule）；端到端回归作为兜底</td></tr>
+<tr><td>规范知晓但执行走样</td><td>BUG-16-04</td><td>令牌适用范围写进设计文档；可访问性审计进 CI</td></tr>
+<tr><td>批量改写后未复核</td><td>BUG-16-05</td><td>改动后强制"构建 + 静态检查 + 实测"三步</td></tr>
+<tr><td>环境与权限假设</td><td>BUG-16-06</td><td>工作流改动后在全新克隆复现；CI 阈值只许下降（棘轮机制）</td></tr>
+</tbody></table>
+<p><strong>整体趋势</strong>：缺陷从"功能与安全类"（v0.05 ~ v0.10）转向"界面质量与工程效率类"（v0.16），</p>
+<p>说明功能正确性已稳定，问题集中在质量工程与协作流程上 —— 这也是本项目把质量门禁接入 CI 的直接动因。</p>
+<h3>BUG-17【中 · 部署配置】发布商品上传的图片在部署形态下显示"加载失败"</h3>
+<ul>
+<li><strong>发现方式</strong>：手工验收（学生上传图片时发现裂图），非自动化用例 —— 因为原 AC 没要求"图片可见"</li>
+<li><strong>现象</strong>：发布页缩略图裂图；详情页商品图为空；页面文案「加载失败」</li>
+<li><strong>定位（对比法）</strong>：</li>
+<li>直连后端 <code>http://127.0.0.1:8080/upload/2026/11/xxx.jpeg</code> → <strong>200 image/jpeg 899 KB</strong></li>
+<li>经 Nginx <code>http://127.0.0.1:8081/upload/...</code> → <strong>404</strong></li>
+<li><strong>根因</strong>：<code>location ~* \.(js|css|png|jpg|jpeg|…)$</code> 是<strong>正则 location</strong>，优先级高于前缀 location</li>
+</ul>
+<p>  <code>location /upload/</code>，上传路径被它截走，按静态资源去 <code>frontend/dist</code> 查找 → 404</p>
+<ul>
+<li><strong>修复</strong>：<code>location /upload/</code> → <code>location ^~ /upload/</code>（<code>^~</code> 命中前缀后不再尝试正则）；</li>
+</ul>
+<p>  生效配置与 <code>deploy/windows/nginx.conf</code> 同步修改</p>
+<ul>
+<li><strong>回归</strong>：<code>tests/e2e/test-story-scenarios.py</code> 增加"上传后缩略图 naturalWidth&gt;0"断言；</li>
+</ul>
+<p>  US-GOODS-01 补 AC4</p>
+<ul>
+<li><strong>教训</strong>：① <strong>部署形态与直连后端是两条链路</strong>，只测直连会漏掉代理层；</li>
+</ul>
+<p>  ② 验收标准要写"用户能看到什么"，不能写"接口返回什么"</p>
+<hr></div></body></html>
