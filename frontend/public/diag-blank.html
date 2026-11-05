@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>诊断空页 · 校园二手交易平台</title>
+  <style>
+    body { font-family: "Microsoft YaHei", system-ui, sans-serif; padding: 40px; color: #1e241f; background: #f5f5f0; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    p { color: #4a544d; line-height: 1.8; }
+    code { background: #e8ebe4; padding: 2px 6px; border-radius: 4px; }
+    .tip { background: #fff; border: 1px solid #dfe3da; border-radius: 10px; padding: 18px 20px; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <h1>诊断空页（同源 · 无任何 JS / 框架 / 定时器）</h1>
+  <p>这个页面与主站<b>同一个地址、同一个端口</b>，但内容是纯静态 HTML：没有 Vue、没有路由、没有 Element Plus、没有 WebSocket、没有定时器。</p>
+
+  <div class="tip">
+    <p><b>测试方法</b>：在这个页面按 <code>Win + D</code>（或点最小化）。</p>
+    <p>· <b>不弹回</b> → 问题在我们应用的 JS 代码里 → 继续二分（我下一步做「路由/组件」级排查）</p>
+    <p>· <b>弹回</b> → 与我们代码无关，是<b>这个地址/浏览器环境</b>的问题（例如 Edge 对该站点的设置、或某个拦截程序按站点匹配）</p>
+  </div>
+
+  <p style="margin-top:24px">对照：同源主站 <code>/home</code> 会弹回（你已验证）。</p>
+</body>
+</html>
