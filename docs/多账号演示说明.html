@@ -73,6 +73,22 @@ localStorage.getItem(TOKEN_KEY)             // 每次请求读取</code></pre>
 <li>窗口 C 点「标记待交付」→ 窗口 B 看「我买到的」状态变化</li>
 <li>窗口 B 确认收货 → 商品变「已售出」→ 窗口 B 评价 → 窗口 A 后台看信用分</li>
 </ol>
+<h2>补充：为什么你可能记得「以前能同时登两个账号」</h2>
+<p>我查了 git 历史：<code>frontend/src/utils/auth.js</code> <strong>从 v0.03 建脚手架起只有一个提交</strong>，</p>
+<p>全程用 <code>localStorage</code>，<strong>从未用过 <code>sessionStorage</code></strong> —— 也就是说"以前能"并不是因为代码不同。</p>
+<p>最可能的原因是：<strong>当时那两个窗口不是同一个"源"</strong>。</p>
+<table><thead><tr><th>窗口</th><th>地址</th><th>是否同一个源</th></tr></thead><tbody>
+<tr><td>Vite 开发服务器</td><td><code>http://127.0.0.1:5173</code></td><td>❌ 端口不同 → <strong>不同源</strong></td></tr>
+<tr><td>Nginx 部署形态</td><td><code>http://127.0.0.1:8081</code></td><td>❌ 同上</td></tr>
+</tbody></table>
+<p><code>localStorage</code> 按 <strong>源（协议 + 域名 + 端口）</strong> 隔离，端口不同就是两个独立的存储空间。</p>
+<p>所以早期开发时"5173 一个账号 + 8081 一个账号，还能互相发消息"是<strong>完全成立的</strong> ——</p>
+<p>两个窗口各自持有一份 token，而后端是同一个（8080）与同一个库，消息自然互通。</p>
+<p>想复现这个效果（仅调试用）：</p>
+<pre><code>cd frontend; pnpm dev      # 起 5173
+# 窗口 A: http://127.0.0.1:5173  登录 stu_test01
+# 窗口 B: http://127.0.0.1:8081  登录 stu_demo</code></pre>
+<blockquote>答辩现场不建议这么用（dev server 依赖 HMR 与代理，容易出状况）；<br>现场用<strong>无痕窗口</strong>登两个账号更稳。</blockquote>
 <h2>五、相关文档</h2>
 <ul>
 <li>用户故事：<code>docs/user-stories.md</code> 的 <code>US-USER-02</code>（登录态保持）</li>
