@@ -356,7 +356,7 @@ jobs:
         run: |
           mysql -h 127.0.0.1 -uroot -p123456 < db/schema/01-schema.sql
           mysql -h 127.0.0.1 -uroot -p123456 campus_trade < db/schema/04-moderation.sql
-          python3 tools/seed-demo-data.py --reset
+          python3 tools/seed-demo-data.py --reset --db campus_trade
           mysql -h 127.0.0.1 -uroot -p123456 -N -B -e "
             SELECT 'user',COUNT(*) FROM campus_trade.user
             UNION ALL SELECT 'product',COUNT(*) FROM campus_trade.product
@@ -562,7 +562,7 @@ jobs:
         run: |
           mysql -h 127.0.0.1 -uroot -p123456 < db/schema/01-schema.sql
           mysql -h 127.0.0.1 -uroot -p123456 campus_trade < db/schema/04-moderation.sql
-          python3 tools/seed-demo-data.py --reset
+          python3 tools/seed-demo-data.py --reset --db campus_trade
 
       - name: 启动后端并等待健康检查（直连 8080）
         run: |
