@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>用户故事与验收标准（37 条）</title><style>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>用户故事全集（37 条需求条目）</title><style>
 :root{--ink:#1a1d19;--ink2:#4a4f47;--muted:#8a8f86;--rule:#d8dbd3;--paper:#f6f7f4;--card:#fff;--accent:#35603f}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);
@@ -36,6 +36,7 @@ a{color:var(--accent)}
 <blockquote>校园二手交易平台 · 黎钟 · 2027 届软件工程<br>用途：把"功能清单"改写为<strong>用户视角的需求</strong>，并为每条用户故事给出可验证的验收标准（Acceptance Criteria），<br>同时关联到仓库中已有的自动化测试用例与缺陷编号，形成<strong>需求 → 测试 → 缺陷</strong>的可追溯链路。</blockquote>
 <h2>0. 使用说明</h2>
 <table><thead><tr><th>项</th><th>约定</th></tr></thead><tbody>
+<tr><td><strong>文档构成</strong></td><td>本文件共 <strong>37 条需求条目</strong> = <strong>28 条用户故事（功能型）</strong> + <strong>9 条质量需求（非功能型，第 9 节）</strong>。后者用故事格式书写，是为了纳入 MoSCoW 优先级与追溯矩阵，严格归类属<strong>非功能需求</strong>，其验收对象是接口/源码/数据层/CI，不是界面</td></tr>
 <tr><td>故事编号</td><td><code>US-模块-序号</code>，如 <code>US-GOODS-03</code></td></tr>
 <tr><td>角色定义（<strong>权限主体</strong>，即账号属性）</td><td><strong>游客</strong>（未登录）· <strong>普通学生</strong>（<code>user.role = 0</code>）· <strong>管理员</strong>（<code>user.role = 1</code>）—— 共 <strong>2 个登录角色 + 1 个非登录角色</strong>，与 <code>spec.md</code> §2.1 一致</td></tr>
 <tr><td>业务身份（<strong>不是角色</strong>）</td><td><strong>卖家</strong> / <strong>买家</strong>：同一学生在<strong>某笔交易</strong>中的相对身份，由 <code>product.seller_id</code>、<code>order.buyer_id / seller_id</code> 推导；<strong>同一账号可同时兼有</strong>，因此不设独立角色、也不占 <code>user.role</code> 取值。订单表同时存 <code>buyer_id</code> 与 <code>seller_id</code> 来表达这层关系</td></tr>
@@ -326,6 +327,7 @@ a{color:var(--accent)}
 <p><strong>对应测试</strong>：后台 E2E、部署验证 D27　<strong>相关缺陷</strong>：无</p>
 <hr>
 <h2>9. 质量与非功能需求（US-QUALITY）</h2>
+<blockquote><strong>归类说明</strong>：本节 9 条（US-QUALITY-01~07、US-SEARCH-03、US-EVAL-03）严格归类为<strong>非功能需求</strong>，用故事格式书写只为纳入优先级与追溯；<br>它们的验收对象不是界面，因此<strong>不产生浏览器场景与截图</strong>，也不写入《用户故事报告》。</blockquote>
 <blockquote>这一组是<strong>跨功能的非功能需求</strong>，也是本项目测试与质量工程的主要对象。</blockquote>
 <h3>US-QUALITY-01 接口权限与越权防护 【必须】</h3>
 <p><strong>作为</strong> 平台方，<strong>我希望</strong> 任何写操作都必须校验身份与归属，<strong>以便</strong> 防止越权操作与信息泄漏。</p>
@@ -457,7 +459,7 @@ a{color:var(--accent)}
 <tr><td><strong>US-EVAL-02 查看商品口碑</strong></td><td>组件测试 6 条、实测</td><td>——</td></tr>
 <tr><td><strong>US-EVAL-03 信用分与防刷</strong></td><td>后端单测 3 条、实测</td><td>——</td></tr>
 </tbody></table>
-<p><strong>统计</strong>：共 <strong>37 条</strong>用户故事（<strong>必须 17</strong>、<strong>应该 15</strong>、<strong>可以 5</strong>），其中 <strong>35 条</strong>有自动化测试覆盖，覆盖率 <strong>97%</strong>；</p>
+<p><strong>统计</strong>：共 <strong>37 条需求条目</strong> = <strong>28 条用户故事（功能型）</strong> + <strong>9 条质量需求（非功能型，第 9 节）</strong>；优先级分布 <strong>必须 17 / 应该 15 / 可以 5</strong>；其中 <strong>35 条</strong>有自动化测试覆盖（覆盖率 97%）；</p>
 <p>仅 US-QUALITY-05（390px 窄屏）依赖人工走查，已在测试报告的遗留问题中标注。</p>
 <blockquote><strong>修订说明（v0.18）</strong>：本节原先写作"30 条（必须 14、应该 11）"，与正文标题的实际条数不符 ——<br>按 <code>### US-</code> 标题逐条点算，第 1~9 组本来就是 <strong>33 条（必须 15、应该 13、可以 5）</strong>，<br>加上 v0.18 新增的 US-EVAL 3 条后为 <strong>36 条（必须 16、应该 15、可以 5）</strong>。<br>统计口径已按实际标题更正，避免论文里"说 30 条、列了 36 条"这种硬伤。</blockquote>
 <hr>
