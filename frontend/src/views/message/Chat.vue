@@ -330,7 +330,9 @@ function onEnter(event) {
       <!-- 顶部：对方信息 -->
       <div class="chat-header">
         <el-button text @click="router.back()">← 返回</el-button>
-        <el-avatar :size="40">{{ (peer?.nickname || '匿').slice(0, 1) }}</el-avatar>
+        <el-avatar :size="40" :src="peer?.avatar || undefined">
+            {{ (peer?.nickname || '匿').slice(0, 1) }}
+          </el-avatar>
         <div class="peer-info">
           <div class="peer-name">
             {{ peer?.nickname || '加载中…' }}

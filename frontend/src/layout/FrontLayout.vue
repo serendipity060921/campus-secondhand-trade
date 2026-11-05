@@ -136,7 +136,9 @@ async function handleLogout() {
           <template v-if="userStore.isLogin">
             <el-dropdown>
               <span class="user-name">
-                <el-avatar :size="28">{{ userStore.nickname.slice(0, 1) }}</el-avatar>
+                <el-avatar :size="28" :src="userStore.userInfo?.avatar || undefined">
+          {{ userStore.nickname.slice(0, 1) }}
+        </el-avatar>
                 <span class="ml-8">{{ userStore.nickname }}</span>
               </span>
               <template #dropdown>
