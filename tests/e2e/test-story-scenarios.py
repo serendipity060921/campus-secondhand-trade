@@ -131,6 +131,28 @@ def run(browser, base, only):
         check('昵称' in t and ('头像' in t or '上传' in t), 'US-USER-03 资料编辑页含昵称与头像')
         shot(p, 'US-USER-03-S1-个人资料编辑页')
 
+    if want('US-GOODS-01'):
+        # BUG-17 回归：上传图片后缩略图必须真的渲染出来（只验接口 200 会漏掉代理层 404）
+        goto(p, base, '/product/publish')
+        import base64 as _b64
+        # 20x20 纯色 PNG（不依赖 Pillow，CI 里也能跑）
+        _png = _b64.b64decode(
+            'iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAIAAAAC64paAAAAJUlEQVR4nGP8z4APMOGVHXHSLcOp'
+            'Ezmqi0Y6ZSLVRSMdAKoRAZ8PY6LwAAAAAElFTkSuQmCC')
+        probe = pathlib.Path(tempfile.gettempdir()) / 'dsh_sqlval_upload_probe.png'
+        probe.write_bytes(_png)
+        try:
+            p.set_input_files('input[type=file]', str(probe))
+            p.wait_for_timeout(2800)
+            imgs = p.evaluate("() => [...document.images].map(i => ({s: i.currentSrc || i.src, w: i.naturalWidth}))")
+            up = [i for i in imgs if '/upload/' in i['s']]
+            ok_img = bool(up) and up[0]['w'] > 0
+            check(ok_img, 'US-GOODS-01 上传后缩略图可见（BUG-17 回归）',
+                  (up[0]['s'][:70] + f' w={up[0]["w"]}') if up else '未找到 /upload/ 图片元素')
+            shot(p, 'US-GOODS-01-S9-上传后缩略图正常', 'BUG-17 回归断言')
+        except Exception as e:
+            check(False, 'US-GOODS-01 上传后缩略图可见（BUG-17 回归）', str(e)[:70])
+
     if want('US-FAV-02'):
         goto(p, base, '/favorites')
         t = body(p)
