@@ -1,0 +1,81 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>多账号演示说明</title><style>
+:root{--ink:#1a1d19;--ink2:#4a4f47;--muted:#8a8f86;--rule:#d8dbd3;--paper:#f6f7f4;--card:#fff;--accent:#35603f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+     font:16px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:40px 28px 100px;background:var(--card);
+      min-height:100vh;box-shadow:0 0 0 1px var(--rule)}
+h1{font-size:30px;margin:0 0 8px;line-height:1.3}
+h2{font-size:22px;margin:36px 0 12px;padding-bottom:8px;border-bottom:1.5px solid var(--rule)}
+h3{font-size:18px;margin:26px 0 8px}
+h4{font-size:16px;margin:18px 0 6px;color:var(--ink2)}
+p{margin:10px 0}
+ul,ol{margin:10px 0;padding-left:26px}
+li{margin:4px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th,td{border:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper);font-weight:600}
+tr:nth-child(even) td{background:#fbfcfa}
+code{background:#f0f2ee;padding:1px 5px;border-radius:3px;font-size:13px;
+     font-family:Consolas,"Courier New",monospace}
+pre{background:#f0f2ee;padding:14px;border-radius:6px;overflow:auto;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0}
+blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--accent);
+           background:#f7f9f6;color:var(--ink2)}
+img{max-width:100%;border:1px solid var(--rule);border-radius:4px;margin:6px 0}
+hr{border:none;border-top:1px solid var(--rule);margin:28px 0}
+a{color:var(--accent)}
+.meta{color:var(--muted);font-size:13px;margin-bottom:24px}
+@media print{
+  body{background:#fff}
+  .wrap{box-shadow:none;max-width:none;padding:0}
+  h2{page-break-after:avoid}
+  table,pre,img{page-break-inside:avoid}
+}
+</style></head><body><div class="wrap"><div class="meta">来源：docs\多账号演示说明.md　|　打印成 PDF：Ctrl+P → 目标选「另存为 PDF」</div><h1>多账号演示说明（同一浏览器两个窗口登不同账号）</h1>
+<blockquote>一句话结论：<strong>同一浏览器所有标签页共享登录态，这是标准行为，不是缺陷。</strong><br>想同时登两个账号，用「无痕窗口 / 另一个浏览器 / 另一个浏览器配置文件」即可。</blockquote>
+<h2>一、为什么会这样</h2>
+<p>前端把登录凭证存在 <code>localStorage</code>（<code>frontend/src/utils/auth.js</code>）：</p>
+<pre><code>const TOKEN_KEY = &#x27;campus_trade_token&#x27;
+localStorage.setItem(TOKEN_KEY, token)      // 登录时写入
+localStorage.getItem(TOKEN_KEY)             // 每次请求读取</code></pre>
+<p><code>localStorage</code> 的作用域是 <strong>源（origin）= 协议 + 域名 + 端口</strong>，</p>
+<p>所以在 <code>http://127.0.0.1:8081</code> 下打开的<strong>所有标签页与窗口共用同一份</strong>：</p>
+<table><thead><tr><th>存储</th><th>作用域</th><th>结果</th></tr></thead><tbody>
+<tr><td><code>localStorage</code></td><td>同一浏览器 + 同一源 + <strong>所有标签页</strong></td><td>A 标签页登录 → B 标签页也是同一账号 ✓ 正常</td></tr>
+<tr><td><code>sessionStorage</code></td><td>同一浏览器 + 同一源 + <strong>单个标签页</strong></td><td>每个标签页独立（但新开标签页要重新登录）</td></tr>
+<tr><td>Cookie</td><td>同上（可设 <code>SameSite</code>）</td><td>同上</td></tr>
+</tbody></table>
+<p>这也是 GitHub / 淘宝 / 学校教务系统的行为：<strong>你在一个标签页登录，另一个标签页不用再登</strong>。</p>
+<p>它正是用户故事 <strong>US-USER-02「登录与登录态保持」AC1</strong> 的实现方式 ——</p>
+<p>如果改成"每个标签页独立"，那条故事的"保持登录"就不成立了。</p>
+<h2>二、想同时登两个账号（演示买卖双方）：三种办法</h2>
+<table><thead><tr><th>办法</th><th>操作</th><th>适合</th></tr></thead><tbody>
+<tr><td><strong>① 无痕窗口</strong>（推荐）</td><td>Edge 按 <code>Ctrl+Shift+N</code>（Chrome 是 <code>Ctrl+Shift+N</code>）→ 在新窗口登录另一个账号</td><td>临时演示，30 秒搞定</td></tr>
+<tr><td><strong>② 换一个浏览器</strong></td><td>Edge 登买家、Chrome 登卖家</td><td>需要长期并排对照</td></tr>
+<tr><td><strong>③ 浏览器多配置文件</strong></td><td>Edge：右上角头像 → 「添加个人资料」→ 新配置文件独立登录</td><td>长期开发/答辩</td></tr>
+<tr><td>④ 自动化测试里怎么做</td><td>Playwright <code>browser.new_context()</code> 每账号一个 context，天然隔离</td><td>写测试用（现有套件已这样）</td></tr>
+</tbody></table>
+<h2>三、要不要改成"每个标签页独立登录"</h2>
+<table><thead><tr><th>方案</th><th>做法</th><th>代价</th></tr></thead><tbody>
+<tr><td>保持现状（推荐）</td><td><code>localStorage</code></td><td>无。符合用户预期与 US-USER-02</td></tr>
+<tr><td>每标签页独立</td><td>改用 <code>sessionStorage</code></td><td>① 新开标签页必须重新登录；② 刷新才保留；③ 与"登录态保持"故事冲突</td></tr>
+<tr><td>同一浏览器多账号并存</td><td>用「账号切换器」把多个 token 存数组 + 顶栏下拉切换</td><td>工作量大（前端 + 拦截器 + 故事/AC/测试全要改），收益低</td></tr>
+</tbody></table>
+<p><strong>建议保持现状。</strong> 若导师明确要求"同浏览器多账号并存"，再按第三种方案排期。</p>
+<h2>四、演示时的推荐组合</h2>
+<pre><code>窗口 A（普通）    admin / 123456        管理员：审核、用户管理、举报处理
+窗口 B（无痕）    stu_test01 / abc12345 买家：下单、评价（订单 1 已完成）
+窗口 C（另一浏览器）stu_demo / 123456    卖家：卖出商品、待交易订单</code></pre>
+<p>三步演示"一笔交易的两端"：</p>
+<ol>
+<li>窗口 B 下单 → 窗口 C 刷新「我卖出的」看到新订单</li>
+<li>窗口 C 点「标记待交付」→ 窗口 B 看「我买到的」状态变化</li>
+<li>窗口 B 确认收货 → 商品变「已售出」→ 窗口 B 评价 → 窗口 A 后台看信用分</li>
+</ol>
+<h2>五、相关文档</h2>
+<ul>
+<li>用户故事：<code>docs/user-stories.md</code> 的 <code>US-USER-02</code>（登录态保持）</li>
+<li>登录实现：<code>frontend/src/utils/auth.js</code></li>
+<li>多账号自动化：<code>tests/e2e/test-story-scenarios.py</code>（每个场景一个 browser context）</li>
+</ul></div></body></html>
