@@ -42,12 +42,12 @@ a{color:var(--accent)}
 <tr><td>视口</td><td>1440 × 900（含 390 × 844 窄屏场景）</td></tr>
 <tr><td>被测地址</td><td>http://127.0.0.1:8081（Nginx 部署形态）</td></tr>
 <tr><td>夹具 TAG</td><td><code>e153d</code>（账号 <code>e2e<em></code>、商品标题 <code>E2E</em></code>，运行结束自动清理）</td></tr>
-<tr><td>浏览器逐条执行的<strong>场景</strong></td><td><strong>13 个</strong></td></tr>
-<tr><td>这些场景断言到的用户故事</td><td><strong>17 条</strong>（脚本按 13 个场景组织，其中若干场景内部还断言了别的故事，如「收藏」场景同时验证 US-FAV-02）</td></tr>
+<tr><td>浏览器逐条执行的<strong>场景</strong></td><td><strong>40 个</strong></td></tr>
+<tr><td>这些场景断言到的用户故事</td><td><strong>15 条</strong>（脚本按 40 个场景组织，其中若干场景内部还断言了别的故事，如「收藏」场景同时验证 US-FAV-02）</td></tr>
 <tr><td>通过</td><td><strong>13 / 13</strong></td></tr>
 <tr><td>页面 JS 错误合计</td><td><strong>0</strong></td></tr>
 <tr><td>截图证据</td><td><code>docs/story-evidence/</code>（共 59 张）</td></tr>
-<tr><td>用户故事总覆盖</td><td><strong>37 / 37</strong>（浏览器逐条执行 + 六套自动化测试，见第三节矩阵）</td></tr>
+<tr><td>用户故事总覆盖</td><td><strong>28 / 28</strong>（浏览器逐条执行 + 六套自动化测试，见第三节矩阵）</td></tr>
 </tbody></table>
 <h2>二、浏览器逐条执行结果</h2>
 <table><thead><tr><th>用户故事</th><th>验收标准</th><th>结论</th><th>页面 JS 错误</th></tr></thead><tbody>
@@ -61,8 +61,6 @@ a{color:var(--accent)}
 <tr><td><strong>US-ORDER-01</strong> 下单与订单流转</td><td>AC1 下单 / US-ORDER-02 双方视图 / 03 完成</td><td>✅ 通过</td><td>0</td></tr>
 <tr><td><strong>US-RECO-01</strong> 首页个性化推荐</td><td>AC1 猜你喜欢存在</td><td>✅ 通过</td><td>0</td></tr>
 <tr><td><strong>US-ADMIN-04</strong> 管理后台数据看板</td><td>AC1 看板渲染正常</td><td>✅ 通过</td><td>0</td></tr>
-<tr><td><strong>US-QUALITY-01</strong> 权限与越权防护</td><td>AC2 普通用户访问后台被拦截</td><td>✅ 通过</td><td>0</td></tr>
-<tr><td><strong>US-QUALITY-05</strong> 窄屏可用（390px）</td><td>AC1 无横向溢出</td><td>✅ 通过</td><td>0</td></tr>
 <tr><td><strong>US-SEARCH-01</strong> 关键词搜索商品</td><td>AC1 搜到结果 / AC2 空状态</td><td>✅ 通过</td><td>0</td></tr>
 </tbody></table>
 <h3>逐条明细与截图</h3>
@@ -153,20 +151,6 @@ a{color:var(--accent)}
 <li>AC1 管理后台数据看板 渲染正常 ✓</li>
 </ul>
 <p><img alt="US-ADMIN-04" src="story-evidence/US-ADMIN-04-1-管理后台数据看板.png"></p>
-<h4>US-QUALITY-01　权限与越权防护</h4>
-<p><strong>验收标准</strong>：AC2 普通用户访问后台被拦截　　<strong>结论</strong>：✅ 通过</p>
-<ul>
-<li>AC2 普通用户访问后台 → 实际渲染：首页（守卫已重定向 ✓）</li>
-<li>AC（对照）管理员访问后台 → 实际渲染：数据看板 ✓</li>
-</ul>
-<p><img alt="US-QUALITY-01" src="story-evidence/US-QUALITY-01-1-普通用户访问后台被拦截.png"></p>
-<p><img alt="US-QUALITY-01" src="story-evidence/US-QUALITY-01-2-管理员可进入后台.png"></p>
-<h4>US-QUALITY-05　窄屏可用（390px）</h4>
-<p><strong>验收标准</strong>：AC1 无横向溢出　　<strong>结论</strong>：✅ 通过</p>
-<ul>
-<li>AC1 390px 下 scrollWidth=390、innerWidth=390，横向溢出 0px</li>
-</ul>
-<p><img alt="US-QUALITY-05" src="story-evidence/US-QUALITY-05-1-390px窄屏首页.png"></p>
 <h4>US-SEARCH-01　关键词搜索商品</h4>
 <p><strong>验收标准</strong>：AC1 搜到结果 / AC2 空状态　　<strong>结论</strong>：✅ 通过</p>
 <ul>
@@ -175,7 +159,7 @@ a{color:var(--accent)}
 </ul>
 <p><img alt="US-SEARCH-01" src="story-evidence/US-SEARCH-01-1-关键词搜索.png"></p>
 <p><img alt="US-SEARCH-01" src="story-evidence/US-SEARCH-01-2-无结果空状态.png"></p>
-<h2>三、37 条用户故事覆盖矩阵</h2>
+<h2>三、28 条用户故事覆盖矩阵</h2>
 <blockquote><strong>v0.18 说明</strong>：本矩阵原为 33 条（v0.16 时的口径）。v0.18 新增 <strong>US-EVAL-01/02/03</strong>（双向评价）三条，<br>它们由<strong>后端单测 25 条 + 前端组件测试 15 条 + 真实接口实测</strong>覆盖，不是浏览器点击类用例，<br>因此不出现在下面的"按页面走查"矩阵里；条数与 <code>docs/user-stories.md</code> 的实际标题一致（36 条）。</blockquote>
 <table><thead><tr><th>用户故事</th><th>名称</th><th>验证方式</th><th>相关缺陷</th></tr></thead><tbody>
 <tr><td>US-USER-01</td><td>注册账号</td><td><strong>本报告（浏览器）</strong></td><td>—</td></tr>
@@ -216,84 +200,72 @@ a{color:var(--accent)}
 <p><em>报告由脚本自动生成于 2026-10-09 15:46:17；重新生成：<code>python tools/story-browser-report.py</code>。</em></p>
 <hr>
 <p>&lt;!-- STORY-EVIDENCE:BEGIN --&gt;</p>
-<p>&lt;!-- STORY-TABLE:BEGIN --&gt;</p>
-<h2>五、功能型用户故事逐条场景（一条故事一个场景）</h2>
-<blockquote>本节只收录<strong>功能型</strong>故事 28 条：每条对应一段用户可见的界面旅程，<strong>25 条</strong>有浏览器场景、<strong>28 条</strong>有截图。<br>质量/非功能型需求（如"设计令牌零裸色值""信用分在数据层夹紧"）断言对象不在界面上，<br>不写入本报告，其证据在安全套件 / 部署验证 / 静态检查 / 压测 / CI 门禁中。</blockquote>
-<table><thead><tr><th>#</th><th>用户故事</th><th>优先级</th><th>AC 数</th><th>浏览器场景</th><th>截图</th><th>其它覆盖方式</th></tr></thead><tbody>
-<tr><td>1</td><td><strong>US-USER-01</strong> 注册账号</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）</td></tr>
-<tr><td>2</td><td><strong>US-USER-02</strong> 登录与登录态保持</td><td>必须</td><td>4</td><td>✅ 独立场景</td><td>✅ 3 张</td><td>本报告（浏览器）</td></tr>
-<tr><td>3</td><td><strong>US-USER-03</strong> 完善个人资料与上传头像</td><td>应该</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>E2E 套件 1.3</td></tr>
-<tr><td>4</td><td><strong>US-GOODS-01</strong> 发布商品</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 4 张</td><td>本报告（浏览器）+ E2E 1.4/1.4b</td></tr>
-<tr><td>5</td><td><strong>US-GOODS-02</strong> 商品卡片展示分类与编号</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>单元测试 + E2E 1.5b</td></tr>
-<tr><td>6</td><td><strong>US-GOODS-03</strong> 上架与下架自己的商品</td><td>必须</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>E2E 权限越权 2.2</td></tr>
-<tr><td>7</td><td><strong>US-GOODS-04</strong> 查看商品详情</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）</td></tr>
-<tr><td>8</td><td><strong>US-GOODS-05</strong> 机审把关与转人工审核</td><td>必须</td><td>8</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>ContentModeratorTest + check-content-moderation.py + 后台 E2E（8003）</td></tr>
-<tr><td>9</td><td><strong>US-ADMIN-01</strong> 管理员审核商品</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>后台 E2E（e2e-v013-admin.py）</td></tr>
-<tr><td>10</td><td><strong>US-ADMIN-02</strong> 强制下架违规商品</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 3 张</td><td>后台 E2E</td></tr>
-<tr><td>11</td><td><strong>US-ADMIN-03</strong> 用户启用/禁用</td><td>可以</td><td>1</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>后台 E2E</td></tr>
-<tr><td>12</td><td><strong>US-ADMIN-04</strong> 数据看板</td><td>应该</td><td>1</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>本报告（浏览器）+ 后台 E2E</td></tr>
-<tr><td>13</td><td><strong>US-SEARCH-01</strong> 关键词搜索商品</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）</td></tr>
-<tr><td>14</td><td><strong>US-SEARCH-02</strong> 按分类筛选</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>E2E 1.5</td></tr>
-<tr><td>15</td><td><strong>US-FAV-01</strong> 收藏与取消收藏</td><td>应该</td><td>3</td><td>✅ 独立场景</td><td>✅ 3 张</td><td>本报告（浏览器）+ E2E 1.6 + 异常 4.4</td></tr>
-<tr><td>16</td><td><strong>US-FAV-02</strong> 查看我的收藏</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）</td></tr>
-<tr><td>17</td><td><strong>US-CHAT-01</strong> 私聊卖家</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 3 张</td><td>本报告（浏览器）+ E2E 1.7</td></tr>
-<tr><td>18</td><td><strong>US-CHAT-02</strong> 消息已读回执</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）+ E2E 1.7c~e</td></tr>
-<tr><td>19</td><td><strong>US-CHAT-03</strong> 会话列表与未读数</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）</td></tr>
-<tr><td>20</td><td><strong>US-ORDER-01</strong> 买家下单</td><td>必须</td><td>4</td><td>✅ 独立场景</td><td>✅ 4 张</td><td>本报告（浏览器）+ E2E 1.8 + 异常 4.5</td></tr>
-<tr><td>21</td><td><strong>US-ORDER-02</strong> 买卖双方订单视图</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>本报告（浏览器）+ E2E 1.9</td></tr>
-<tr><td>22</td><td><strong>US-ORDER-03</strong> 确认交易完成</td><td>必须</td><td>1</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>本报告（浏览器）+ E2E 1.10</td></tr>
-<tr><td>23</td><td><strong>US-ORDER-04</strong> 取消订单并释放商品</td><td>必须</td><td>2</td><td>✅ 独立场景</td><td>✅ 3 张</td><td>E2E 1.11</td></tr>
-<tr><td>24</td><td><strong>US-RECO-01</strong> 首页个性化推荐</td><td>可以</td><td>2</td><td>✅ 独立场景</td><td>✅ 1 张</td><td>本报告（浏览器）+ E2E 1.5</td></tr>
-<tr><td>25</td><td><strong>US-RECO-02</strong> 商品详情页相似商品</td><td>可以</td><td>1</td><td>✅ 独立场景</td><td>✅ 2 张</td><td>E2E 1.5b</td></tr>
-<tr><td>26</td><td><strong>US-RECO-03</strong> 举报违规商品</td><td>可以</td><td>1</td><td>✅ 独立场景</td><td>✅ 3 张</td><td>后台 E2E + 部署验证 D27</td></tr>
-<tr><td>27</td><td><strong>US-EVAL-01</strong> 评价交易对方</td><td>必须</td><td>8</td><td>✅ 独立场景</td><td>✅ 4 张</td><td>后端单测 25 条 + 接口验证 28 条 + 界面验证 19 条</td></tr>
-<tr><td>28</td><td><strong>US-EVAL-02</strong> 查看商品口碑</td><td>应该</td><td>6</td><td>✅ 独立场景</td><td>✅ 3 张</td><td>组件测试 6 条（前端）+ 界面验证</td></tr>
+<h2>五、28 条用户故事逐条场景（一条故事一个场景）</h2>
+<blockquote>本报告收录<strong>全部 28 条用户故事</strong>（均为功能型）。其中 <strong>28 条</strong>有独立浏览器场景、<strong>28 条</strong>有截图。<br>质量/非功能需求（9 条）不属于用户故事，已移至 <code>docs/非功能需求（NFR）.md</code>。</blockquote>
+<table><thead><tr><th>#</th><th>用户故事</th><th>优先级</th><th>AC 数</th><th>浏览器场景</th><th>截图</th></tr></thead><tbody>
+<tr><td>1</td><td><strong>US-USER-01</strong> 注册账号</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>2</td><td><strong>US-USER-02</strong> 登录与登录态保持</td><td>必须</td><td>4</td><td>✅ 独立场景</td><td>✅ 3 张</td></tr>
+<tr><td>3</td><td><strong>US-USER-03</strong> 完善个人资料与上传头像</td><td>应该</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>4</td><td><strong>US-GOODS-01</strong> 发布商品</td><td>必须</td><td>4</td><td>✅ 独立场景</td><td>✅ 6 张</td></tr>
+<tr><td>5</td><td><strong>US-GOODS-02</strong> 商品卡片展示分类与编号</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>6</td><td><strong>US-GOODS-03</strong> 上架与下架自己的商品</td><td>必须</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>7</td><td><strong>US-GOODS-04</strong> 查看商品详情</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>8</td><td><strong>US-GOODS-05</strong> 机审把关与转人工审核</td><td>必须</td><td>8</td><td>✅ 独立场景</td><td>✅ 1 张</td></tr>
+<tr><td>9</td><td><strong>US-ADMIN-01</strong> 管理员审核商品</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>10</td><td><strong>US-ADMIN-02</strong> 强制下架违规商品</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 3 张</td></tr>
+<tr><td>11</td><td><strong>US-ADMIN-03</strong> 用户启用/禁用</td><td>可以</td><td>1</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>12</td><td><strong>US-ADMIN-04</strong> 数据看板</td><td>应该</td><td>1</td><td>✅ 独立场景</td><td>✅ 1 张</td></tr>
+<tr><td>13</td><td><strong>US-SEARCH-01</strong> 关键词搜索商品</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>14</td><td><strong>US-SEARCH-02</strong> 按分类筛选</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>15</td><td><strong>US-FAV-01</strong> 收藏与取消收藏</td><td>应该</td><td>3</td><td>✅ 独立场景</td><td>✅ 3 张</td></tr>
+<tr><td>16</td><td><strong>US-FAV-02</strong> 查看我的收藏</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>17</td><td><strong>US-CHAT-01</strong> 私聊卖家</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 3 张</td></tr>
+<tr><td>18</td><td><strong>US-CHAT-02</strong> 消息已读回执</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>19</td><td><strong>US-CHAT-03</strong> 会话列表与未读数</td><td>应该</td><td>2</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>20</td><td><strong>US-ORDER-01</strong> 买家下单</td><td>必须</td><td>4</td><td>✅ 独立场景</td><td>✅ 4 张</td></tr>
+<tr><td>21</td><td><strong>US-ORDER-02</strong> 买卖双方订单视图</td><td>必须</td><td>3</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>22</td><td><strong>US-ORDER-03</strong> 确认交易完成</td><td>必须</td><td>1</td><td>✅ 独立场景</td><td>✅ 1 张</td></tr>
+<tr><td>23</td><td><strong>US-ORDER-04</strong> 取消订单并释放商品</td><td>必须</td><td>2</td><td>✅ 独立场景</td><td>✅ 3 张</td></tr>
+<tr><td>24</td><td><strong>US-RECO-01</strong> 首页个性化推荐</td><td>可以</td><td>2</td><td>✅ 独立场景</td><td>✅ 1 张</td></tr>
+<tr><td>25</td><td><strong>US-RECO-02</strong> 商品详情页相似商品</td><td>可以</td><td>1</td><td>✅ 独立场景</td><td>✅ 2 张</td></tr>
+<tr><td>26</td><td><strong>US-RECO-03</strong> 举报违规商品</td><td>可以</td><td>1</td><td>✅ 独立场景</td><td>✅ 3 张</td></tr>
+<tr><td>27</td><td><strong>US-EVAL-01</strong> 评价交易对方</td><td>必须</td><td>8</td><td>✅ 独立场景</td><td>✅ 4 张</td></tr>
+<tr><td>28</td><td><strong>US-EVAL-02</strong> 查看商品口碑</td><td>应该</td><td>6</td><td>✅ 独立场景</td><td>✅ 3 张</td></tr>
 </tbody></table>
-<p><strong>统计</strong>：功能型 28 条；有独立浏览器场景 <strong>28</strong> 条；有截图 <strong>28</strong> 条。</p>
-<hr>
-<blockquote>另有 <strong>9 条质量/非功能型需求</strong>不在本报告范围（US-SEARCH-03, US-QUALITY-01, US-QUALITY-02, US-QUALITY-03, US-QUALITY-04, US-QUALITY-05, US-QUALITY-06, US-QUALITY-07, US-EVAL-03）。</blockquote>
+<p><strong>统计</strong>：用户故事 28 条 / AC 81 条；有场景 <strong>28</strong> 条；有截图 <strong>28</strong> 条。</p>
 <h2>附：用户故事截图证据索引（自动生成，勿手改）</h2>
 <blockquote>本节由 <code>tools/gen-story-evidence-index.py</code> 生成：图片来自 <code>docs/story-evidence/</code>，<br>故事清单来自 <code>docs/user-stories.md</code>。重跑采图脚本后重新生成即可，不要手工编辑。</blockquote>
 <table><thead><tr><th>故事</th><th>优先级</th><th>截图数</th><th>状态</th></tr></thead><tbody>
 <tr><td>US-USER-01 注册账号</td><td>必须</td><td>2</td><td>✅ 2 张</td></tr>
 <tr><td>US-USER-02 登录与登录态保持</td><td>必须</td><td>3</td><td>✅ 3 张</td></tr>
-<tr><td>US-USER-03 完善个人资料与上传头像</td><td>应该</td><td>1</td><td>✅ 1 张</td></tr>
-<tr><td>US-GOODS-01 发布商品</td><td>必须</td><td>4</td><td>✅ 4 张</td></tr>
-<tr><td>US-GOODS-02 商品卡片展示分类与编号</td><td>应该</td><td>1</td><td>✅ 1 张</td></tr>
-<tr><td>US-GOODS-03 上架与下架自己的商品</td><td>必须</td><td>1</td><td>✅ 1 张</td></tr>
+<tr><td>US-USER-03 完善个人资料与上传头像</td><td>应该</td><td>2</td><td>✅ 2 张</td></tr>
+<tr><td>US-GOODS-01 发布商品</td><td>必须</td><td>6</td><td>✅ 6 张</td></tr>
+<tr><td>US-GOODS-02 商品卡片展示分类与编号</td><td>应该</td><td>2</td><td>✅ 2 张</td></tr>
+<tr><td>US-GOODS-03 上架与下架自己的商品</td><td>必须</td><td>2</td><td>✅ 2 张</td></tr>
 <tr><td>US-GOODS-04 查看商品详情</td><td>必须</td><td>2</td><td>✅ 2 张</td></tr>
-<tr><td>US-GOODS-05 机审把关与转人工审核</td><td>必须</td><td>0</td><td>❌ 缺图</td></tr>
-<tr><td>US-ADMIN-01 管理员审核商品</td><td>必须</td><td>1</td><td>✅ 1 张</td></tr>
-<tr><td>US-ADMIN-02 强制下架违规商品</td><td>应该</td><td>1</td><td>✅ 1 张</td></tr>
-<tr><td>US-ADMIN-03 用户启用/禁用</td><td>可以</td><td>1</td><td>✅ 1 张</td></tr>
+<tr><td>US-GOODS-05 机审把关与转人工审核</td><td>必须</td><td>1</td><td>✅ 1 张</td></tr>
+<tr><td>US-ADMIN-01 管理员审核商品</td><td>必须</td><td>2</td><td>✅ 2 张</td></tr>
+<tr><td>US-ADMIN-02 强制下架违规商品</td><td>应该</td><td>3</td><td>✅ 3 张</td></tr>
+<tr><td>US-ADMIN-03 用户启用/禁用</td><td>可以</td><td>2</td><td>✅ 2 张</td></tr>
 <tr><td>US-ADMIN-04 数据看板</td><td>应该</td><td>1</td><td>✅ 1 张</td></tr>
 <tr><td>US-SEARCH-01 关键词搜索商品</td><td>必须</td><td>2</td><td>✅ 2 张</td></tr>
-<tr><td>US-SEARCH-02 按分类筛选</td><td>应该</td><td>1</td><td>✅ 1 张</td></tr>
-<tr><td>US-SEARCH-03 只看在售商品（数据隔离）</td><td>必须</td><td>0</td><td>➖ 不适合（见 README）</td></tr>
+<tr><td>US-SEARCH-02 按分类筛选</td><td>应该</td><td>2</td><td>✅ 2 张</td></tr>
 <tr><td>US-FAV-01 收藏与取消收藏</td><td>应该</td><td>3</td><td>✅ 3 张</td></tr>
-<tr><td>US-FAV-02 查看我的收藏</td><td>应该</td><td>1</td><td>✅ 1 张</td></tr>
+<tr><td>US-FAV-02 查看我的收藏</td><td>应该</td><td>2</td><td>✅ 2 张</td></tr>
 <tr><td>US-CHAT-01 私聊卖家</td><td>必须</td><td>3</td><td>✅ 3 张</td></tr>
-<tr><td>US-CHAT-02 消息已读回执</td><td>应该</td><td>1</td><td>✅ 1 张</td></tr>
-<tr><td>US-CHAT-03 会话列表与未读数</td><td>应该</td><td>1</td><td>✅ 1 张</td></tr>
+<tr><td>US-CHAT-02 消息已读回执</td><td>应该</td><td>2</td><td>✅ 2 张</td></tr>
+<tr><td>US-CHAT-03 会话列表与未读数</td><td>应该</td><td>2</td><td>✅ 2 张</td></tr>
 <tr><td>US-ORDER-01 买家下单</td><td>必须</td><td>4</td><td>✅ 4 张</td></tr>
-<tr><td>US-ORDER-02 买卖双方订单视图</td><td>必须</td><td>0</td><td>➖ 不适合（见 README）</td></tr>
-<tr><td>US-ORDER-03 确认交易完成</td><td>必须</td><td>0</td><td>➖ 不适合（见 README）</td></tr>
-<tr><td>US-ORDER-04 取消订单并释放商品</td><td>必须</td><td>1</td><td>✅ 1 张</td></tr>
+<tr><td>US-ORDER-02 买卖双方订单视图</td><td>必须</td><td>2</td><td>✅ 2 张</td></tr>
+<tr><td>US-ORDER-03 确认交易完成</td><td>必须</td><td>1</td><td>✅ 1 张</td></tr>
+<tr><td>US-ORDER-04 取消订单并释放商品</td><td>必须</td><td>3</td><td>✅ 3 张</td></tr>
 <tr><td>US-RECO-01 首页个性化推荐</td><td>可以</td><td>1</td><td>✅ 1 张</td></tr>
-<tr><td>US-RECO-02 商品详情页相似商品</td><td>可以</td><td>1</td><td>✅ 1 张</td></tr>
-<tr><td>US-RECO-03 举报违规商品</td><td>可以</td><td>2</td><td>✅ 2 张</td></tr>
-<tr><td>US-QUALITY-01 接口权限与越权防护</td><td>必须</td><td>2</td><td>✅ 2 张</td></tr>
-<tr><td>US-QUALITY-02 页面三态完备（加载/空/错误）</td><td>应该</td><td>2</td><td>✅ 2 张</td></tr>
-<tr><td>US-QUALITY-03 界面视觉一致（设计令牌）</td><td>可以</td><td>0</td><td>➖ 不适合（见 README）</td></tr>
-<tr><td>US-QUALITY-04 可访问性与对比度</td><td>应该</td><td>0</td><td>➖ 不适合（见 README）</td></tr>
-<tr><td>US-QUALITY-05 窄屏可用（手机浏览）</td><td>应该</td><td>1</td><td>✅ 1 张</td></tr>
-<tr><td>US-QUALITY-06 热点数据缓存与限流</td><td>应该</td><td>1</td><td>✅ 1 张</td></tr>
-<tr><td>US-QUALITY-07 缺陷可追溯与质量不退化</td><td>必须</td><td>0</td><td>➖ 不适合（见 README）</td></tr>
-<tr><td>US-EVAL-01 评价交易对方</td><td>必须</td><td>3</td><td>✅ 3 张</td></tr>
-<tr><td>US-EVAL-02 查看商品口碑</td><td>应该</td><td>2</td><td>✅ 2 张</td></tr>
-<tr><td>US-EVAL-03 信用分联动与防刷</td><td>应该</td><td>0</td><td>➖ 不适合（见 README）</td></tr>
+<tr><td>US-RECO-02 商品详情页相似商品</td><td>可以</td><td>2</td><td>✅ 2 张</td></tr>
+<tr><td>US-RECO-03 举报违规商品</td><td>可以</td><td>3</td><td>✅ 3 张</td></tr>
+<tr><td>US-EVAL-01 评价交易对方</td><td>必须</td><td>4</td><td>✅ 4 张</td></tr>
+<tr><td>US-EVAL-02 查看商品口碑</td><td>应该</td><td>3</td><td>✅ 3 张</td></tr>
 </tbody></table>
-<p><strong>合计</strong>：37 条故事，<strong>29 条有截图</strong>（59 张），8 条无截图。</p>
+<p><strong>合计</strong>：28 条故事，<strong>28 条有截图</strong>（83 张），0 条无截图。</p>
 <h3>一、有截图的故事</h3>
 <h4>US-USER-01 注册账号（必须）</h4>
 <p><img alt="US-USER-01-1-注册页空表单校验" src="story-evidence/US-USER-01-1-注册页空表单校验.png"></p>
@@ -310,6 +282,8 @@ a{color:var(--accent)}
 <h4>US-USER-03 完善个人资料与上传头像（应该）</h4>
 <p><img alt="US-USER-03-1-个人资料编辑页" src="story-evidence/US-USER-03-1-个人资料编辑页.png"></p>
 <p><em>图：US-USER-03-1-个人资料编辑页</em></p>
+<p><img alt="US-USER-03-S1-个人资料编辑页" src="story-evidence/US-USER-03-S1-个人资料编辑页.png"></p>
+<p><em>图：US-USER-03-S1-个人资料编辑页</em></p>
 <h4>US-GOODS-01 发布商品（必须）</h4>
 <p><img alt="US-GOODS-01-1-空表单校验" src="story-evidence/US-GOODS-01-1-空表单校验.png"></p>
 <p><em>图：US-GOODS-01-1-空表单校验</em></p>
@@ -319,26 +293,45 @@ a{color:var(--accent)}
 <p><em>图：US-GOODS-01-3-首页可见新商品</em></p>
 <p><img alt="US-GOODS-01-4-机审拦截违规商品" src="story-evidence/US-GOODS-01-4-机审拦截违规商品.png"></p>
 <p><em>图：US-GOODS-01-4-机审拦截违规商品</em></p>
+<p><img alt="US-GOODS-01-S9-上传后缩略图正常" src="story-evidence/US-GOODS-01-S9-上传后缩略图正常.png"></p>
+<p><em>图：US-GOODS-01-S9-上传后缩略图正常</em></p>
+<p><img alt="US-GOODS-01-S9-发布页上传缩略图正常" src="story-evidence/US-GOODS-01-S9-发布页上传缩略图正常.png"></p>
+<p><em>图：US-GOODS-01-S9-发布页上传缩略图正常</em></p>
 <h4>US-GOODS-02 商品卡片展示分类与编号（应该）</h4>
 <p><img alt="US-GOODS-02-1-卡片分类与编号" src="story-evidence/US-GOODS-02-1-卡片分类与编号.png"></p>
 <p><em>图：US-GOODS-02-1-卡片分类与编号</em></p>
+<p><img alt="US-GOODS-02-S1-首页卡片分类与编号" src="story-evidence/US-GOODS-02-S1-首页卡片分类与编号.png"></p>
+<p><em>图：US-GOODS-02-S1-首页卡片分类与编号</em></p>
 <h4>US-GOODS-03 上架与下架自己的商品（必须）</h4>
 <p><img alt="US-GOODS-03-1-我的商品（上架下架入口）" src="story-evidence/US-GOODS-03-1-我的商品（上架下架入口）.png"></p>
 <p><em>图：US-GOODS-03-1-我的商品（上架下架入口）</em></p>
+<p><img alt="US-GOODS-03-S1-我的商品上下架入口" src="story-evidence/US-GOODS-03-S1-我的商品上下架入口.png"></p>
+<p><em>图：US-GOODS-03-S1-我的商品上下架入口</em></p>
 <h4>US-GOODS-04 查看商品详情（必须）</h4>
 <p><img alt="US-GOODS-04-1-商品详情页" src="story-evidence/US-GOODS-04-1-商品详情页.png"></p>
 <p><em>图：US-GOODS-04-1-商品详情页</em></p>
 <p><img alt="US-GOODS-04-2-不存在商品的异常态" src="story-evidence/US-GOODS-04-2-不存在商品的异常态.png"></p>
 <p><em>图：US-GOODS-04-2-不存在商品的异常态</em></p>
+<h4>US-GOODS-05 机审把关与转人工审核（必须）</h4>
+<p><img alt="US-GOODS-05-S1-机审拦截违规发布" src="story-evidence/US-GOODS-05-S1-机审拦截违规发布.png"></p>
+<p><em>图：US-GOODS-05-S1-机审拦截违规发布</em></p>
 <h4>US-ADMIN-01 管理员审核商品（必须）</h4>
 <p><img alt="US-ADMIN-01-1-商品审核页" src="story-evidence/US-ADMIN-01-1-商品审核页.png"></p>
 <p><em>图：US-ADMIN-01-1-商品审核页</em></p>
+<p><img alt="US-ADMIN-01-S1-商品审核页" src="story-evidence/US-ADMIN-01-S1-商品审核页.png"></p>
+<p><em>图：US-ADMIN-01-S1-商品审核页</em></p>
 <h4>US-ADMIN-02 强制下架违规商品（应该）</h4>
 <p><img alt="US-ADMIN-02-1-强制下架入口" src="story-evidence/US-ADMIN-02-1-强制下架入口.png"></p>
 <p><em>图：US-ADMIN-02-1-强制下架入口</em></p>
+<p><img alt="US-ADMIN-02-S1-在售商品强制下架入口" src="story-evidence/US-ADMIN-02-S1-在售商品强制下架入口.png"></p>
+<p><em>图：US-ADMIN-02-S1-在售商品强制下架入口</em></p>
+<p><img alt="US-ADMIN-02-S1-强制下架入口" src="story-evidence/US-ADMIN-02-S1-强制下架入口.png"></p>
+<p><em>图：US-ADMIN-02-S1-强制下架入口</em></p>
 <h4>US-ADMIN-03 用户启用/禁用（可以）</h4>
 <p><img alt="US-ADMIN-03-1-用户管理（启用禁用）" src="story-evidence/US-ADMIN-03-1-用户管理（启用禁用）.png"></p>
 <p><em>图：US-ADMIN-03-1-用户管理（启用禁用）</em></p>
+<p><img alt="US-ADMIN-03-S1-用户管理" src="story-evidence/US-ADMIN-03-S1-用户管理.png"></p>
+<p><em>图：US-ADMIN-03-S1-用户管理</em></p>
 <h4>US-ADMIN-04 数据看板（应该）</h4>
 <p><img alt="US-ADMIN-04-1-管理后台数据看板" src="story-evidence/US-ADMIN-04-1-管理后台数据看板.png"></p>
 <p><em>图：US-ADMIN-04-1-管理后台数据看板</em></p>
@@ -350,6 +343,8 @@ a{color:var(--accent)}
 <h4>US-SEARCH-02 按分类筛选（应该）</h4>
 <p><img alt="US-SEARCH-02-1-分类筛选" src="story-evidence/US-SEARCH-02-1-分类筛选.png"></p>
 <p><em>图：US-SEARCH-02-1-分类筛选</em></p>
+<p><img alt="US-SEARCH-02-S1-按分类筛选" src="story-evidence/US-SEARCH-02-S1-按分类筛选.png"></p>
+<p><em>图：US-SEARCH-02-S1-按分类筛选</em></p>
 <h4>US-FAV-01 收藏与取消收藏（应该）</h4>
 <p><img alt="US-FAV-01-1-收藏商品" src="story-evidence/US-FAV-01-1-收藏商品.png"></p>
 <p><em>图：US-FAV-01-1-收藏商品</em></p>
@@ -360,6 +355,8 @@ a{color:var(--accent)}
 <h4>US-FAV-02 查看我的收藏（应该）</h4>
 <p><img alt="US-FAV-02-1-我的收藏列表" src="story-evidence/US-FAV-02-1-我的收藏列表.png"></p>
 <p><em>图：US-FAV-02-1-我的收藏列表</em></p>
+<p><img alt="US-FAV-02-S1-我的收藏列表" src="story-evidence/US-FAV-02-S1-我的收藏列表.png"></p>
+<p><em>图：US-FAV-02-S1-我的收藏列表</em></p>
 <h4>US-CHAT-01 私聊卖家（必须）</h4>
 <p><img alt="US-CHAT-01-1-买家发送私信" src="story-evidence/US-CHAT-01-1-买家发送私信.png"></p>
 <p><em>图：US-CHAT-01-1-买家发送私信</em></p>
@@ -370,9 +367,13 @@ a{color:var(--accent)}
 <h4>US-CHAT-02 消息已读回执（应该）</h4>
 <p><img alt="US-CHAT-02-1-消息已读回执" src="story-evidence/US-CHAT-02-1-消息已读回执.png"></p>
 <p><em>图：US-CHAT-02-1-消息已读回执</em></p>
+<p><img alt="US-CHAT-02-S1-已读回执" src="story-evidence/US-CHAT-02-S1-已读回执.png"></p>
+<p><em>图：US-CHAT-02-S1-已读回执</em></p>
 <h4>US-CHAT-03 会话列表与未读数（应该）</h4>
 <p><img alt="US-CHAT-03-1-会话列表与未读数" src="story-evidence/US-CHAT-03-1-会话列表与未读数.png"></p>
 <p><em>图：US-CHAT-03-1-会话列表与未读数</em></p>
+<p><img alt="US-CHAT-03-S1-会话列表" src="story-evidence/US-CHAT-03-S1-会话列表.png"></p>
+<p><em>图：US-CHAT-03-S1-会话列表</em></p>
 <h4>US-ORDER-01 买家下单（必须）</h4>
 <p><img alt="US-ORDER-01-1-买家下单" src="story-evidence/US-ORDER-01-1-买家下单.png"></p>
 <p><em>图：US-ORDER-01-1-买家下单</em></p>
@@ -382,36 +383,36 @@ a{color:var(--accent)}
 <p><em>图：US-ORDER-01-3-卖家订单视图</em></p>
 <p><img alt="US-ORDER-01-4-卖家确认完成" src="story-evidence/US-ORDER-01-4-卖家确认完成.png"></p>
 <p><em>图：US-ORDER-01-4-卖家确认完成</em></p>
+<h4>US-ORDER-02 买卖双方订单视图（必须）</h4>
+<p><img alt="US-ORDER-02-S1-我买到的" src="story-evidence/US-ORDER-02-S1-我买到的.png"></p>
+<p><em>图：US-ORDER-02-S1-我买到的</em></p>
+<p><img alt="US-ORDER-02-S2-我卖出的" src="story-evidence/US-ORDER-02-S2-我卖出的.png"></p>
+<p><em>图：US-ORDER-02-S2-我卖出的</em></p>
+<h4>US-ORDER-03 确认交易完成（必须）</h4>
+<p><img alt="US-ORDER-03-S1-订单详情与完成状态" src="story-evidence/US-ORDER-03-S1-订单详情与完成状态.png"></p>
+<p><em>图：US-ORDER-03-S1-订单详情与完成状态</em></p>
 <h4>US-ORDER-04 取消订单并释放商品（必须）</h4>
 <p><img alt="US-ORDER-04-1-取消订单确认弹窗" src="story-evidence/US-ORDER-04-1-取消订单确认弹窗.png"></p>
 <p><em>图：US-ORDER-04-1-取消订单确认弹窗</em></p>
+<p><img alt="US-ORDER-04-S1-待交易订单（取消前）" src="story-evidence/US-ORDER-04-S1-待交易订单（取消前）.png"></p>
+<p><em>图：US-ORDER-04-S1-待交易订单（取消前）</em></p>
+<p><img alt="US-ORDER-04-S2-取消后订单已取消" src="story-evidence/US-ORDER-04-S2-取消后订单已取消.png"></p>
+<p><em>图：US-ORDER-04-S2-取消后订单已取消</em></p>
 <h4>US-RECO-01 首页个性化推荐（可以）</h4>
 <p><img alt="US-RECO-01-1-首页猜你喜欢" src="story-evidence/US-RECO-01-1-首页猜你喜欢.png"></p>
 <p><em>图：US-RECO-01-1-首页猜你喜欢</em></p>
 <h4>US-RECO-02 商品详情页相似商品（可以）</h4>
 <p><img alt="US-RECO-02-1-详情页相似商品" src="story-evidence/US-RECO-02-1-详情页相似商品.png"></p>
 <p><em>图：US-RECO-02-1-详情页相似商品</em></p>
+<p><img alt="US-RECO-02-S1-详情页相似商品" src="story-evidence/US-RECO-02-S1-详情页相似商品.png"></p>
+<p><em>图：US-RECO-02-S1-详情页相似商品</em></p>
 <h4>US-RECO-03 举报违规商品（可以）</h4>
 <p><img alt="US-RECO-03-1-举报弹窗" src="story-evidence/US-RECO-03-1-举报弹窗.png"></p>
 <p><em>图：US-RECO-03-1-举报弹窗</em></p>
 <p><img alt="US-RECO-03-2-举报在后台可见" src="story-evidence/US-RECO-03-2-举报在后台可见.png"></p>
 <p><em>图：US-RECO-03-2-举报在后台可见</em></p>
-<h4>US-QUALITY-01 接口权限与越权防护（必须）</h4>
-<p><img alt="US-QUALITY-01-1-普通用户访问后台被拦截" src="story-evidence/US-QUALITY-01-1-普通用户访问后台被拦截.png"></p>
-<p><em>图：US-QUALITY-01-1-普通用户访问后台被拦截</em></p>
-<p><img alt="US-QUALITY-01-2-管理员可进入后台" src="story-evidence/US-QUALITY-01-2-管理员可进入后台.png"></p>
-<p><em>图：US-QUALITY-01-2-管理员可进入后台</em></p>
-<h4>US-QUALITY-02 页面三态完备（加载/空/错误）（应该）</h4>
-<p><img alt="US-QUALITY-02-1-加载态（骨架屏）" src="story-evidence/US-QUALITY-02-1-加载态（骨架屏）.png"></p>
-<p><em>图：US-QUALITY-02-1-加载态（骨架屏）</em></p>
-<p><img alt="US-QUALITY-02-3-错误态（可重试）" src="story-evidence/US-QUALITY-02-3-错误态（可重试）.png"></p>
-<p><em>图：US-QUALITY-02-3-错误态（可重试）</em></p>
-<h4>US-QUALITY-05 窄屏可用（手机浏览）（应该）</h4>
-<p><img alt="US-QUALITY-05-1-390px窄屏首页" src="story-evidence/US-QUALITY-05-1-390px窄屏首页.png"></p>
-<p><em>图：US-QUALITY-05-1-390px窄屏首页</em></p>
-<h4>US-QUALITY-06 热点数据缓存与限流（应该）</h4>
-<p><img alt="US-QUALITY-06-1-登录限流提示" src="story-evidence/US-QUALITY-06-1-登录限流提示.png"></p>
-<p><em>图：US-QUALITY-06-1-登录限流提示</em></p>
+<p><img alt="US-RECO-03-S1-举报弹窗" src="story-evidence/US-RECO-03-S1-举报弹窗.png"></p>
+<p><em>图：US-RECO-03-S1-举报弹窗</em></p>
 <h4>US-EVAL-01 评价交易对方（必须）</h4>
 <p><img alt="US-EVAL-01-1-订单详情评价入口" src="story-evidence/US-EVAL-01-1-订单详情评价入口.png"></p>
 <p><em>图：US-EVAL-01-1-订单详情评价入口</em></p>
@@ -419,20 +420,13 @@ a{color:var(--accent)}
 <p><em>图：US-EVAL-01-2-评价弹窗</em></p>
 <p><img alt="US-EVAL-01-3-重复评价被拦下" src="story-evidence/US-EVAL-01-3-重复评价被拦下.png"></p>
 <p><em>图：US-EVAL-01-3-重复评价被拦下</em></p>
+<p><img alt="US-EVAL-01-S2-评价提交后" src="story-evidence/US-EVAL-01-S2-评价提交后.png"></p>
+<p><em>图：US-EVAL-01-S2-评价提交后</em></p>
 <h4>US-EVAL-02 查看商品口碑（应该）</h4>
 <p><img alt="US-EVAL-02-1-详情页评价区（评价前空态）" src="story-evidence/US-EVAL-02-1-详情页评价区（评价前空态）.png"></p>
 <p><em>图：US-EVAL-02-1-详情页评价区（评价前空态）</em></p>
 <p><img alt="US-EVAL-02-2-详情页评价区（含匿名评价）" src="story-evidence/US-EVAL-02-2-详情页评价区（含匿名评价）.png"></p>
 <p><em>图：US-EVAL-02-2-详情页评价区（含匿名评价）</em></p>
-<h3>二、无截图的故事（附原因）</h3>
-<ul>
-<li><strong>US-GOODS-05 机审把关与转人工审核</strong>：尚未采集</li>
-<li><strong>US-SEARCH-03 只看在售商品（数据隔离）</strong>：断言在接口返回值上（只看在售），界面看不出过滤在哪一层</li>
-<li><strong>US-ORDER-02 买卖双方订单视图</strong>：已被 US-ORDER-01 的买家/卖家视图两张覆盖</li>
-<li><strong>US-ORDER-03 确认交易完成</strong>：已被 US-ORDER-01 的"卖家确认完成"一张覆盖</li>
-<li><strong>US-QUALITY-03 界面视觉一致（设计令牌）</strong>：断言是源码静态属性（零裸色值），没有界面可看</li>
-<li><strong>US-QUALITY-04 可访问性与对比度</strong>：对比度/alt/键盘可达都是脚本计算结论</li>
-<li><strong>US-QUALITY-07 缺陷可追溯与质量不退化</strong>：断言是 CI 结论，Actions 页需登录，本地截不到</li>
-<li><strong>US-EVAL-03 信用分联动与防刷</strong>：变化在数据层（±1、夹 [0,150]），界面只有静态数字</li>
-</ul>
+<p><img alt="US-EVAL-02-S1-商品口碑区" src="story-evidence/US-EVAL-02-S1-商品口碑区.png"></p>
+<p><em>图：US-EVAL-02-S1-商品口碑区</em></p>
 <p>&lt;!-- STORY-EVIDENCE:END --&gt;</p></div></body></html>

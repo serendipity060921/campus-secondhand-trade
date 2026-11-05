@@ -22,11 +22,11 @@ md = REPORT.read_text(encoding='utf-8')
 # 抓第五节表格行
 rows = []
 for line in md.splitlines():
-    m = re.match(r'\| (\d+) \| \*\*(US-[A-Z]+-\d+)\*\* (.+?) \| (必须|应该|可以) \| (\d+) \| (.+?) \| (.+?) \| (.*?) \|$', line)
+    m = re.match(r'\| (\d+) \| \*\*(US-[A-Z]+-\d+)\*\* (.+?) \| (必须|应该|可以) \| (\d+) \| (.+?) \| (.+?) \|(?: (.*?) \|)?$', line)
     if m:
         rows.append({'idx': m.group(1), 'sid': m.group(2), 'name': m.group(3),
                      'pri': m.group(4), 'ac': m.group(5), 'scene': m.group(6).strip(),
-                     'shotcell': m.group(7).strip(), 'how': m.group(8)})
+                     'shotcell': m.group(7).strip(), 'how': (m.group(8) or '').strip()})
 
 assert rows, '没抓到第五节表格，检查报告格式'
 

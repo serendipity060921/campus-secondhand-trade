@@ -1,0 +1,113 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>非功能需求（NFR）</title><style>
+:root{--ink:#1a1d19;--ink2:#4a4f47;--muted:#8a8f86;--rule:#d8dbd3;--paper:#f6f7f4;--card:#fff;--accent:#35603f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+     font:16px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:40px 28px 100px;background:var(--card);
+      min-height:100vh;box-shadow:0 0 0 1px var(--rule)}
+h1{font-size:30px;margin:0 0 8px;line-height:1.3}
+h2{font-size:22px;margin:36px 0 12px;padding-bottom:8px;border-bottom:1.5px solid var(--rule)}
+h3{font-size:18px;margin:26px 0 8px}
+h4{font-size:16px;margin:18px 0 6px;color:var(--ink2)}
+p{margin:10px 0}
+ul,ol{margin:10px 0;padding-left:26px}
+li{margin:4px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th,td{border:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper);font-weight:600}
+tr:nth-child(even) td{background:#fbfcfa}
+code{background:#f0f2ee;padding:1px 5px;border-radius:3px;font-size:13px;
+     font-family:Consolas,"Courier New",monospace}
+pre{background:#f0f2ee;padding:14px;border-radius:6px;overflow:auto;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0}
+blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--accent);
+           background:#f7f9f6;color:var(--ink2)}
+img{max-width:100%;border:1px solid var(--rule);border-radius:4px;margin:6px 0}
+hr{border:none;border-top:1px solid var(--rule);margin:28px 0}
+a{color:var(--accent)}
+.meta{color:var(--muted);font-size:13px;margin-bottom:24px}
+@media print{
+  body{background:#fff}
+  .wrap{box-shadow:none;max-width:none;padding:0}
+  h2{page-break-after:avoid}
+  table,pre,img{page-break-inside:avoid}
+}
+</style></head><body><div class="wrap"><div class="meta">来源：docs\非功能需求（NFR）.md　|　打印成 PDF：Ctrl+P → 目标选「另存为 PDF」</div><h1>非功能需求（NFR）</h1>
+<blockquote>本文件原为 <code>docs/user-stories.md</code> 第 9 节「质量与非功能需求（US-QUALITY）」。<br>2026-11-05 按要求<strong>从用户故事集中移出</strong>：它们的验收对象是接口返回值 / 源码静态属性 /<br>数据层变化 / CI 结论，不是「用户能做什么、看到什么」，严格归类属<strong>非功能需求</strong>，<br>不应计入用户故事条数。移出是为了口径严谨，<strong>工作与证据全部保留</strong>。</blockquote>
+<h2>一、需求条目（原 US-QUALITY / US-SEARCH-03 / US-EVAL-03）</h2>
+<h3>质量与非功能需求（US-QUALITY）</h3>
+<blockquote><strong>归类说明</strong>：本节 9 条（US-QUALITY-01~07、US-SEARCH-03、US-EVAL-03）严格归类为<strong>非功能需求</strong>，用故事格式书写只为纳入优先级与追溯；<br>它们的验收对象不是界面，因此<strong>不产生浏览器场景与截图</strong>，也不写入《用户故事报告》。</blockquote>
+<blockquote>这一组是<strong>跨功能的非功能需求</strong>，也是本项目测试与质量工程的主要对象。</blockquote>
+<h3>US-QUALITY-01 接口权限与越权防护 【必须】</h3>
+<p><strong>作为</strong> 平台方，<strong>我希望</strong> 任何写操作都必须校验身份与归属，<strong>以便</strong> 防止越权操作与信息泄漏。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 我未登录 / When 调用任何写接口 / Then 返回 401，操作不生效。</li>
+<li>AC2　Given 我登录为普通用户 / When 调用管理员接口 / Then 返回 403。</li>
+<li>AC3　Given 我登录为普通用户 / When 操作<strong>他人</strong>的订单/商品 / Then 被拒绝，数据不变。</li>
+</ul>
+<p><strong>对应测试</strong>：权限越权 6 条 + 部署验证 D10/D24　<strong>相关缺陷</strong>：BUG-01、BUG-02（均已修复）</p>
+<h3>US-QUALITY-02 页面三态完备（加载/空/错误）【应该】</h3>
+<p><strong>作为</strong> 用户，<strong>我希望</strong> 每个页面在加载中、无数据、请求失败时都有明确反馈，<strong>以便</strong> 不会面对空白页不知所措。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 数据正在请求 / When 页面打开 / Then 显示加载态（骨架屏或加载提示）。</li>
+<li>AC2　Given 请求返回空列表 / When 页面渲染 / Then 显示空状态文案与引导。</li>
+<li>AC3　Given 请求失败（如后端未启动）/ When 页面渲染 / Then 显示错误态与重试入口，<strong>不是白屏</strong>。</li>
+<li>AC4　Givne 全部页面 / When 运行 <code>tools/check-states.py</code> / Then 20 个页面全部达标、缺失数为 0。</li>
+</ul>
+<p><strong>对应测试</strong>：<code>tools/check-states.py</code>（CI 中运行）、部署验证 D3~D5　<strong>相关缺陷</strong>：BUG-16-05（非法模板组合与失效绑定，已修复）</p>
+<h3>US-QUALITY-03 界面视觉一致（设计令牌）【可以】</h3>
+<p><strong>作为</strong> 平台方，<strong>我希望</strong> 所有颜色、间距来自统一的设计令牌，<strong>以便</strong> 视觉一致且便于统一调整。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 前端全部源码 / When 运行 <code>tools/check-tokens.py</code> / Then 裸色值数量为 0（CI 中锁定为 0）。</li>
+</ul>
+<p><strong>对应测试</strong>：<code>tools/check-tokens.py</code>　<strong>相关缺陷</strong>：无</p>
+<h3>US-QUALITY-04 可访问性与对比度 【应该】</h3>
+<p><strong>作为</strong> 有视觉或操作障碍的用户，<strong>我希望</strong> 文字对比度达标、键盘可操作、图片有替代文本，<strong>以便</strong> 正常使用平台。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 全部页面 / When 运行 <code>tools/ui-a11y.py</code> / Then 对比度不达标项为 0（装饰性文字除外）、焦点可见、图片均有 alt。</li>
+<li>AC2　Given 我只用键盘 / When 浏览并操作主要流程 / Then 所有可点击元素均可到达并触发（无鼠标独占元素）。</li>
+</ul>
+<p><strong>对应测试</strong>：<code>tools/ui-a11y.py</code>、<code>tools/check-states.py</code>（鼠标独占 0）　<strong>相关缺陷</strong>：BUG-16-04（对比度回归 3 → 15 处，已修复）</p>
+<h3>US-QUALITY-05 窄屏可用（手机浏览）【应该】</h3>
+<p><strong>作为</strong> 用手机浏览的同学，<strong>我希望</strong> 页面在 390px 宽度下不出现横向溢出，<strong>以便</strong> 正常查看与操作。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 前台页面 / When 视口宽度为 390px / Then 无横向滚动条，核心操作可完成。</li>
+<li>AC2　（已知例外）管理后台侧栏固定宽度，窄屏会溢出；<strong>经评估不做适配</strong>，已记录在测试报告的遗留问题中。</li>
+</ul>
+<p><strong>对应测试</strong>：<code>tools/capture-ui.py</code> + 人工走查　<strong>相关缺陷</strong>：无</p>
+<h3>US-QUALITY-06 热点数据缓存与限流 【应该】</h3>
+<p><strong>作为</strong> 平台方，<strong>我希望</strong> 热点接口有缓存、高频接口有限流，<strong>以便</strong> 保证系统在高并发下可用。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 商品列表/详情/分类/推荐接口 / When 重复请求 / Then 命中缓存（Redis），响应时间显著下降。</li>
+<li>AC2　Given 缓存中不存在的数据被反复请求 / When 请求 / Then 空值缓存生效，不压垮数据库（防穿透）。</li>
+<li>AC3　Given 同一 IP 高频调用登录接口 / When 超过阈值 / Then 返回限流提示（本项目对<strong>本机同样生效</strong>，需专门测试）。</li>
+</ul>
+<p><strong>对应测试</strong>：部署验证 D12/D17/D18、压测脚本 load-test.py　<strong>相关缺陷</strong>：无</p>
+<h3>US-QUALITY-07 缺陷可追溯与质量不退化 【必须】</h3>
+<p><strong>作为</strong> 项目维护者，<strong>我希望</strong> 每个缺陷都有记录、每次改版都不让质量指标倒退，<strong>以便</strong> 长期维护。</p>
+<p><strong>验收标准</strong></p>
+<ul>
+<li>AC1　Given 发现任何缺陷 / When 登记 / Then 记录发现方式、复现步骤、根因、修复与验证结果。</li>
+<li>AC2　Given 代码推送 / When CI 运行 / Then 三类静态检查与三套测试自动执行；指标超过阈值则失败（棘轮机制）。</li>
+</ul>
+<p><strong>对应测试</strong>：<code>.github/workflows/ci.yml</code>、<code>docs/defect-log.md</code>　<strong>相关缺陷</strong>：全部 12 条缺陷均按此流程闭环</p>
+<hr>
+<h2>二、验证证据映射</h2>
+<table><thead><tr><th>原编号</th><th>由什么覆盖</th></tr></thead><tbody>
+<tr><td>US-QUALITY-01</td><td>安全套件 52 条（匿名 401 / 越权 403）+ 浏览器场景截图 US-QUALITY-01-1/2</td></tr>
+<tr><td>US-QUALITY-02</td><td>check-states.py（CI）+ 部署验证 D3~D5 + 截图 US-QUALITY-02-1/3</td></tr>
+<tr><td>US-QUALITY-03</td><td>check-tokens.py（CI 门禁，阈值 0）</td></tr>
+<tr><td>US-QUALITY-04</td><td>ui-a11y.py + check-states.py（CI）</td></tr>
+<tr><td>US-QUALITY-05</td><td>浏览器 390px 场景 + 截图 US-QUALITY-05-1</td></tr>
+<tr><td>US-QUALITY-06</td><td>部署验证 D12/D17/D18 + 压测脚本 + 截图 US-QUALITY-06-1</td></tr>
+<tr><td>US-QUALITY-07</td><td>ci.yml 覆盖率/用例数棘轮 + defect-log 追溯</td></tr>
+<tr><td>US-SEARCH-03</td><td>部署验证 D24（接口返回集合只含在售）+ 安全套件</td></tr>
+<tr><td>US-EVAL-03</td><td>后端单测（±1 与 [0,150] 夹紧、每单只变一次、SQL 原子更新）</td></tr>
+</tbody></table>
+<blockquote>说明：这些条目的编号沿用 <code>US-*</code> 前缀仅为便于追溯历史；<br>在论文与报告中应表述为「非功能需求」，不计入用户故事总数（28 条）。</blockquote></div></body></html>
