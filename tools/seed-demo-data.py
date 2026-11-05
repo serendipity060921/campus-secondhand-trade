@@ -179,7 +179,42 @@ def capture(args):
     print(f'    共 {ins} 条 INSERT（--skip-extended-insert 保证一行一条，便于比对）')
 
 
+def non_baseline_rows():
+    """返回"不属于基线快照"的数据（用户自己发的商品/订单等）。
+
+    ★ 背景：2026-11-05 我用 --reset 把学生刚发布的商品（id=277）连带删掉了。
+    防线是：只要有非基线数据，就必须显式 --force 才允许清库。
+    """
+    body = BASELINE.read_text(encoding='utf-8')
+    base_p = {int(x) for x in re.findall(r"INSERT INTO `product`[^\n]*?VALUES \((\d+),", body)}
+    base_o = {int(x) for x in re.findall(r"INSERT INTO `orders`[^\n]*?VALUES \((\d+),", body)}
+    out = subprocess.run([MYSQL, *AUTH, '-N', '-B', '--default-character-set=utf8mb4', '-e',
+                          f'USE {DB}; SELECT id, title FROM product; SELECT id FROM orders;'],
+                         capture_output=True, text=True, encoding='utf-8').stdout
+    cur_p, cur_o = [], []
+    for line in out.splitlines():
+        parts = line.split('\t')
+        if len(parts) == 2 and parts[0].strip().isdigit():
+            cur_p.append((int(parts[0]), parts[1]))
+        elif len(parts) == 1 and parts[0].strip().isdigit():
+            cur_o.append(int(parts[0]))
+    extra_p = [x for x in cur_p if x[0] not in base_p]
+    extra_o = [x for x in cur_o if x not in base_o]
+    return extra_p, extra_o
+
+
 def reset(args):
+    if not args.dry_run and not getattr(args, 'force', False):
+        extra_p, extra_o = non_baseline_rows()
+        if extra_p or extra_o:
+            print('\n  ⛔ 拒绝复位：库里存在【不属于演示基线】的数据')
+            for pid, title in extra_p[:8]:
+                print(f'     商品 #{pid}  {title[:30]}')
+            for oid in extra_o[:8]:
+                print(f'     订单 #{oid}')
+            print('\n  这是防止再次误删你自己发布的内容（详见 BUG-18）。')
+            print('  确认要清空吗？加 --force 重跑；不想清空就用 --verify 只核对。')
+            sys.exit(3)
     if not BASELINE.exists():
         print('  ✗ 找不到基线快照，请先执行 --capture')
         sys.exit(2)
