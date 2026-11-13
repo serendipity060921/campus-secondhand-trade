@@ -161,4 +161,122 @@ a{color:var(--accent)}
 <li><strong>教训</strong>：① <strong>部署形态与直连后端是两条链路</strong>，只测直连会漏掉代理层；</li>
 </ul>
 <p>  ② 验收标准要写"用户能看到什么"，不能写"接口返回什么"</p>
+<hr>
+<h3>BUG-19【严重 · 数据安全】schema 脚本里的 USE 把「测试库操作」带回演示库，再次清空</h3>
+<ul>
+<li><strong>发现方式</strong>：BUG-18 恢复后，我为做"测试库隔离"执行</li>
+</ul>
+<p>  <code>Get-Content db\schema\01-schema.sql | mysql campus_trade_test</code>，</p>
+<p>  响应里出现 <code>Failed to open the referenced table 'user'</code>，随后演示库商品数变成 0</p>
+<ul>
+<li><strong>根因</strong>：<code>db/schema/01-schema.sql</code> 开头有 <code>CREATE DATABASE ... campus_trade</code> 与 <code>USE campus_trade;</code>，</li>
+</ul>
+<p>  即使命令行指定了 <code>campus_trade_test</code>，执行到 <code>USE</code> 就切回演示库；</p>
+<p>  而该文件含 <code>DROP TABLE IF EXISTS</code> → <strong>演示库表被删重建</strong></p>
+<ul>
+<li><strong>影响</strong>：演示库第二次被清空，学生商品 #277 再次丢失</li>
+<li><strong>恢复</strong>：从 <code>deploy/windows/backups/campus_trade-20261105-160224.sql</code> 完整恢复，</li>
+</ul>
+<p>  再从 <code>db/demo-data/backup-20261105-152152.sql</code> 回灌商品 #277 →</p>
+<p>  user 4 / product 18 / orders 4 / favorite 4，商品 277 在售 ✓</p>
+<p>  （恢复时又踩一坑：PowerShell <code>&gt;</code> 把备份写成 UTF-16，mysql 报 <code>ASCII '\0' appeared</code>，</p>
+<p>   需转 UTF-8 并加 <code>--binary-mode</code> 才能导入）</p>
+<ul>
+<li><strong>修复</strong>：</li>
+</ul>
+<ol>
+<li>新增 <code>tools/apply-schema.py</code>：应用前<strong>剥掉</strong> <code>USE</code> / <code>CREATE DATABASE</code>，强制落到目标库</li>
+<li><code>seed-demo-data.py</code> 默认库改为 <strong><code>campus_trade_test</code></strong>，动演示库必须显式 <code>--db campus_trade</code></li>
+<li>测试后端独立：8082 → <code>campus_trade_test</code> + Redis db1 + <code>uploads-test</code> 目录</li>
+<li>保留 <code>--force</code> 保护与自动备份</li>
+</ol>
+<ul>
+<li><strong>教训</strong>：</li>
+</ul>
+<p>  ① 任何"看起来只作用于指定库"的 SQL 文件，先确认里面没有 <code>USE</code></p>
+<p>  ② 备份/恢复链路本身也要验证（UTF-16 的坑）</p>
+<p>  ③ 连续两次动到学生数据，说明"靠自觉"不够 —— 必须靠<strong>工具默认值</strong>（默认测试库）</p>
+<hr>
+<h3>BUG-21【中 · 逻辑缺陷】关键词搜索不匹配分类名，导致"分类正确但标题无关键词"的商品搜不到</h3>
+<ul>
+<li><strong>发现方式</strong>：学生反馈「搜『教材』只有 2 件，我刚发的『计算机操作系统』不是吗？」</li>
+<li><strong>排查</strong>：该商品 <code>category_id=1</code>（教材书籍）✓、<code>status=1</code> 在售 ✓、标题"计算机操作系统"、</li>
+</ul>
+<p>  描述为空 → 搜索实现是 <code>title LIKE %kw% OR description LIKE %kw%</code>，</p>
+<p>  <strong>不含分类名</strong> → 所以搜「教材」搜不到它</p>
+<ul>
+<li><strong>修复</strong>：<code>ProductModuleServiceImpl.pageList</code> 与 <code>ProductSearchServiceImpl.search</code> 都改为</li>
+</ul>
+<p>  「标题 / 描述 / <strong>分类名</strong>」三路匹配（先按名称查出命中的分类 id，再 <code>OR category_id IN (...)</code>，</p>
+<p>  避免把用户输入直接拼进 SQL）</p>
+<ul>
+<li><strong>验证</strong>：搜「教材」→ 3 件（含"计算机操作系统"）；搜「操作系统」→ 1 件；搜「数据结构」→ 1 件</li>
+<li><strong>回归</strong>：<code>tests/e2e/test-story-scenarios.py</code> 增加 US-SEARCH-01 断言（≥3 件且含该商品）</li>
+<li><strong>教训</strong>：用户对"搜索"的预期是<strong>语义级</strong>（我搜教材，就该出教材类的东西），</li>
+</ul>
+<p>  而实现只做了<strong>字段级</strong>；验收标准要写清"搜什么、按哪些字段命中"</p>
+<hr>
+<h3>BUG-18【严重 · 数据安全】复位脚本无差别清库，删掉了学生刚发布的商品</h3>
+<ul>
+<li><strong>发现方式</strong>：学生反馈「我刚刚明明发布了一个商品，怎么不见了」</li>
+<li><strong>现象</strong>：发布页显示成功，但首页与「我的商品」都没有；数据库里也查不到该行</li>
+<li><strong>定位</strong>：</li>
+</ul>
+<ol>
+<li>后端日志 <code>15:14:05 [商品发布] id=277 title=计算机操作系统 sellerId=6 图片数=1 状态=在售</code></li>
+</ol>
+<p>     → <strong>发布是成功的</strong>，机审结论为 <code>PASS</code></p>
+<ol>
+<li>数据库 <code>product</code> 表 <code>AUTO_INCREMENT=278</code>，但没有 id=277 的行 → 说明被 DELETE 过</li>
+<li><code>tools/seed-demo-data.py --reset</code> 的 <code>DELETE_ORDER</code> 会 <code>DELETE FROM product</code>（无差别清空），</li>
+</ol>
+<p>     我为跑验证套件反复执行了它 → 把学生的真实数据当成"测试数据"删了</p>
+<ul>
+<li><strong>影响</strong>：商品 #277「计算机操作系统」（卖家 serendipity / id=6）被删；演示数据被重置</li>
+<li><strong>恢复</strong>：脚本自带自动备份，从 <code>db/demo-data/backup-20261105-152152.sql</code> 回灌</li>
+</ul>
+<p>  <code>product</code> 与 <code>product_image</code> 两行 → 详情接口 200、封面图 200、首页可见</p>
+<ul>
+<li><strong>修复</strong>：</li>
+</ul>
+<ol>
+<li><code>--reset</code> 先检测"非基线数据"（商品/订单 id 不在基线快照里），存在则<strong>拒绝执行</strong>，须 <code>--force</code></li>
+<li>保留清库前自动备份（<code>db/demo-data/backup-*.sql</code>）</li>
+<li>清库前打印将删除的内容</li>
+</ol>
+<ul>
+<li><strong>教训</strong>：</li>
+</ul>
+<p>  ① <strong>测试库与用户数据必须分开</strong>：同一套 MySQL 承担两件事，迟早出事</p>
+<p>  ② 破坏性操作前要<strong>备份 + 二次确认</strong>，不能因为"是演示数据"就默认安全</p>
+<p>  ③ 做这类操作前应先问一句，而不是跑完再解释</p>
+<ul>
+<li><strong>回归</strong>：<code>tools/seed-demo-data.py</code> 默认库改为 <code>campus_trade_test</code>（见 BUG-19）</li>
+</ul>
+<hr>
+<h3>BUG-20【中 · 界面】顶栏头像永远显示昵称首字，不显示上传的图片</h3>
+<ul>
+<li><strong>发现方式</strong>：学生反馈「改了头像不显示，还是显示一个薇字」</li>
+<li><strong>排查顺序（数据 → 状态 → 模板）</strong>：</li>
+</ul>
+<ol>
+<li>数据库：<code>user.avatar = /upload/2026/11/e50c99….jpg</code>（320 KB，HTTP 200）→ <strong>数据正常</strong></li>
+<li>状态：编辑页保存时已调用 <code>userStore.setLoginState(...)</code> → <strong>store 有 avatar</strong></li>
+<li>模板：<code>layout/FrontLayout.vue</code> 写的是</li>
+</ol>
+<p>     <code>&lt;el-avatar :size="28"&gt;{{ userStore.nickname.slice(0, 1) }}&lt;/el-avatar&gt;</code></p>
+<p>     —— <strong>只有插槽文本，没有 <code>:src</code></strong> → 永远显示首字</p>
+<ul>
+<li><strong>修复</strong>：改为 <code>:src="userStore.userInfo?.avatar || undefined"</code>，保留首字作回退；</li>
+</ul>
+<p>  <code>views/message/Chat.vue</code> 的对端头像同样处理；<code>pnpm build</code> 重建 dist</p>
+<ul>
+<li><strong>验证</strong>：用真实头像（2560×1440）跑浏览器实测 → 顶栏 <code>&lt;img src="/upload/…"&gt;</code>、<code>naturalWidth=2560</code> ✓</li>
+<li><strong>附带发现</strong>：<code>stu_test01</code> 的头像文件仅 0.1 KB（坏文件）→ Element Plus 回退显示首字，</li>
+</ul>
+<p>  属<strong>数据问题</strong>而非代码问题</p>
+<ul>
+<li><strong>教训</strong>：界面元素"有则显示、无则回退"这类分支，必须<strong>两种数据都测</strong>；</li>
+</ul>
+<p>  只测有头像的账号，会漏掉 <code>:src</code> 没绑定的低级错误</p>
 <hr></div></body></html>
