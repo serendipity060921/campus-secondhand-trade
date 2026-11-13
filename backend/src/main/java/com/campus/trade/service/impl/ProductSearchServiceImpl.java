@@ -58,7 +58,18 @@ public class ProductSearchServiceImpl implements ProductSearchService {
 
         // ② 关键词：按商品名称模糊匹配
         if (StringUtils.hasText(dto.getKeyword())) {
-            wrapper.like(Product::getTitle, dto.getKeyword().trim());
+            String kw = dto.getKeyword().trim();
+            // ★ 同时匹配分类名（与列表搜索保持一致）
+            java.util.List<Long> kwCategoryIds = categoryService.list(
+                            new LambdaQueryWrapper<com.campus.trade.entity.Category>()
+                                    .like(com.campus.trade.entity.Category::getName, kw))
+                    .stream().map(com.campus.trade.entity.Category::getId).toList();
+            wrapper.and(w -> {
+                w.like(Product::getTitle, kw);
+                if (!kwCategoryIds.isEmpty()) {
+                    w.or().in(Product::getCategoryId, kwCategoryIds);
+                }
+            });
         }
 
         // ③ 分类筛选：一级分类自动包含子分类

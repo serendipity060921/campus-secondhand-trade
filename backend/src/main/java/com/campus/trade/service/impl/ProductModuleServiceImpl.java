@@ -514,8 +514,18 @@ public class ProductModuleServiceImpl implements ProductModuleService {
         // 关键词：匹配名称或描述
         if (StringUtils.hasText(query.getKeyword())) {
             String keyword = query.getKeyword().trim();
-            wrapper.and(w -> w.like(Product::getTitle, keyword)
-                    .or().like(Product::getDescription, keyword));
+            // ★ 关键词同时匹配「分类名」：搜「教材」应能找到所有属于教材类目的商品
+            //   （学生反馈：标题里没有"教材"二字、但分类是"教材书籍"的商品搜不到）
+            java.util.List<Long> kwCategoryIds = categoryService.list(
+                            new LambdaQueryWrapper<com.campus.trade.entity.Category>()
+                                    .like(com.campus.trade.entity.Category::getName, keyword))
+                    .stream().map(com.campus.trade.entity.Category::getId).toList();
+            wrapper.and(w -> {
+                w.like(Product::getTitle, keyword).or().like(Product::getDescription, keyword);
+                if (!kwCategoryIds.isEmpty()) {
+                    w.or().in(Product::getCategoryId, kwCategoryIds);
+                }
+            });
         }
 
         // 价格区间

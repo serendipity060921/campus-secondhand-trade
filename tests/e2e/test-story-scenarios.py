@@ -107,6 +107,16 @@ def run(browser, base, only):
         check(has_code, 'US-GOODS-02 卡片上有分类编号（形如 G4-012）')
         shot(p, 'US-GOODS-02-S1-首页卡片分类与编号', '卡片展示分类名与编号')
 
+    if want('US-SEARCH-01'):
+        # BUG-21 回归：关键词应同时匹配「分类名」—— 标题里没有"教材"、但分类是「教材书籍」的商品也要出现
+        goto(p, base, '/search?keyword=' + __import__('urllib.parse', fromlist=['quote']).quote('教材'))
+        tt = body(p)
+        m2 = re.search(r'共\s*(\d+)\s*件', tt)
+        n = int(m2.group(1)) if m2 else 0
+        check(n >= 3, 'US-SEARCH-01 搜「教材」包含分类为教材书籍的商品', f'共 {n} 件')
+        check('计算机操作系统' in tt, 'US-SEARCH-01 分类命中：标题无"教材"也能被搜到')
+        shot(p, 'US-SEARCH-01-S2-关键词命中分类名', '搜教材 → 3 件（含计算机操作系统）')
+
     if want('US-SEARCH-02'):
         goto(p, base, '/search?categoryId=2')
         t = body(p)
