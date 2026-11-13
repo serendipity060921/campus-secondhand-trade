@@ -442,8 +442,11 @@ class OrderModuleServiceImplTest {
     class FinishOrder {
 
         @BeforeEach
-        void pendingOrderReady() {
-            when(orderService.getById(55L)).thenReturn(pendingOrder());
+        void receivingOrderReady() {
+            // v0.19：完成只能从「待收货(2)」由买家确认（0→3 的捷径已移除）
+            Order receiving = pendingOrder();
+            receiving.setStatus(OrderStatus.RECEIVING.getCode());
+            when(orderService.getById(55L)).thenReturn(receiving);
             when(userService.listByIds(anyCollection())).thenReturn(twoUsers());
         }
 
@@ -463,7 +466,7 @@ class OrderModuleServiceImplTest {
         @Test
         @DisplayName("★ 商品被标记为已售出（status=5）并写入售出时间")
         void productMarkedSold() {
-            service.changeStatus(statusDTO(55L, 3, null), SELLER);
+            service.changeStatus(statusDTO(55L, 3, null), BUYER);
 
             ArgumentCaptor<LambdaUpdateWrapper<Product>> captor = ArgumentCaptor.forClass(LambdaUpdateWrapper.class);
             verify(productMapper).update(isNull(), captor.capture());
@@ -500,10 +503,19 @@ class OrderModuleServiceImplTest {
         }
 
         @Test
-        @DisplayName("卖家也能确认完成（买卖双方权限对等）")
-        void sellerCanFinish() {
-            service.changeStatus(statusDTO(55L, 3, null), SELLER);
+        @DisplayName("买家可以确认收货（v0.19：完成由买家确认）")
+        void buyerCanFinish() {
+            service.changeStatus(statusDTO(55L, 3, null), BUYER);
             verify(orderService).updateById(any(Order.class));
+        }
+
+        @Test
+        @DisplayName("★ 卖家不能替买家确认完成（v0.19）")
+        void sellerCannotFinish() {
+            OrderException ex = assertThrows(OrderException.class,
+                    () -> service.changeStatus(statusDTO(55L, 3, null), SELLER));
+            assertTrue(ex.getMessage().contains("无权") || ex.getCode() == 6004,
+                    "卖家确认完成应被拒绝（6004 无权限），实际：" + ex.getMessage());
         }
     }
 

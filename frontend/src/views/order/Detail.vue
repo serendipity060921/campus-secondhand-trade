@@ -102,15 +102,15 @@ const stateActions = computed(() => {
   if (o.status === 0) {
     // 待交易
     if (isSeller.value) push(1, '标记可交付', 'primary', '标记后进入待交付，买家等待收货')
-    push(3, '确认交易完成', 'success', '确认后商品标记为已售出，双方信用分 +1')
+    // v0.19：待交易阶段不再提供"一步完成"，完成只能由买家在"待收货"阶段确认
     push(4, '取消订单', 'warning')
   } else if (o.status === 1) {
     // 待交付：交付动作由卖家掌握
     if (isSeller.value) push(2, '确认已交付', 'primary', '买家确认后订单完成')
     push(5, '申请退款', 'danger', '退款后商品回到在售')
   } else if (o.status === 2) {
-    // 待收货
-    push(3, '确认收货', 'success', '确认后商品标记为已售出，双方信用分 +1')
+    // 待收货：只有买家能确认收货（卖家不能替买家确认）
+    if (!isSeller.value) push(3, '确认收货', 'success', '确认后商品标记为已售出，双方信用分 +1')
     push(5, '申请退款', 'danger', '退款后商品回到在售')
   }
   return acts

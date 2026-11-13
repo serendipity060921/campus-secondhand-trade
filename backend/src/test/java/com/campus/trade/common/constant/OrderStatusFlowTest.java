@@ -56,8 +56,7 @@ class OrderStatusFlowTest {
         @ParameterizedTest(name = "{0} → {1}")
         @CsvSource({
                 "0, 1",   // 待交易 → 待交付（卖家标记可交付）
-                "0, 3",   // 待交易 → 已完成（US-ORDER-03 AC1：线下当面交易一步完成）
-                "0, 4",   // 待交易 → 已取消
+                        "0, 4",   // 待交易 → 已取消
                 "1, 2",   // 待交付 → 待收货（卖家已交付）
                 "1, 5",   // 待交付 → 已退款
                 "2, 3",   // 待收货 → 已完成（买家确认收货）
@@ -136,13 +135,12 @@ class OrderStatusFlowTest {
         }
 
         @Test
-        @DisplayName("★ 已完成：买卖双方都可以确认完成（与 US-ORDER-03 的既有需求一致）")
-        void finishAllowedForBoth() {
-            // 这一条最初被我写成"只有买家能确认收货"，跑全量测试时与 US-ORDER-03
-            //（"作为卖家，我希望在完成线下交付后确认交易完成"）以及既有的
-            // OrderModuleServiceImplTest.sellerCanFinish 冲突 —— 既有需求是权威，改规则不改需求。
-            assertTrue(OrderStatusFlow.actorAllowed(FINISHED, false), "买家可以确认完成");
-            assertTrue(OrderStatusFlow.actorAllowed(FINISHED, true), "卖家也可以确认完成");
+        @DisplayName("★ 已完成：只有买家能确认收货（v0.19：卖家不能替买家确认）")
+        void finishOnlyBuyer() {
+            // v0.19 修正：学生反馈"买家没等卖家发货就能点确认交易完成"。
+            // 新规则：0 待交易 →(卖家)1 待交付 →(卖家)2 待收货 →(买家)3 已完成。
+            assertTrue(OrderStatusFlow.actorAllowed(FINISHED, false), "买家可以确认收货（完成）");
+            assertFalse(OrderStatusFlow.actorAllowed(FINISHED, true), "★ 卖家不能替买家确认完成");
         }
 
         @Test
@@ -211,5 +209,12 @@ class OrderStatusFlowTest {
             assertEquals("", OrderStatusFlow.actionLabel(1, 3));
             assertEquals("", OrderStatusFlow.actionLabel(3, 0));
         }
+    }
+
+    @Test
+    @DisplayName("0 待交易 不能直接跳到 3 已完成（v0.19：必须经卖家交付、买家收货）")
+    void zeroToFinishedIsForbidden() {
+        assertFalse(OrderStatusFlow.canTransit(PENDING, FINISHED),
+                "待交易不允许一步完成：买家必须等卖家交付后确认收货");
     }
 }

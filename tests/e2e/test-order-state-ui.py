@@ -118,8 +118,9 @@ def main():
         check('待交易' in body, '初始状态为「待交易」')
         btns = buttons(p)
         check('标记可交付' in btns, '卖家能看到「标记可交付」', str(btns))
-        check('确认交易完成' in btns and '取消订单' in btns, '同时保留一步完成与取消', str(btns))
-        snap(p, 'US-ORDER-05-验证-待交易卖家三按钮', '标记可交付/确认交易完成/取消订单')
+        check('确认交易完成' not in btns, '★ 待交易不再提供一步完成（v0.19 修正）', str(btns))
+        check('取消订单' in btns, '待交易可取消', str(btns))
+        snap(p, 'US-ORDER-05-验证-待交易卖家（标记可交付/取消）', 'v0.19：不再有一步完成')
 
         click_action(p, '标记可交付')
         body = p.inner_text('body')

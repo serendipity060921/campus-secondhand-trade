@@ -50,8 +50,9 @@ public final class OrderStatusFlow {
 
     /** 允许的流转表：from → 可去往的 to 集合 */
     private static final Map<Integer, Set<Integer>> ALLOWED = Map.of(
-            // 0→3 这条"一步完成"必须保留：US-ORDER-03 AC1 就是"待交易 → 卖家确认完成"
-            PENDING, Set.of(DELIVERING, FINISHED, CANCELLED),
+            // ★ v0.19：移除 0→3 的一步捷径 —— 学生反馈"买家没等卖家交付就能完成交易"，
+            //   改为正规流程：卖家标记待交付 → 卖家确认已交付 → 买家确认收货
+            PENDING, Set.of(DELIVERING, CANCELLED),
             DELIVERING, Set.of(RECEIVING, REFUNDED),
             RECEIVING, Set.of(FINISHED, REFUNDED),
             FINISHED, Set.of(),
@@ -87,9 +88,9 @@ public final class OrderStatusFlow {
             case DELIVERING:
             case RECEIVING:
                 return isSeller;
-            // 确认完成：与 US-ORDER-03 的既有需求一致（线下交付后买卖双方都可确认完成）
+            // 确认完成 = 买家确认收货；卖家不能替买家确认（v0.19 修正）
             case FINISHED:
-                return true;
+                return !isSeller;
             // 取消与退款：双方都可以发起
             case CANCELLED:
             case REFUNDED:
