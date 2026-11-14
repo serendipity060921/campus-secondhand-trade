@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>缺陷日志 · 校园二手交易平台</title><style>
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>缺陷报告 · 校园二手交易平台</title><style>
 :root{--ink:#1a1d19;--ink2:#4a4f47;--muted:#8a8f86;--rule:#d8dbd3;--paper:#f6f7f4;--card:#fff;--accent:#35603f}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);
@@ -279,4 +279,54 @@ a{color:var(--accent)}
 <li><strong>教训</strong>：界面元素"有则显示、无则回退"这类分支，必须<strong>两种数据都测</strong>；</li>
 </ul>
 <p>  只测有头像的账号，会漏掉 <code>:src</code> 没绑定的低级错误</p>
+<hr>
+<h3>BUG-22【高 · 逻辑缺陷】买家无需等卖家交付，就能点「确认交易完成」</h3>
+<ul>
+<li><strong>发现方式</strong>：学生（需求方）截图反馈：买家刚下单、状态还是「待交易」，页面上就有「确认交易完成」按钮</li>
+<li><strong>根因</strong>：</li>
+</ul>
+<ol>
+<li>状态机保留了 <code>0 待交易 → 3 已完成</code> 的<strong>一步捷径</strong>（当初照 US-ORDER-03 的 AC1 实现）</li>
+<li><code>actorAllowed(FINISHED, ...)</code> 对<strong>任何人</strong>返回 true → 卖家、买家都能完成</li>
+<li>前端「待交易」阶段的按钮里也硬编码了「确认交易完成」</li>
+</ol>
+<ul>
+<li><strong>影响</strong>：买家可以单方面把订单"完成"，卖家还没交付、商品就被标记已售出 → <strong>交易流程可被绕过</strong></li>
+<li><strong>修复（v0.19）</strong>：</li>
+<li>移除 <code>0→3</code>：必须 <code>0 待交易 →(卖家)1 待交付 →(卖家)2 待收货 →(<strong>买家</strong>)3 已完成</code></li>
+<li><code>actorAllowed(FINISHED)</code> 改为 <code>!isSeller</code>（<strong>只有买家</strong>能确认收货）</li>
+<li>前端「待交易」只保留「标记可交付」（卖家）+「取消订单」；「待收货」只对买家显示「确认收货」</li>
+<li><strong>同步修改</strong>：</li>
+<li><code>OrderStatusFlowTest</code>（移除 0→3 合法断言、新增"0→3 禁止"与"卖家不能完成"用例）</li>
+<li><code>OrderModuleServiceImplTest</code>（完成类测试的前置状态改为「待收货」、操作者改为买家、新增"卖家不能完成"）</li>
+<li><code>test-order-state-ui.py</code>（断言"待交易不再提供一步完成"，12 → 13 条）</li>
+<li>用户故事 US-ORDER-03 的 AC1 改写为"买家在待收货阶段确认收货"，并新增 AC1b（越权被拒）</li>
+<li><code>spec.md</code> 状态机描述同步</li>
+<li><strong>验证</strong>：</li>
+<li>后端全量 <strong>709 条测试通过</strong>（覆盖率棘轮通过）</li>
+<li>API 实测：买家在待交易点完成 → <strong>6005</strong>；卖家替买家完成 → <strong>6004</strong>；正常链路 0→1→2→3 全部 200</li>
+<li>界面验证 <strong>13/13 通过</strong></li>
+<li><strong>教训</strong>：</li>
+</ul>
+<p>  ① <strong>需求文档里的 AC 也可能写错</strong> —— 我当初"照 AC 实现"没错，但 AC 本身不符合交易常识；</p>
+<p>     发现 AC 与业务冲突时应回到需求方确认，而不是拿它当挡箭牌</p>
+<p>  ② 状态机这种"谁能做什么"的规则，要用<strong>角色 × 状态</strong>的矩阵测，只测"能推进"会漏掉越权</p>
+<p>  ③ 前端按钮必须与后端规则同步推导，不能各自硬编码</p>
+<hr>
+<h3>BUG-23【中 · 前后端规则不同步】订单列表页硬编码「完成」按钮，点了被后端拒绝（6005）</h3>
+<ul>
+<li><strong>发现方式</strong>：学生在「我卖出的」列表点「完成」，弹出"该订单状态不允许该操作"</li>
+<li><strong>根因</strong>：v0.19 移除了 <code>0→3</code> 一步完成后，<strong>列表页的按钮没同步</strong> ——</li>
+</ul>
+<p>  仍按"待交易可完成/取消"硬编码，与状态机规则冲突</p>
+<ul>
+<li><strong>修复</strong>：列表页改为 <code>rowActions(row)</code> 按<strong>状态 × 角色</strong>推导：</li>
+</ul>
+<p>  0 待交易 → 卖家「标记可交付」+ 双方「取消」；1 待交付 → 卖家「确认已交付」；</p>
+<p>  2 待收货 → 买家「确认收货」；其余只显示「详情」</p>
+<ul>
+<li><strong>验证</strong>：浏览器实测列表按钮随状态变化（待交易卖家 = 标记可交付/取消，不再有「完成」）</li>
+<li><strong>教训</strong>：<strong>同一份业务规则出现在两个地方</strong>（详情页 + 列表页）时，改一处必然漏另一处；</li>
+</ul>
+<p>  应把"状态 → 可用动作"抽成单一函数复用（本次详情页与列表页已同源）</p>
 <hr></div></body></html>

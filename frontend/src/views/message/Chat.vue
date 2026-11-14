@@ -31,6 +31,14 @@ const userStore = useUserStore()
 const chatStore = useChatStore()
 
 const PEER_ID = Number(route.params.userId)
+
+/** v0.19：点对方头像/昵称 → 卖家主页（看信用分、历史成交、收到的评价） */
+function goSellerHome() {
+  if (!PEER_ID) return
+  const me = userStore.userInfo?.id
+  if (me && Number(me) === Number(PEER_ID)) return   // 自己的话不用看主页
+  router.push(`/seller/${PEER_ID}`)
+}
 const PRODUCT_ID = route.query.productId ? Number(route.query.productId) : null
 const PAGE_SIZE = 20
 
@@ -331,12 +339,28 @@ function onEnter(event) {
       <!-- 顶部：对方信息 -->
       <div class="chat-header">
         <el-button text @click="router.back()">← 返回</el-button>
-        <el-avatar :size="40" :src="peer?.avatar || undefined">
-            {{ (peer?.nickname || '匿').slice(0, 1) }}
-          </el-avatar>
+        <el-avatar
+          :size="40"
+          :src="peer?.avatar || undefined"
+          class="peer-clickable"
+          role="button"
+          tabindex="0"
+          :title="`查看 ${peer?.nickname || '对方'} 的主页`"
+          @click="goSellerHome"
+          @keydown.enter="goSellerHome"
+        >
+          {{ (peer?.nickname || '匿').slice(0, 1) }}
+        </el-avatar>
         <div class="peer-info">
           <div class="peer-name">
-            {{ peer?.nickname || '加载中…' }}
+            <span
+              class="peer-name peer-clickable"
+              role="button"
+              tabindex="0"
+              :title="`查看 ${peer?.nickname || '对方'} 的主页`"
+              @click="goSellerHome"
+              @keydown.enter="goSellerHome"
+            >{{ peer?.nickname || '加载中…' }}</span>
             <el-tag v-if="peer?.self" size="small" type="warning">这是你自己</el-tag>
           </div>
           <div class="peer-meta">
@@ -369,7 +393,16 @@ function onEnter(event) {
         <div v-for="(msg, index) in messages" :key="msg.id" class="message-row">
           <div v-if="showTimeDivider(index)" class="time-divider">{{ msg.createTime }}</div>
           <div class="bubble-line" :class="isMine(msg) ? 'mine' : 'theirs'">
-            <el-avatar v-if="!isMine(msg)" :size="32" class="bubble-avatar">
+            <el-avatar
+              v-if="!isMine(msg)"
+              :size="32"
+              class="bubble-avatar peer-clickable"
+              role="button"
+              tabindex="0"
+              title="查看对方主页"
+              @click="goSellerHome"
+              @keydown.enter="goSellerHome"
+            >
               {{ (peer?.nickname || '对').slice(0, 1) }}
             </el-avatar>
             <div class="bubble-wrap">
@@ -433,6 +466,10 @@ function onEnter(event) {
 </template>
 
 <style scoped>
+.peer-clickable { cursor: pointer; }
+.peer-name { text-decoration: underline dotted; text-underline-offset: 3px; }
+.peer-clickable:hover { opacity: 0.85; }
+
 .chat-page {
   max-width: 900px;
   margin: 0 auto;
