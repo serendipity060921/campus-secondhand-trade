@@ -1,0 +1,107 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>明日演示 · 速查卡</title><style>
+:root{--ink:#1a1d19;--ink2:#4a4f47;--muted:#8a8f86;--rule:#d8dbd3;--paper:#f6f7f4;--card:#fff;--accent:#35603f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+     font:16px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:40px 28px 100px;background:var(--card);
+      min-height:100vh;box-shadow:0 0 0 1px var(--rule)}
+h1{font-size:30px;margin:0 0 8px;line-height:1.3}
+h2{font-size:22px;margin:36px 0 12px;padding-bottom:8px;border-bottom:1.5px solid var(--rule)}
+h3{font-size:18px;margin:26px 0 8px}
+h4{font-size:16px;margin:18px 0 6px;color:var(--ink2)}
+p{margin:10px 0}
+ul,ol{margin:10px 0;padding-left:26px}
+li{margin:4px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th,td{border:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper);font-weight:600}
+tr:nth-child(even) td{background:#fbfcfa}
+code{background:#f0f2ee;padding:1px 5px;border-radius:3px;font-size:13px;
+     font-family:Consolas,"Courier New",monospace}
+pre{background:#f0f2ee;padding:14px;border-radius:6px;overflow:auto;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0}
+blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--accent);
+           background:#f7f9f6;color:var(--ink2)}
+img{max-width:100%;border:1px solid var(--rule);border-radius:4px;margin:6px 0}
+hr{border:none;border-top:1px solid var(--rule);margin:28px 0}
+a{color:var(--accent)}
+.meta{color:var(--muted);font-size:13px;margin-bottom:24px}
+@media print{
+  body{background:#fff}
+  .wrap{box-shadow:none;max-width:none;padding:0}
+  h2{page-break-after:avoid}
+  table,pre,img{page-break-inside:avoid}
+}
+</style></head><body><div class="wrap"><div class="meta">来源：docs\明日演示-速查卡.md　|　打印成 PDF：Ctrl+P → 目标选「另存为 PDF」</div><h1>明日演示 · 速查卡（11-15 周日 10:00 厚B815）</h1>
+<blockquote>一页纸，照着做。<strong>上台前只看这一张。</strong></blockquote>
+<hr>
+<h2>⓪ 会前 5 分钟（三步）</h2>
+<pre><code>① 双击 D:\文档\毕设-中期DemoDay-2026-11-15\0-启动演示环境（先双击这个）.cmd
+   等到窗口显示 [OK] … 就绪（后端 8080 + Nginx 8081）
+② 双击 tools\打开校园演示（无痕）.cmd → 登录  stu_demo / 123456      ← 窗口 A（买家）
+③ 打开 Chrome → http://127.0.0.1:8081 → 登录  admin / 123456     ← 窗口 B（管理员/卖家）</code></pre>
+<p><strong>兜底</strong>：先在一个标签页打开 <code>2-功能故事28条（现场兜底·单文件）.html</code>（服务挂了用它讲）</p>
+<hr>
+<h2>① 2 分钟 · 项目简介（背这 3 句）</h2>
+<blockquote>题目：《AI 辅助下的校园二手交易平台设计与实现》。<br>一句话：面向本校学生的二手教材与闲置交易平台 —— <strong>校内可信、当面交易、信息不发散</strong>。<br>三个数字：<strong>28 条用户故事</strong>（105 条验收标准）· <strong>941 条自动化用例</strong> · 后端覆盖率 <strong>85.94%</strong>（门禁 83%）。</blockquote>
+<hr>
+<h2>② 8 分钟 · 现场演示（跟着点）</h2>
+<table><thead><tr><th>#</th><th>窗口</th><th>动作</th><th>预期 / 说什么</th></tr></thead><tbody>
+<tr><td>1</td><td>A</td><td>停在首页</td><td>8 段分类色带按在售量着色；卡片带分类编号（如 <code>G4·012</code>）与成色</td></tr>
+<tr><td>2</td><td>A</td><td>搜索框输入 <code>教材</code> → 回车</td><td><strong>3 件</strong>（含标题没"教材"但分类是教材书籍的商品）；空结果给空态</td></tr>
+<tr><td>3</td><td>A</td><td>点开一件商品</td><td>详情有分类/成色/校区、<strong>相关推荐</strong>、<strong>交易评价区</strong>、卖家卡片</td></tr>
+<tr><td>4</td><td>A</td><td><strong>点卖家头像</strong></td><td>进入<strong>卖家主页</strong>：信用分、在售/交易中/<strong>已售出</strong>、<strong>收到的评价</strong> ← 加分点</td></tr>
+<tr><td>5</td><td>A</td><td>点「立即购买」→ 确认</td><td>商品变「交易中」，订单生成；<strong>下单即锁定，防一物多卖</strong></td></tr>
+<tr><td>6</td><td>B</td><td>顶栏「订单」→ 直接进「我卖出的」</td><td>注意顶栏<strong>红色待办数字</strong>；这单在「待交易」</td></tr>
+<tr><td>7</td><td>B</td><td>打开订单 →「标记可交付」→「确认已交付」</td><td>状态机 6 态：0→(卖家)1→(卖家)2→(买家)3；<strong>卖家不能替买家确认</strong></td></tr>
+<tr><td>8</td><td>A</td><td>「我买到的」→ 刷新 →「确认收货」</td><td>变「已完成」、商品「已售出」、<strong>双方信用分 +1</strong>、出现「评价这笔交易」</td></tr>
+<tr><td>9</td><td>A</td><td>评价：5 星 + 标签 + <strong>勾选匿名</strong> → 提交</td><td>详情页口碑出现：<strong>平均分 / 好评率 / 星级分布</strong></td></tr>
+<tr><td>10</td><td>B</td><td>后台 → 商品审核（1 件待审核）→ 通过/驳回</td><td>机审三态：违禁词直接拒、可疑转人工、通过直接上架</td></tr>
+<tr><td>11</td><td>B</td><td>用户管理（禁用/解禁）→ 数据看板</td><td>所有管理操作写审计日志</td></tr>
+<tr><td>12</td><td>A→B</td><td>A 发一条私信 → B 查看并回复</td><td>WebSocket 实时 + <strong>已读回执</strong>；断线自动降级轮询</td></tr>
+<tr><td>13</td><td>—</td><td>切到 <code>2-功能故事28条…html</code></td><td><strong>28 条故事，每条一个场景 + 至少一张截图</strong>，全是 Playwright 真点出来的</td></tr>
+<tr><td>14</td><td>—</td><td>展示 CI 五个 job 全绿</td><td>单元 709 / 端到端 31 / 部署 28 / 安全 52 / 前端 91</td></tr>
+</tbody></table>
+<p><strong>时间不够时的取舍</strong>：砍 2（搜索）、12（私信），保留 5→6→7→8→9（一笔交易闭环）。</p>
+<hr>
+<h2>③ 3 分钟 · AI 开发经验（四个故事，各 40 秒）</h2>
+<table><thead><tr><th>故事</th><th>说什么（带数字）</th></tr></thead><tbody>
+<tr><td><strong>TDD</strong></td><td>订单状态机先写 <strong>41 条测试</strong>，一跑<strong>红 24 条</strong> —— 其中两条是<strong>我读错了需求</strong>（以为"只能买家完成""不能一步完成"），是测试把我拉回文档</td></tr>
+<tr><td><strong>排障</strong></td><td>CI 连续 6 轮红、日志读不到；靠失败注解里的 <strong><code>exit 127</code></strong> 定位到：两个 job 缺 <code>working-directory: backend</code></td></tr>
+<tr><td><strong>对齐</strong></td><td>写脚本抽出 <strong>66 个业务错误码 + 12 个状态取值</strong>，逐条问"用户故事里有吗"；又扫全仓文档抓出 <strong>5 处真矛盾</strong></td></tr>
+<tr><td><strong>纠错</strong></td><td>我为跑测试<strong>误删过两次真实数据</strong>；此后把默认库改成测试库、加非基线数据保护、每次清库自动备份 → <strong>AI 会犯错，关键是把错变成防线</strong></td></tr>
+</tbody></table>
+<hr>
+<h2>④ 2 分钟 · 提问预案（一句话答）</h2>
+<table><thead><tr><th>问</th><th>答</th></tr></thead><tbody>
+<tr><td>数据量/并发？</td><td>演示 19 商品；Redis 缓存列表与详情、登录限流 20 次/分；瓶颈在 DB 写入，可读写分离</td></tr>
+<tr><td>为什么不用 ES？</td><td>当前量级 MySQL 前缀/全文足够；是"可扩展点"不是必需</td></tr>
+<tr><td>安全怎么保证？</td><td>JWT + <code>@LoginRequired</code> 统一鉴权；<strong>52 条</strong>安全用例（匿名 401 / 越权 403 / 只能操作自己资源）</td></tr>
+<tr><td>机审准确率？</td><td>违禁词 + 可疑规则 + 联系方式正则三层，<strong>保守设计</strong>：可疑只转人工不直接拒</td></tr>
+<tr><td>买家能跳过卖家吗？</td><td>不能（已修）：必须 卖家标记交付 → 卖家确认交付 → <strong>买家</strong>确认收货；越权返回 6004/6005</td></tr>
+<tr><td>AI 代码可信吗？</td><td>三条兜底：941 条用例、CI 覆盖率棘轮、我逐条核对业务规则与文档</td></tr>
+<tr><td>下一步？</td><td>端到端进 CI、组件测试扩面、论文与中期材料</td></tr>
+</tbody></table>
+<hr>
+<h2>⑤ 现场故障怎么办（30 秒切换）</h2>
+<table><thead><tr><th>现象</th><th>立刻改讲</th></tr></thead><tbody>
+<tr><td>502 / 白屏</td><td>打开 <code>2-功能故事28条…html</code>（离线单文件），讲"一条故事一个场景"</td></tr>
+<tr><td>数据被改乱</td><td><strong>不要复位</strong>！改用 <code>docs/story-evidence/</code> 截图讲流程</td></tr>
+<tr><td>投影太窄</td><td>无痕窗口 <code>Ctrl+0</code> 复位缩放，或直接讲 HTML 报告</td></tr>
+<tr><td>被压到 6 分钟</td><td>只走：首页 → 下单 → 卖家两连点 → 买家确认收货 → 评价</td></tr>
+</tbody></table>
+<hr>
+<h2>⑥ 账号与现状（今晚快照）</h2>
+<table><thead><tr><th>账号</th><th>密码</th><th>用途</th></tr></thead><tbody>
+<tr><td><code>admin</code></td><td><code>123456</code></td><td>管理员 / 卖家（有 1 件待审核、多件在售）</td></tr>
+<tr><td><code>stu_demo</code></td><td><code>123456</code></td><td>普通学生（买家）</td></tr>
+<tr><td><code>stu_test01</code></td><td><code>abc12345</code></td><td>普通学生（有已完成订单可评价）</td></tr>
+</tbody></table>
+<pre><code>商品 19 件：在售 14 / 交易中 1 / 已售 2 / 待审核 1
+订单：#4 待交易 · #18 待收货 · #19 已完成 · #1 已完成 · #2#3 已取消
+评价 1 条</code></pre>
+<blockquote>⚠️ <strong>不要跑 <code>seed-demo-data.py --reset</code></strong> —— 它会清空演示库（BUG-18/19 两次教训）。</blockquote>
+<hr>
+<h2>⑦ 最后一句话（收尾）</h2>
+<blockquote>这个系统从需求、设计、编码到测试，全部有记录可追溯：<strong>28 条故事 → 105 条验收标准 → 941 条用例 → 23 条缺陷</strong>，每一步都能指给老师看。</blockquote>
+<p><em>2026-11-14 生成 · 配合 <code>1-15分钟分享脚本.docx</code> 使用</em></p></div></body></html>
