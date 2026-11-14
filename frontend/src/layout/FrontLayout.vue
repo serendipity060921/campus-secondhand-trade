@@ -10,11 +10,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
 import { useChatStore } from '@/store/chat'
+import { useOrderBadge } from '@/composables/useOrderBadge'
 import { APP_VERSION, APP_VERSION_LABEL } from '@/utils/version'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const { total: orderPendingTotal } = useOrderBadge()
 const chatStore = useChatStore()
 
 // v0.14：登录状态下初始化实时连接（含页面刷新：从 localStorage 恢复登录态后重连）
@@ -112,7 +114,15 @@ async function handleLogout() {
             <el-badge v-if="chatStore.unreadTotal > 0" :value="chatStore.unreadTotal"
                       :max="99" class="msg-badge" />
           </el-menu-item>
-          <el-menu-item index="/orders/bought">订单</el-menu-item>
+          <el-menu-item index="/orders/bought">
+            订单
+            <el-badge
+              v-if="orderPendingTotal > 0"
+              :value="orderPendingTotal"
+              class="order-badge"
+              type="danger"
+            />
+          </el-menu-item>
           <el-menu-item index="/profile">个人中心</el-menu-item>
           </el-menu>
         </nav>
@@ -207,6 +217,10 @@ async function handleLogout() {
 </template>
 
 <style scoped>
+.order-badge {
+  margin-left: 2px;
+  transform: translateY(-6px) scale(0.82);
+}
 .layout {
   min-height: 100%;
 }
