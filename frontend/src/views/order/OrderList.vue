@@ -73,14 +73,41 @@ async function load() {
   }
 }
 
+/**
+ * 列表里每行应该显示哪些动作。
+ *
+ * v0.19：列表页原先硬编码「完成 / 取消」，而 0→3 的一步完成已被移除 →
+ * 卖家在"待交易"点「完成」必然被后端拒绝（6005）。这里改为按状态×角色推导：
+ *   0 待交易 → 卖家：标记可交付；双方：取消
+ *   1 待交付 → 卖家：确认已交付
+ *   2 待收货 → 买家：确认收货
+ */
+function rowActions(row) {
+  const acts = []
+  const isSeller = props.role === 'sell'
+  if (row.status === 0) {
+    if (isSeller) acts.push({ label: '标记可交付', to: 1, type: 'primary' })
+    acts.push({ label: '取消', to: 4, type: 'warning' })
+  } else if (row.status === 1) {
+    if (isSeller) acts.push({ label: '确认已交付', to: 2, type: 'primary' })
+  } else if (row.status === 2) {
+    if (!isSeller) acts.push({ label: '确认收货', to: 3, type: 'success' })
+  }
+  return acts
+}
+
 async function handleStatusChange(item, status) {
   const isFinish = status === 3
   try {
     await ElMessageBox.confirm(
       isFinish
-        ? `确认「${item.productTitle}」这笔交易已完成吗？确认后商品将标记为已售出。`
-        : `确定取消订单「${item.orderNo}」吗？取消后商品会重新上架。`,
-      isFinish ? '确认完成' : '取消订单',
+        ? `确认收货「${item.productTitle}」？确认后商品标记为已售出、双方信用分 +1。`
+        : status === 1
+          ? '标记为待交付？买家会看到进度更新。'
+          : status === 2
+            ? '确认已交付？买家随后可确认收货。'
+            : `确定取消订单「${item.orderNo}」吗？取消后商品会重新上架。`,
+      isFinish ? '确认收货' : status === 1 ? '标记可交付' : status === 2 ? '确认已交付' : '取消订单',
       { type: 'warning' }
     )
   } catch (e) {
@@ -203,10 +230,15 @@ onMounted(() => {
             >
               去评价
             </el-button>
-            <template v-if="row.status === 0">
-              <el-button size="small" type="success" @click="handleStatusChange(row, 3)">完成</el-button>
-              <el-button size="small" type="warning" @click="handleStatusChange(row, 4)">取消</el-button>
-            </template>
+            <el-button
+              v-for="act in rowActions(row)"
+              :key="act.to"
+              size="small"
+              :type="act.type"
+              @click="handleStatusChange(row, act.to)"
+            >
+              {{ act.label }}
+            </el-button>
           </template>
         </el-table-column>
 
