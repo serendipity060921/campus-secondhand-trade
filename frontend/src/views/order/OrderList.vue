@@ -9,6 +9,7 @@
  * 功能：按状态筛选、分页、查看详情、快速完成/取消（仅"待交易"可操作）。
  */
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { actionsFor } from '@/utils/orderActions'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getBuyOrders, getSellOrders, updateOrderStatus } from '@/api/order'
@@ -83,33 +84,17 @@ async function load() {
  *   2 待收货 → 买家：确认收货
  */
 function rowActions(row) {
-  const acts = []
-  const isSeller = props.role === 'sell'
-  if (row.status === 0) {
-    if (isSeller) acts.push({ label: '标记可交付', to: 1, type: 'primary' })
-    acts.push({ label: '取消', to: 4, type: 'warning' })
-  } else if (row.status === 1) {
-    if (isSeller) acts.push({ label: '确认已交付', to: 2, type: 'primary' })
-  } else if (row.status === 2) {
-    if (!isSeller) acts.push({ label: '确认收货', to: 3, type: 'success' })
-  }
-  return acts
+  // ★ 唯一来源：utils/orderActions.js（与详情页同一份规则）
+  return actionsFor({ status: row.status, isSeller: props.role === 'sell' })
 }
 
 async function handleStatusChange(item, status) {
-  const isFinish = status === 3
+  const act = actionsFor({ status: item.status, isSeller: props.role === 'sell' })
+    .find((a) => a.to === status)
+  const title = act?.confirmTitle || '确认操作'
+  const text = act?.confirmText || '确定执行该操作吗？'
   try {
-    await ElMessageBox.confirm(
-      isFinish
-        ? `确认收货「${item.productTitle}」？确认后商品标记为已售出、双方信用分 +1。`
-        : status === 1
-          ? '标记为待交付？买家会看到进度更新。'
-          : status === 2
-            ? '确认已交付？买家随后可确认收货。'
-            : `确定取消订单「${item.orderNo}」吗？取消后商品会重新上架。`,
-      isFinish ? '确认收货' : status === 1 ? '标记可交付' : status === 2 ? '确认已交付' : '取消订单',
-      { type: 'warning' }
-    )
+    await ElMessageBox.confirm(text, title, { type: 'warning' })
   } catch (e) {
     return
   }

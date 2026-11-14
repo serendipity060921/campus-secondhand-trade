@@ -6,6 +6,7 @@
  * 权限：后端会校验只有买卖双方能访问，其他人访问返回 6004。
  */
 import { computed, onMounted, ref } from 'vue'
+import { actionsFor, statusHint as hintOf } from '@/utils/orderActions'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getOrderDetail, updateOrderStatus } from '@/api/order'
@@ -96,34 +97,12 @@ const isSeller = computed(() => order.value?.myRole === 'seller')
 const stateActions = computed(() => {
   const o = order.value
   if (!o) return []
-  const acts = []
-  const push = (to, label, type, desc = '') => acts.push({ to, label, type, desc })
-
-  if (o.status === 0) {
-    // 待交易
-    if (isSeller.value) push(1, '标记可交付', 'primary', '标记后进入待交付，买家等待收货')
-    // v0.19：待交易阶段不再提供"一步完成"，完成只能由买家在"待收货"阶段确认
-    push(4, '取消订单', 'warning')
-  } else if (o.status === 1) {
-    // 待交付：交付动作由卖家掌握
-    if (isSeller.value) push(2, '确认已交付', 'primary', '买家确认后订单完成')
-    push(5, '申请退款', 'danger', '退款后商品回到在售')
-  } else if (o.status === 2) {
-    // 待收货：只有买家能确认收货（卖家不能替买家确认）
-    if (!isSeller.value) push(3, '确认收货', 'success', '确认后商品标记为已售出，双方信用分 +1')
-    push(5, '申请退款', 'danger', '退款后商品回到在售')
-  }
-  return acts
+  // ★ 唯一来源：utils/orderActions.js（详情页与列表页共用，避免两处规则不同步 —— BUG-23）
+  return actionsFor({ status: o.status, isSeller: isSeller.value })
 })
 
 /** 终态提示文案 */
-const statusHint = computed(() => {
-  const s = order.value?.status
-  if (s === 3) return '该订单已完成，商品已标记为已售出，双方信用分 +1'
-  if (s === 4) return '该订单已取消，商品已重新上架'
-  if (s === 5) return '该订单已退款，商品已重新上架'
-  return '该订单当前没有可执行的操作'
-})
+const statusHint = computed(() => hintOf(order.value?.status))
 
 /** 推进订单状态（统一入口：确认 → 调接口 → 刷新） */
 async function handleAdvance(action) {
