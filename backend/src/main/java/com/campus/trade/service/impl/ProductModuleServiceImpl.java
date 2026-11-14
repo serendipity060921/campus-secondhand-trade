@@ -165,11 +165,15 @@ public class ProductModuleServiceImpl implements ProductModuleService {
     @Override
     public PageResult<ProductVO> pageList(ProductQueryDTO query) {
         // v0.12：列表按"查询条件指纹"缓存（首页 QPS 最高、且同一批条件重复查询多）
+        // ★ 卖家主页会带 sellerId / status 查询，而缓存 key 只包含
+        //   page/size/category/keyword/价格/排序 —— 不含这两项，会串成"全站列表"。
+        //   因此这类查询直接绕过缓存（数据量小，且卖家主页不需高并发）。
+        boolean bypassCache = query.getSellerId() != null || query.getStatus() != null;
         String cacheKey = cacheKeys.productList(cacheKeys.conditionOf(cacheKeys.params(
                 "page", query.getPage(), "size", query.getSize(), "categoryId", query.getCategoryId(),
                 "keyword", query.getKeyword(), "minPrice", query.getMinPrice(),
                 "maxPrice", query.getMaxPrice(), "sort", query.getSort())));
-        if (cacheService.exists(cacheKey)) {
+        if (!bypassCache && cacheService.exists(cacheKey)) {
             PageResult<ProductVO> cached = cacheService.get(cacheKey, PageResult.class);
             if (cached != null) {
                 log.debug("[缓存命中] 商品列表 key={}", cacheKey);
@@ -179,13 +183,27 @@ public class ProductModuleServiceImpl implements ProductModuleService {
 
         LambdaQueryWrapper<Product> wrapper = buildBaseWrapper(query);
         // 列表只返回上架中的商品
-        wrapper.eq(Product::getStatus, STATUS_ON_SALE);
+        // v0.19：卖家主页需要「只看这个卖家的商品」，并允许查看「已售出」用于历史成交展示。
+        //   · status 仅放开 1（在售）与 5（已售出）：其余状态（待审核/驳回/下架）不对外暴露
+        //   · sellerId 由调用方显式传入，缺省时行为与旧版一致（只列在售）
+        Integer wantedStatus = query.getStatus();
+        // 允许：1 在售 / 4 交易中 / 5 已售出（其余状态不对外暴露）
+        if (wantedStatus != null
+                && (wantedStatus == STATUS_SOLD || wantedStatus == STATUS_ON_SALE
+                    || wantedStatus == STATUS_TRADING)) {
+            wrapper.eq(Product::getStatus, wantedStatus);
+        } else {
+            wrapper.eq(Product::getStatus, STATUS_ON_SALE);
+        }
+        wrapper.eq(query.getSellerId() != null, Product::getSellerId, query.getSellerId());
 
         Page<Product> page = productService.page(
                 new Page<>(query.getPage(), query.getSize()), wrapper);
         PageResult<ProductVO> result = new PageResult<>(page.getTotal(), page.getPages(), page.getCurrent(),
                 page.getSize(), toVOList(page.getRecords()));
-        cacheService.set(cacheKey, result, cacheProperties.getProductListTtl());
+        if (!bypassCache) {
+            cacheService.set(cacheKey, result, cacheProperties.getProductListTtl());
+        }
         return result;
     }
 

@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -73,8 +74,20 @@ public class UserController {
      * 查询当前登录用户信息（需要携带 Token）。
      * <p>用户ID 从 Token 解析后的上下文中获取，<b>不由前端传入</b>，避免越权查询他人信息。</p>
      */
+    /**
+     * 指定用户的**公开信息**（无需登录）。
+     *
+     * <p>用于卖家主页：昵称、头像、信用分、校区、注册时间。
+     * UserVO 本身不含手机号与邮箱，因此可直接对外暴露。</p>
+     */
+    @Operation(summary = "查询指定用户的公开信息（无需登录，卖家主页用）")
+    @GetMapping("/{id}/public")
+    public Result<UserVO> publicInfo(@PathVariable("id") Long id) {
+        return Result.success(authService.getUserInfo(id));
+    }
+
     @LoginRequired
-@Operation(summary = "查询指定用户的公开信息")
+@Operation(summary = "查询当前登录用户信息")
     @GetMapping("/info")
     public Result<UserVO> info() {
         return Result.success(authService.getUserInfo(UserContext.getUserId()));

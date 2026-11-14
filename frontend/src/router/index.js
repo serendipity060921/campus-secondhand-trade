@@ -72,6 +72,13 @@ const routes = [
         meta: { title: '编辑资料', requiresAuth: true }
       },
       {
+        // v0.19 卖家主页：点卖家头像进入，看他的在售/交易中/已售出与收到的评价
+        path: 'seller/:id',
+        name: 'SellerHome',
+        component: () => import('@/views/user/SellerHome.vue'),
+        meta: { title: '卖家主页' }
+      },
+      {
         // v0.07 消息会话列表
         path: 'messages',
         name: 'ConversationList',

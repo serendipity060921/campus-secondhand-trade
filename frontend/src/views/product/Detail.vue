@@ -38,6 +38,13 @@ const favorited = ref(false)
 const favoriteCount = ref(0)
 const favoriteLoading = ref(false)
 
+/* ---------------- v0.19 卖家主页 ---------------- */
+/** 点卖家头像/昵称 → 卖家主页（看历史成交与口碑） */
+function goSellerHome() {
+  const id = product.value?.sellerId
+  if (id) router.push(`/seller/${id}`)
+}
+
 /* ---------------- v0.07 私聊卖家 ---------------- */
 
 /** 是否是自己的商品（自己的商品不能私聊自己） */
@@ -303,9 +310,27 @@ onMounted(loadDetail)
             <!-- 发布者信息 -->
             <el-card class="seller-card" shadow="never">
               <div class="seller">
-                <el-avatar :size="46">{{ (product.sellerNickname || '匿').slice(0, 1) }}</el-avatar>
+                <el-avatar
+            :size="46"
+            :src="product.sellerAvatar ? resolveImageUrl(product.sellerAvatar) : undefined"
+            class="seller-avatar"
+            role="button"
+            tabindex="0"
+            :title="`查看 ${product.sellerNickname || '卖家'} 的主页`"
+            @click="goSellerHome"
+            @keydown.enter="goSellerHome"
+          >
+            {{ (product.sellerNickname || '匿').slice(0, 1) }}
+          </el-avatar>
                 <div class="seller-info">
-                  <div class="seller-name">{{ product.sellerNickname || '匿名用户' }}</div>
+                  <div
+            class="seller-name seller-name--link"
+            role="button"
+            tabindex="0"
+            :title="`查看 ${product.sellerNickname || '卖家'} 的主页`"
+            @click="goSellerHome"
+            @keydown.enter="goSellerHome"
+          >{{ product.sellerNickname || '匿名用户' }}</div>
                   <div class="seller-meta">
                     <span>信用分：{{ product.sellerCreditScore ?? '-' }}</span>
                     <span v-if="product.sellerCampus"> · {{ product.sellerCampus }}</span>
@@ -419,6 +444,9 @@ onMounted(loadDetail)
 </template>
 
 <style scoped>
+.seller-avatar { cursor: pointer; }
+.seller-name--link { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+
 .page-header {
   margin-bottom: var(--ct-space-4);
 }

@@ -731,4 +731,5 @@ class ProductModuleServiceImplTest {
             assertNotNull(vo, "埋点异常不应影响详情返回");
         }
     }
+
 }
