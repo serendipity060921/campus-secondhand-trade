@@ -1,4 +1,4 @@
-# 抢焦点诊断（60 秒）—— 双击运行，然后按几次 Win+D
+﻿# 抢焦点诊断（60 秒）—— 双击运行，然后按几次 Win+D
 # 结果写入 docs/诊断-抢焦点.txt
 $ErrorActionPreference = 'SilentlyContinue'
 $out = Join-Path $PSScriptRoot '..\docs\诊断-抢焦点.txt'
