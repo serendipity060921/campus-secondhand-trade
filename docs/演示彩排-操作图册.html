@@ -32,13 +32,13 @@ a{color:var(--accent)}
   h2{page-break-after:avoid}
   table,pre,img{page-break-inside:avoid}
 }
-</style></head><body><div class="wrap"><div class="meta">来源：docs\演示彩排-操作图册.md　|　打印成 PDF：Ctrl+P → 目标选「另存为 PDF」</div><h1>演示彩排 · 操作图册（测试环境自动跑）</h1>
-<blockquote>环境：<code>http://127.0.0.1:8092</code> → <code>campus_trade_test</code>（<strong>未触碰演示库</strong>）。共 17 步。<br>用途：上台前照着这组图熟悉操作顺序。</blockquote>
+</style></head><body><div class="wrap"><div class="meta">来源：docs\演示彩排-操作图册.md　|　打印成 PDF：Ctrl+P → 目标选「另存为 PDF」</div><h1>演示彩排 · 操作图册-测试环境自动跑</h1>
+<blockquote>环境：<code>http://127.0.0.1:8092</code> → <code>campus_trade_test</code>-<strong>未触碰演示库</strong>。共 17 步。<br>用途：上台前照着这组图熟悉操作顺序。</blockquote>
 <table><thead><tr><th>#</th><th>步骤</th><th>说明</th><th>截图</th></tr></thead><tbody>
-<tr><td>01</td><td>首页（8段分类色带+卡片编号）</td><td>讲：分类按在售量着色，卡片带分类编号</td><td><code>01-首页（8段分类色带+卡片编号）.png</code></td></tr>
-<tr><td>02</td><td>搜「教材」</td><td>共 2 件（含分类命中的商品）</td><td><code>02-搜「教材」.png</code></td></tr>
-<tr><td>03</td><td>商品详情（相关推荐+评价区）</td><td>讲：详情、相关推荐、卖家卡片</td><td><code>03-商品详情（相关推荐+评价区）.png</code></td></tr>
-<tr><td>04</td><td>卖家主页（信用分/已售出/收到的评价）</td><td>加分点：点卖家头像看历史与口碑</td><td><code>收到的评价）.png</code></td></tr>
+<tr><td>01</td><td>首页-8段分类色带+卡片编号</td><td>讲：分类按在售量着色，卡片带分类编号</td><td><code>01-首页-8段分类色带+卡片编号.png</code></td></tr>
+<tr><td>02</td><td>搜「教材」</td><td>共 2 件-含分类命中的商品</td><td><code>02-搜「教材」.png</code></td></tr>
+<tr><td>03</td><td>商品详情-相关推荐+评价区</td><td>讲：详情、相关推荐、卖家卡片</td><td><code>03-商品详情-相关推荐+评价区.png</code></td></tr>
+<tr><td>04</td><td>卖家主页-信用分/已售出/收到的评价</td><td>加分点：点卖家头像看历史与口碑</td><td><code>收到的评价.png</code></td></tr>
 <tr><td>05</td><td>买家下单成功</td><td>商品变「交易中」；下单即锁定，防一物多卖</td><td><code>05-买家下单成功.png</code></td></tr>
 <tr><td>06</td><td>卖家顶栏订单徽标</td><td>顶栏「订单」出现红色待办数字</td><td><code>06-卖家顶栏订单徽标.png</code></td></tr>
 <tr><td>07</td><td>卖家「我卖出的」列表</td><td>待交易行有「标记可交付」按钮</td><td><code>07-卖家「我卖出的」列表.png</code></td></tr>
@@ -46,7 +46,7 @@ a{color:var(--accent)}
 <tr><td>09</td><td>卖家：确认已交付</td><td>状态 1 → 2 待收货；卖家不能替买家确认</td><td><code>09-卖家：确认已交付.png</code></td></tr>
 <tr><td>10</td><td>买家「我买到的」</td><td>待收货行出现「确认收货」</td><td><code>10-买家「我买到的」.png</code></td></tr>
 <tr><td>11</td><td>买家确认收货 → 已完成</td><td>商品已售出；双方信用分 +1</td><td><code>11-买家确认收货 → 已完成.png</code></td></tr>
-<tr><td>12</td><td>评价弹窗（星级/标签/匿名）</td><td>勾选匿名；每单每人一次</td><td><code>匿名）.png</code></td></tr>
+<tr><td>12</td><td>评价弹窗-星级/标签/匿名</td><td>勾选匿名；每单每人一次</td><td><code>匿名.png</code></td></tr>
 <tr><td>13</td><td>评价提交后</td><td>成功提示或弹窗关闭</td><td><code>13-评价提交后.png</code></td></tr>
 <tr><td>14</td><td>后台商品审核</td><td>有 1 件待审核：通过/驳回 + 审核意见</td><td><code>14-后台商品审核.png</code></td></tr>
 <tr><td>15</td><td>后台用户管理</td><td>启用/禁用 + 审计日志</td><td><code>15-后台用户管理.png</code></td></tr>
@@ -54,18 +54,18 @@ a{color:var(--accent)}
 <tr><td>17</td><td>买家消息列表</td><td>WebSocket 实时 + 已读回执</td><td><code>17-买家消息列表.png</code></td></tr>
 </tbody></table>
 <h2>逐步截图</h2>
-<h3>01　首页（8段分类色带+卡片编号）</h3>
+<h3>01　首页-8段分类色带+卡片编号</h3>
 <blockquote>讲：分类按在售量着色，卡片带分类编号</blockquote>
-<p><img alt="首页（8段分类色带+卡片编号）" src="story-evidence/演示彩排/01-首页（8段分类色带+卡片编号）.png"></p>
+<p><img alt="首页-8段分类色带+卡片编号" src="story-evidence/演示彩排/01-首页-8段分类色带+卡片编号.png"></p>
 <h3>02　搜「教材」</h3>
-<blockquote>共 2 件（含分类命中的商品）</blockquote>
+<blockquote>共 2 件-含分类命中的商品</blockquote>
 <p><img alt="搜「教材」" src="story-evidence/演示彩排/02-搜「教材」.png"></p>
-<h3>03　商品详情（相关推荐+评价区）</h3>
+<h3>03　商品详情-相关推荐+评价区</h3>
 <blockquote>讲：详情、相关推荐、卖家卡片</blockquote>
-<p><img alt="商品详情（相关推荐+评价区）" src="story-evidence/演示彩排/03-商品详情（相关推荐+评价区）.png"></p>
-<h3>04　卖家主页（信用分/已售出/收到的评价）</h3>
+<p><img alt="商品详情-相关推荐+评价区" src="story-evidence/演示彩排/03-商品详情-相关推荐+评价区.png"></p>
+<h3>04　卖家主页-信用分/已售出/收到的评价</h3>
 <blockquote>加分点：点卖家头像看历史与口碑</blockquote>
-<p><img alt="卖家主页（信用分/已售出/收到的评价）" src="story-evidence/演示彩排/收到的评价）.png"></p>
+<p><img alt="卖家主页-信用分/已售出/收到的评价" src="story-evidence/演示彩排/收到的评价.png"></p>
 <h3>05　买家下单成功</h3>
 <blockquote>商品变「交易中」；下单即锁定，防一物多卖</blockquote>
 <p><img alt="买家下单成功" src="story-evidence/演示彩排/05-买家下单成功.png"></p>
@@ -87,9 +87,9 @@ a{color:var(--accent)}
 <h3>11　买家确认收货 → 已完成</h3>
 <blockquote>商品已售出；双方信用分 +1</blockquote>
 <p><img alt="买家确认收货 → 已完成" src="story-evidence/演示彩排/11-买家确认收货 → 已完成.png"></p>
-<h3>12　评价弹窗（星级/标签/匿名）</h3>
+<h3>12　评价弹窗-星级/标签/匿名</h3>
 <blockquote>勾选匿名；每单每人一次</blockquote>
-<p><img alt="评价弹窗（星级/标签/匿名）" src="story-evidence/演示彩排/匿名）.png"></p>
+<p><img alt="评价弹窗-星级/标签/匿名" src="story-evidence/演示彩排/匿名.png"></p>
 <h3>13　评价提交后</h3>
 <blockquote>成功提示或弹窗关闭</blockquote>
 <p><img alt="评价提交后" src="story-evidence/演示彩排/13-评价提交后.png"></p>
