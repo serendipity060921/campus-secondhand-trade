@@ -16,7 +16,7 @@ import { APP_VERSION, APP_VERSION_LABEL } from '@/utils/version'
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
-const { total: orderPendingTotal } = useOrderBadge()
+const { total: orderPendingTotal, orderEntryPath, orderHint } = useOrderBadge()
 const chatStore = useChatStore()
 
 // v0.14：登录状态下初始化实时连接（含页面刷新：从 localStorage 恢复登录态后重连）
@@ -36,7 +36,7 @@ const navItems = [
   { path: '/product/publish', label: '发布商品' },
   { path: '/product/mine', label: '我的商品' },
   { path: '/messages', label: '消息' },
-  { path: '/orders/bought', label: '订单' },
+  { path: '/orders/bought', label: '订单', dynamic: true },
   { path: '/profile', label: '个人中心' }
 ]
 
@@ -114,7 +114,7 @@ async function handleLogout() {
             <el-badge v-if="chatStore.unreadTotal > 0" :value="chatStore.unreadTotal"
                       :max="99" class="msg-badge" />
           </el-menu-item>
-          <el-menu-item index="/orders/bought">
+          <el-menu-item :index="orderEntryPath" :title="orderHint">
             订单
             <el-badge
               v-if="orderPendingTotal > 0"

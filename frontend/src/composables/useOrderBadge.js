@@ -27,6 +27,25 @@ export function useOrderBadge() {
 
   const total = computed(() => sellPending.value + buyPending.value)
 
+  /**
+   * 点「订单」应该进哪个列表：
+   *   · 有卖出待办 → 我卖出的（我需要标记交付）
+   *   · 否则有买入待办 → 我买到的（我需要确认收货）
+   *   · 都没有 → 我买到的（默认）
+   * 这样徽标数字与落地的列表一致，不会出现"有 1 个待办但列表是空的"。
+   */
+  const orderEntryPath = computed(() =>
+    sellPending.value > 0 ? '/orders/sold' : '/orders/bought')
+
+  /** 悬停提示：把卖出/买入拆开说清楚 */
+  const orderHint = computed(() => {
+    if (total.value === 0) return '订单'
+    const parts = []
+    if (sellPending.value > 0) parts.push(`卖出待处理 ${sellPending.value}`)
+    if (buyPending.value > 0) parts.push(`买入待收货 ${buyPending.value}`)
+    return `订单：${parts.join('，')}（点击进入）`
+  })
+
   let timer = null
   let lastSell = 0
   let lastBuy = 0
@@ -81,5 +100,5 @@ export function useOrderBadge() {
     if (timer) window.clearInterval(timer)
   })
 
-  return { total, sellPending, buyPending, ready, refresh }
+  return { total, sellPending, buyPending, ready, refresh, orderEntryPath, orderHint }
 }
