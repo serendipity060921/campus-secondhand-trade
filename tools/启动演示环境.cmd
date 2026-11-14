@@ -1,4 +1,6 @@
 @echo off
 chcp 65001 >nul
-title 启动演示环境
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0启动演示环境.ps1"
+title Start Demo Environment
+cd /d "D:\campus-secondhand-trade"
+powershell -NoProfile -ExecutionPolicy Bypass -File "D:\campus-secondhand-trade\tools\??????.ps1"
+if errorlevel 1 pause

@@ -1,10 +1,19 @@
 @echo off
 chcp 65001 >nul
-title 校园二手交易平台 · 自动演示
-cd /d "%~dp0..\"
+title Campus Trade - Auto Demo
+cd /d "D:\campus-secondhand-trade"
+if not exist "D:\campus-secondhand-trade\tools\demo-play.py" (
+  echo [ERROR] demo-play.py not found at D:\campus-secondhand-trade\tools\
+  pause
+  exit /b 1
+)
 echo.
-echo   正在打开浏览器并自动演示，请稍候...
-echo   讲稿会显示在这个窗口里。
+echo   Starting auto demo ... a browser window will open shortly.
+echo   Narration will appear in this window.
 echo.
-"C:\Users\26859\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\python\python.exe" tools\demo-play.py
-if errorlevel 1 pause
+"C:\Users\26859\.dsh\dsh-runtimes\dsh-primary-runtime\dependencies\python\python.exe" "D:\campus-secondhand-trade\tools\demo-play.py" %*
+if errorlevel 1 (
+  echo.
+  echo   [ERROR] demo exited with an error. See message above.
+  pause
+)
