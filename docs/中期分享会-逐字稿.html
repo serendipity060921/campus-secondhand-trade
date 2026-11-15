@@ -1,0 +1,140 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>中期 Demo Day · 逐字稿</title><style>
+:root{--ink:#1a1d19;--ink2:#4a4f47;--muted:#8a8f86;--rule:#d8dbd3;--paper:#f6f7f4;--card:#fff;--accent:#35603f}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);
+     font:16px/1.75 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+.wrap{max-width:1000px;margin:0 auto;padding:40px 28px 100px;background:var(--card);
+      min-height:100vh;box-shadow:0 0 0 1px var(--rule)}
+h1{font-size:30px;margin:0 0 8px;line-height:1.3}
+h2{font-size:22px;margin:36px 0 12px;padding-bottom:8px;border-bottom:1.5px solid var(--rule)}
+h3{font-size:18px;margin:26px 0 8px}
+h4{font-size:16px;margin:18px 0 6px;color:var(--ink2)}
+p{margin:10px 0}
+ul,ol{margin:10px 0;padding-left:26px}
+li{margin:4px 0}
+table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+th,td{border:1px solid var(--rule);padding:8px 10px;text-align:left;vertical-align:top}
+th{background:var(--paper);font-weight:600}
+tr:nth-child(even) td{background:#fbfcfa}
+code{background:#f0f2ee;padding:1px 5px;border-radius:3px;font-size:13px;
+     font-family:Consolas,"Courier New",monospace}
+pre{background:#f0f2ee;padding:14px;border-radius:6px;overflow:auto;font-size:13px;line-height:1.6}
+pre code{background:none;padding:0}
+blockquote{margin:14px 0;padding:10px 16px;border-left:3px solid var(--accent);
+           background:#f7f9f6;color:var(--ink2)}
+img{max-width:100%;border:1px solid var(--rule);border-radius:4px;margin:6px 0}
+hr{border:none;border-top:1px solid var(--rule);margin:28px 0}
+a{color:var(--accent)}
+.meta{color:var(--muted);font-size:13px;margin-bottom:24px}
+@media print{
+  body{background:#fff}
+  .wrap{box-shadow:none;max-width:none;padding:0}
+  h2{page-break-after:avoid}
+  table,pre,img{page-break-inside:avoid}
+}
+</style></head><body><div class="wrap"><div class="meta">来源：docs\中期分享会-逐字稿.md　|　打印成 PDF：Ctrl+P → 目标选「另存为 PDF」</div><h1>中期 Demo Day · 逐字稿（15 分钟）</h1>
+<blockquote>11-15 10:00 · 厚B815 · 黎钟<br>用法：<strong>照读就行</strong>。加粗是重音，<code>▸</code> 是停顿，括号里是你手上的动作。</blockquote>
+<hr>
+<h2>一、项目简介 · 2 分钟</h2>
+<p>（站定，看向老师）</p>
+<blockquote>老师好，我是黎钟，我的题目是<strong>《AI 辅助下的校园二手交易平台设计与实现》</strong>。</blockquote>
+<p>▸</p>
+<blockquote>用一句话说：这是一个<strong>面向本校学生的二手教材和闲置交易平台</strong>。<br>它要解决三个问题 —— <strong>校内可信</strong>、<strong>当面交易</strong>、<strong>信息不发散</strong>。<br>现在二手群里的问题是：不知道对方是谁、约了不见、东西卖出去还在挂着。</blockquote>
+<p>▸</p>
+<blockquote>技术上，后端是 <strong>Spring Boot 3 + MyBatis-Plus + MySQL 8 + Redis + WebSocket</strong>，<br>前端是 <strong>Vue 3 + Vite + Element Plus</strong>，用 Nginx 做部署形态。</blockquote>
+<p>▸</p>
+<blockquote>业务闭环是完整的一条链：<strong>注册登录 → 发布商品（先过机审）→ 浏览搜索 → 私信 → 下单 → 订单状态流转 → 双向评价和信用分</strong>。</blockquote>
+<p>▸</p>
+<blockquote>现在的进度，三个数字：<strong>28 条用户故事</strong>、<strong>941 条自动化用例</strong>、<br>后端覆盖率 <strong>85.94%</strong>，覆盖率设了棘轮，掉到 83% 以下流水线直接红。<br>另外有 <strong>23 条缺陷</strong>的完整记录，每一条都有根因和修复。</blockquote>
+<p>▸</p>
+<blockquote>下面用 8 分钟，走一遍<strong>一笔真实的交易</strong>——从买家下单，到卖家交付，到双方评价。</blockquote>
+<hr>
+<h2>二、系统现场演示 · 8 分钟</h2>
+<p>（窗口 A = 无痕，<code>stu_demo</code> 买家；窗口 B = Chrome，<code>admin</code> 卖家/管理员。两个窗口并排）</p>
+<h3>1｜首页（0:00）</h3>
+<p>（A 窗口停首页）</p>
+<blockquote>这是首页。上面 8 段分类色带，颜色深浅是<strong>按各类在售量</strong>来的，一眼能看出学校现在什么最好卖。<br>卡片上除了价格和成色，还有一个<strong>分类编号</strong>，像这个 <code>G4·012</code> —— 这是为了<strong>当面交易</strong>时快速对货。</blockquote>
+<h3>2｜搜索（0:40）</h3>
+<p>（搜「教材」，回车）</p>
+<blockquote>我搜「教材」。这里有个细节：<strong>关键词同时匹配标题、描述和分类名</strong>。<br>所以像「计算机操作系统」这种标题里没有"教材"两个字、但分类是教材书籍的，也能搜到。<br>（停顿）搜不到东西的时候会给空态提示，不是白屏。</blockquote>
+<h3>3｜商品详情（1:10）</h3>
+<p>（点开一件商品）</p>
+<blockquote>详情页有分类、成色、校区、交易地点；下面是<strong>相关推荐</strong>（基于浏览行为的相似商品）；<br>再往下是<strong>交易评价区</strong>，现在这件还没人评过，是空态。<br>右边是卖家卡片。</blockquote>
+<h3>4｜卖家主页（1:40，⭐ 加分点）</h3>
+<p>（<strong>点卖家头像</strong>）</p>
+<blockquote>这里我想多说一句。<strong>二手交易最怕的就是卖家靠不靠谱。</strong><br>所以点卖家头像会进到<strong>卖家主页</strong>：信用分、在售、交易中、<strong>历史成交</strong>、以及<strong>他收到的每一条评价</strong>。<br>匿名评价在这里显示成"匿名同学"，但后台是能追溯的 —— <strong>匿名是保护表达，不是给差评开脱</strong>。</blockquote>
+<p>（回到商品详情）</p>
+<h3>5｜买家下单（2:10）</h3>
+<p>（点「立即购买」→ 确定）</p>
+<blockquote>我买下它。<strong>下单即锁定商品</strong>，状态从「在售」变「交易中」，<br>这样同一个人挂的同一件东西不会被两个人同时买走 —— 用的是唯一约束加事务兜底。</blockquote>
+<h3>6｜卖家的待办提醒（2:50）</h3>
+<p>（切到 B 窗口）</p>
+<blockquote>现在切到卖家这边。<strong>顶栏「订单」上有一个红色数字</strong>，就是待办数。<br>点它直接进「我卖出的」，不用自己去找。</blockquote>
+<p>（点订单 → 打开那笔订单）</p>
+<h3>7｜卖家交付：两个动作（3:10）</h3>
+<p>（点「标记可交付」→ 确定；再点「确认已交付」→ 确定）</p>
+<blockquote>订单状态机是 <strong>6 个状态</strong>：<br>待交易 →(卖家)待交付 →(卖家)待收货 →(买家)已完成；中间 1、2 阶段可以退款回在售，0 阶段可以取消。<br><br>注意这里：<strong>卖家要连点两次</strong> —— 先"标记可交付"，再"确认已交付"。<br>为什么要两步？因为<strong>"我准备交付"和"我确实交付了"是两件事</strong>，买家需要看到这个进度。</blockquote>
+<p>▸</p>
+<blockquote>另外，<strong>卖家不能替买家确认完成</strong>。我上一版留了个漏洞，买家可以跳过卖家直接点完成，<br>同学一句"买家怎么能不等卖家交付"就把我问住了 —— 已经修掉，越权会返回 6004/6005。</blockquote>
+<h3>8｜买家确认收货（4:00）</h3>
+<p>（切回 A，刷新「我买到的」）</p>
+<blockquote>买家这边，直到卖家确认交付，才出现「确认收货」按钮。<br>我点确认 —— 订单变「已完成」，<strong>商品自动变「已售出」</strong>，<strong>双方信用分各 +1</strong>，同时开启评价入口。</blockquote>
+<h3>9｜双向评价（4:40）</h3>
+<p>（点「评价这笔交易」→ 选 5 星 + 标签 + 勾选<strong>匿名</strong> → 提交）</p>
+<blockquote>评价的规则是：只有<strong>已完成订单的买卖双方</strong>能评，<strong>每单每人一次</strong>，唯一索引兜底。<br>评分联动信用分：4~5 星 +1、3 星不变、1~2 星 −1，夹在 0 到 150 之间。<br>我这里勾了匿名，是为了演示：<strong>匿名只隐藏展示层</strong>，后台仍能追溯到具体是谁。</blockquote>
+<p>（回到商品详情，滚到评价区）</p>
+<blockquote>评价一提交，商品详情页立刻有<strong>平均分、好评率、星级分布</strong> —— 这就是口碑。</blockquote>
+<h3>10｜管理后台（5:20）</h3>
+<p>（切 B → 后台 → 商品审核）</p>
+<blockquote>后台先看<strong>商品审核</strong>。发布的时候其实先过一道<strong>机审</strong>，三层：<br>违禁词直接拒绝；可疑的（比如留微信、价格异常）转人工；正常的直接上架。<br>这里有一件待审核的，就是机审转了人工的。管理员可以通过，也可以驳回并写审核意见 —— 卖家能看到理由。</blockquote>
+<p>（点用户管理 → 数据看板）</p>
+<blockquote>用户管理可以禁用/解禁；数据看板有用户、商品、订单、举报的趋势。<br><strong>所有管理操作都写审计日志</strong>，出问题能查是谁做的。</blockquote>
+<h3>11｜私信与已读（6:20）</h3>
+<p>（A 发一条 → B 查看回一条）</p>
+<blockquote>私信是 WebSocket 实时推送的，有<strong>已读回执</strong>；连接断了会自动降级成轮询，不会卡死。</blockquote>
+<h3>12｜质量数据（7:00）</h3>
+<p>（切到浏览器标签：<code>3-28条故事场景截图（一屏一故事）.html</code>）</p>
+<blockquote>最后我想给老师看这一页。<br><strong>28 条功能故事，每一条都对应一个浏览器场景，并且至少有一张截图。</strong><br>这些不是手工截的，是我用 Playwright 驱动真实浏览器一条一条点出来的，命名就是故事编号。</blockquote>
+<p>▸</p>
+<blockquote>再补一句分工：这 <strong>28 条</strong>是功能故事；另外有 <strong>9 条质量需求</strong>（设计令牌、可访问性、信用分防刷这类），<br>它们的验收对象不在界面上，所以没有截图，由安全套件、部署验证、静态检查和压测覆盖。</blockquote>
+<h3>13｜收尾（7:40）</h3>
+<blockquote>所以整体是：<strong>941 条用例</strong>——后端单测 709、端到端 31、部署验证 28、安全 52、前端 91；<br>CI 里五个 job 全绿，每个提交都跑。</blockquote>
+<hr>
+<h2>三、AI 开发经验与心得 · 3 分钟</h2>
+<p>（可以坐着讲，放慢）</p>
+<blockquote>最后三分钟，讲四个真实的故事 —— 都是我这次踩的坑，不是"AI 很厉害"这种话。</blockquote>
+<h3>故事一：TDD 让我发现自己读错了需求（45 秒）</h3>
+<blockquote>订单状态机我是<strong>先写测试</strong>的：41 条，一跑<strong>红了 24 条</strong>。<br>红了以后我发现，有两条不是代码错，是<strong>我自己把需求读错了</strong>：<br>我以为"确认收货只能买家"，可文档写的是买卖双方都可以；我以为"待交易不能直接完成"，可验收标准里明确留了"一步完成"。<br><br>测试先出错的好处是：它把"我以为"变成"文档说的"。<br>当然后来同学又指出，"一步完成"这条需求本身就是错的 —— 那是另一个故事，我下面讲。</blockquote>
+<h3>故事二：看不见的地方不能靠猜（45 秒）</h3>
+<blockquote>CI 连续 6 轮失败，我在本地怎么都复现不了，而且<strong>读不到 CI 的日志</strong>。<br>我的做法不是猜，而是<strong>先造观测手段</strong>：给失败步骤加退出码注解、把日志尾部打成注解。<br>最后就是靠注解里的一句 <strong><code>exit 127</code></strong> 定位到的 —— 127 是"命令找不到"，<br>两个 job 缺了工作目录，<code>./mvnw</code> 在仓库根根本不存在。</blockquote>
+<h3>故事三：把"检查"做成工具，才不会被自己骗（45 秒）</h3>
+<blockquote>我写了个脚本，把代码里 <strong>66 个业务错误码、12 个状态取值</strong>全抽出来，逐条去问"用户故事里有没有对应描述"。<br>又写了个脚本扫全仓库的文档，抓出 <strong>5 处真矛盾</strong> —— 比如文档说"发布后待审核"，但代码实测是直接上架。<br><br>结论是：AI 写文档很快，但<strong>文档之间的一致性必须机器查</strong>。</blockquote>
+<h3>故事四：AI 会犯错，所以我改的是工具（45 秒）</h3>
+<blockquote>最难看的一次：我为了跑测试反复执行复位脚本，<strong>把同学真实发布的商品删了两次</strong>。<br>之后我做了三件事：默认库改成测试库、检测到非演示数据就拒绝执行、每次清库前自动备份。<br><br>我的体会是：<strong>AI 协作的关键不是"它不犯错"，而是"错了能被发现，而且下次犯不了"。</strong><br>这也是我今天讲的故事里，唯一一个跟代码质量无关、但最重要的。</blockquote>
+<hr>
+<h2>四、提问与反馈 · 2 分钟</h2>
+<p>（提前准备好这几条，问到就直说）</p>
+<table><thead><tr><th>老师可能问</th><th>你这样答</th></tr></thead><tbody>
+<tr><td>数据量这么小，能说明什么？</td><td>演示库 19 件商品、4 个用户。<strong>规模小是真话</strong>；我能说的是工程质量：941 条用例、覆盖率棘轮、CI 五个 job。性能上做了缓存和限流，瓶颈在数据库写入，真要上量得读写分离。</td></tr>
+<tr><td>安全性怎么保证？</td><td>JWT + 拦截器统一鉴权（<code>@LoginRequired</code>）。越权专门有 <strong>52 条</strong>用例：匿名 401、普通用户访问后台 403、只能操作自己的资源。上传还限制了类型和大小。</td></tr>
+<tr><td>机审准不准？会不会误杀？</td><td>现在是违禁词 + 可疑规则 + 联系方式正则三层，<strong>故意做得保守</strong>：可疑的只转人工，不直接拒。要提准确率得接第三方内容安全 API，这是我下一步。</td></tr>
+<tr><td>为什么不用 Elasticsearch？</td><td>当前量级 MySQL 的前缀索引和全文索引够用；上 ES 是"数据量或模糊匹配需求变了"之后的事，属于可扩展点，不是现在必需。</td></tr>
+<tr><td>买家能跳过卖家直接完成吗？</td><td><strong>不能</strong>，这是我这周刚修的。流程是 卖家标记可交付 → 卖家确认已交付 → <strong>买家</strong>确认收货；越权返回 6004/6005，有 13 条界面用例守着。</td></tr>
+<tr><td>AI 写的代码你敢用吗？</td><td>三条兜底：941 条用例、覆盖率棘轮、以及<strong>我逐条核对业务规则和文档</strong>。今天讲的四个故事，三个都是"我靠检查发现自己错"。</td></tr>
+<tr><td>一个人做这么大的项目，时间够吗？</td><td>时间主要花在<strong>测试和排障</strong>上，不是写代码。AI 把重复劳动吃掉了，但需求取舍、验收标准、以及"这笔交易到底该谁确认"这种判断，还是得我来定。</td></tr>
+<tr><td>下一步计划？</td><td>端到端进 CI、组件测试扩到更多页面、论文和中期材料整理。</td></tr>
+</tbody></table>
+<p>▸</p>
+<blockquote>如果老师给建议，回一句：<strong>"这个我记下来，回去补进需求文档和用例表。"</strong></blockquote>
+<hr>
+<h2>五、最后 20 秒（收尾）</h2>
+<blockquote>一句话总结：<br><strong>需求 28 条故事、105 条验收标准；测试 941 条用例、85.94% 覆盖率；缺陷 23 条、全部有根因。</strong><br>从需求到测试，每一步都能指给老师看。谢谢老师。</blockquote>
+<hr>
+<h2>附：上台前 60 秒检查</h2>
+<ul>
+<li>[ ] 两个窗口并排：A 无痕 <code>stu_demo</code>、B Chrome <code>admin</code></li>
+<li>[ ] 搜索框清空、都停在<strong>首页</strong></li>
+<li>[ ] 第 12 步要用的 HTML 已开在第三个标签</li>
+<li>[ ] 手机静音、微信/QQ 关闭</li>
+<li>[ ] 心跳：喝水，语速放慢，每句话之间停半秒</li>
+</ul></div></body></html>
